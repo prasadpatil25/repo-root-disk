@@ -133,3 +133,4 @@ vendor/         redistributed third-party material; see NOTICE
 
 MIT, see `LICENSE`. Third-party material under `vendor/` keeps its own licences;
 see `NOTICE`.
+
