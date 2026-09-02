@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claims and Gaps</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+:root {
+  --bg: #EFF2F1; --surface: #FBFCFC; --surface-2: #E6EBE9;
+  --ink: #131C1A; --ink-2: #4A5754; --ink-3: #6E7C78;
+  --rule: #D1D9D6; --rule-soft: #E1E7E5;
+  --accent: #14685A; --accent-soft: #DBEAE5;
+  --warn: #8A6318; --warn-soft: #F0E6CE;
+  --crit: #8E4230; --crit-soft: #F2DDD7;
+  --code-bg: #E8EDEB;
+  --shadow: 0 1px 2px rgba(19,28,26,.06), 0 8px 24px rgba(19,28,26,.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D1412; --surface: #141D1A; --surface-2: #1A2521;
+    --ink: #E1E9E6; --ink-2: #A2B0AC; --ink-3: #7E8C88;
+    --rule: #263330; --rule-soft: #1E2A27;
+    --accent: #55C4A6; --accent-soft: #16322B;
+    --warn: #D6A751; --warn-soft: #2C2617;
+    --crit: #DD8A72; --crit-soft: #32201B;
+    --code-bg: #18231F;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.28);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D1412; --surface: #141D1A; --surface-2: #1A2521;
+  --ink: #E1E9E6; --ink-2: #A2B0AC; --ink-3: #7E8C88;
+  --rule: #263330; --rule-soft: #1E2A27;
+  --accent: #55C4A6; --accent-soft: #16322B;
+  --warn: #D6A751; --warn-soft: #2C2617;
+  --crit: #DD8A72; --crit-soft: #32201B;
+  --code-bg: #18231F;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.28);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0 24px 96px; background: var(--bg); color: var(--ink);
+  font-family: "Source Serif 4", Georgia, serif; font-size: 17px; line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1080px; margin: 0 auto; }
+.mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+.masthead { padding: 72px 0 40px; border-bottom: 1px solid var(--rule); }
+.eyebrow {
+  font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 500;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--accent); margin: 0 0 20px;
+}
+h1 {
+  font-family: Archivo, Arial, sans-serif; font-weight: 700;
+  font-size: clamp(38px, 6vw, 60px); line-height: 1.02; letter-spacing: -.028em;
+  text-wrap: balance; margin: 0 0 22px;
+}
+.thesis { font-size: 20px; line-height: 1.5; color: var(--ink-2); max-width: 36em; margin: 0 0 32px; }
+.meta {
+  display: flex; flex-wrap: wrap; gap: 10px 28px;
+  font-family: "IBM Plex Mono", monospace; font-size: 11.5px; color: var(--ink-3);
+}
+.meta b {
+  font-weight: 500; color: var(--ink-2); letter-spacing: .08em;
+  text-transform: uppercase; font-size: 10.5px; margin-right: 7px;
+}
+.scoreboard {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 18px; margin-top: 34px;
+}
+.sb dt {
+  font-family: "IBM Plex Mono", monospace; font-size: 10px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3); margin-bottom: 5px;
+}
+.sb dd {
+  margin: 0; font-family: Archivo, Arial, sans-serif; font-size: 30px; font-weight: 700;
+  letter-spacing: -.025em; font-variant-numeric: tabular-nums;
+}
+.sb dd.ok { color: var(--accent); }
+.sb dd.gap { color: var(--warn); }
+
+.sec { display: grid; grid-template-columns: 1fr; gap: 6px 40px; padding: 52px 0; border-bottom: 1px solid var(--rule-soft); }
+@media (min-width: 940px) { .sec { grid-template-columns: 148px minmax(0, 1fr); } }
+.sec-label {
+  font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 500;
+  letter-spacing: .13em; text-transform: uppercase; color: var(--ink-3); padding-top: 9px;
+}
+.sec-body { min-width: 0; }
+h2 {
+  font-family: Archivo, Arial, sans-serif; font-weight: 600; font-size: 27px;
+  letter-spacing: -.016em; line-height: 1.18; text-wrap: balance; margin: 0 0 18px;
+}
+h3 { font-family: Archivo, Arial, sans-serif; font-weight: 600; font-size: 16px; margin: 32px 0 12px; }
+p { margin: 0 0 18px; max-width: 68ch; }
+p:last-child { margin-bottom: 0; }
+code { font-family: "IBM Plex Mono", monospace; font-size: .85em; background: var(--code-bg); padding: .12em .4em; border-radius: 3px; }
+strong { font-weight: 600; }
+a { color: var(--accent); }
+
+.tablewrap { overflow-x: auto; margin: 24px 0; }
+table {
+  border-collapse: collapse; width: 100%; min-width: 620px;
+  font-family: "IBM Plex Mono", monospace; font-size: 12.5px; font-variant-numeric: tabular-nums;
+}
+th {
+  text-align: left; font-weight: 500; font-size: 10.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3);
+  border-bottom: 1px solid var(--rule); padding: 0 14px 9px 0;
+}
+td { padding: 10px 14px 10px 0; border-bottom: 1px solid var(--rule-soft); color: var(--ink-2); vertical-align: top; }
+td:first-child { color: var(--ink); white-space: nowrap; }
+tr:last-child td { border-bottom: none; }
+
+.pill {
+  display: inline-block; font-size: 9.5px; font-weight: 500; letter-spacing: .08em;
+  text-transform: uppercase; padding: 2px 7px; border-radius: 3px; white-space: nowrap;
+}
+.ok { background: var(--accent-soft); color: var(--accent); }
+.gap { background: var(--warn-soft); color: var(--warn); }
+.hole { background: var(--crit-soft); color: var(--crit); }
+
+.outline { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; }
+.osec {
+  display: grid; grid-template-columns: 30px minmax(0,1fr) 86px; gap: 0 16px;
+  padding: 14px 0; border-top: 1px solid var(--rule-soft); align-items: baseline;
+}
+.osec:last-child { border-bottom: 1px solid var(--rule-soft); }
+.osec .num { font-family: "IBM Plex Mono", monospace; font-size: 12px; font-weight: 600; color: var(--accent); }
+.osec h4 { font-family: Archivo, Arial, sans-serif; font-size: 14.5px; font-weight: 600; margin: 0 0 5px; }
+.osec p { font-size: 15px; margin: 0; color: var(--ink-2); max-width: 58ch; }
+.osec .budget { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--ink-3); text-align: right; }
+.osec ul { margin: 8px 0 0; padding-left: 17px; font-size: 14.5px; color: var(--ink-3); }
+.osec li { margin-bottom: 3px; }
+@media (max-width: 640px) {
+  .osec { grid-template-columns: 26px minmax(0,1fr); }
+  .osec .budget { grid-column: 2; text-align: left; margin-top: 6px; }
+}
+
+.note { border-left: 2px solid var(--accent); background: var(--accent-soft); padding: 16px 20px; margin: 24px 0; border-radius: 0 4px 4px 0; }
+.note.warn { border-left-color: var(--warn); background: var(--warn-soft); }
+.note.crit { border-left-color: var(--crit); background: var(--crit-soft); }
+.note p { margin: 0; max-width: 62ch; }
+
+.gapcard {
+  background: var(--surface); border: 1px solid var(--rule); border-radius: 5px;
+  padding: 18px 20px; margin-bottom: 14px; box-shadow: var(--shadow);
+}
+.gapcard .top { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.gapcard h4 { font-family: Archivo, Arial, sans-serif; font-size: 16px; font-weight: 600; margin: 0; }
+.gapcard .cost { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--ink-3); }
+.gapcard p { font-size: 15.5px; margin: 9px 0 0; max-width: 66ch; }
+.gapcard .exp {
+  font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-2);
+  background: var(--code-bg); padding: 10px 13px; border-radius: 4px; margin-top: 12px;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="eyebrow">Paper skeleton</p>
+  <h1>Claims and Gaps</h1>
+  <p class="thesis">Every claim the paper wants to make, tagged by whether the data actually supports it, and the four experiments that would close the difference.</p>
+  <div class="meta">
+    <span><b>For</b> Repo as Root Disk</span>
+    <span><b>Date</b> 29 Aug 2026</span>
+    <span><b>Target</b> HotStorage-class short paper, 5 pages</span>
+    <span><b>Runway</b> ~6 months, no deadline forcing</span>
+  </div>
+  <dl class="scoreboard">
+    <div class="sb"><dt>Claims supported</dt><dd class="ok">39</dd></div>
+    <div class="sb"><dt>Claims unsupported</dt><dd class="gap">8</dd></div>
+    <div class="sb"><dt>Experiments to close</dt><dd>3</dd></div>
+    <div class="sb"><dt>Estimated effort</dt><dd>~7<span class="mono" style="font-size:12px;font-weight:400;color:var(--ink-3)"> days</span></dd></div>
+  </dl>
+</header>
+
+<section class="sec">
+  <div class="sec-label">Framing</div>
+  <div class="sec-body">
+    <h2>One contribution, stated three ways</h2>
+    <p>The paper has a mechanism half and a measurement half, and the measurement half is the one nobody else has. Lead with the mechanism because it motivates the measurement, but the finding a reviewer will remember is that a code forge's documented limits are not its enforced limits.</p>
+
+    <div class="note">
+      <p><strong>Working abstract, one sentence:</strong> browser-native virtual machines all treat remote storage as read only, so machine state is trapped in one browser profile; we close the loop by committing the guest's dirty block set into an ordinary git host, and in doing so characterise what a code forge looks like when used as a storage tier.</p>
+    </div>
+
+    <p>Three claimed contributions, in the order a reviewer should meet them. First, the write-back device: an unmodified emulator, a single interception point, and a protocol that turns a machine's state into a commit. Second, the characterisation: latency, concurrency, bandwidth and rate limits of a forge under a block-storage workload, including a documented-versus-enforced discrepancy. Third, the consequence: for this workload the forge is not rate limited, it is storage limited, which relocates the hard problem from budgeting to compaction.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-label">Skeleton</div>
+  <div class="sec-body">
+    <h2>Section plan with word budgets</h2>
+    <ol class="outline">
+      <li class="osec">
+        <div class="num">1</div>
+        <div>
+          <h4>Introduction</h4>
+          <p>The open loop in every existing browser VM. What closing it buys: fork, diff, bisect and checkout applied to a running environment, at zero infrastructure cost. Contributions list.</p>
+        </div>
+        <div class="budget">700 w</div>
+      </li>
+      <li class="osec">
+        <div class="num">2</div>
+        <div>
+          <h4>Background and related work</h4>
+          <p>Browser VMs, git as a blob store, and static-host storage. The gap is narrow and must be stated precisely: all three neighbours exist, none writes back.</p>
+          <ul>
+            <li>v86, CheerpX and WebVM, JSLinux, container2wasm: remote storage is read only</li>
+            <li>bup, git-annex: git as a blob store, but server side and offline</li>
+            <li>sql.js-httpvfs: range-request VFS on static hosting, read only</li>
+            <li>Git-backed CMSes: write to a repo, but files rather than block state</li>
+          </ul>
+        </div>
+        <div class="budget">600 w</div>
+      </li>
+      <li class="osec">
+        <div class="num">3</div>
+        <div>
+          <h4>Design</h4>
+          <p>Device layers, commit shape, and the eight-phase sync protocol. Two figures carry this section; the prose should not restate them.</p>
+          <ul>
+            <li>Fig 1: device stack and the write-back edge</li>
+            <li>Fig 2: chunk-exploded versus delta pack</li>
+            <li>Manifest as the unit that makes restore possible</li>
+          </ul>
+        </div>
+        <div class="budget">900 w</div>
+      </li>
+      <li class="osec">
+        <div class="num">4</div>
+        <div>
+          <h4>Implementation</h4>
+          <p>Short and concrete. v86 unmodified, one interception point, roughly 600 lines across three prototypes. The fact that no emulator changes were needed is a result, not a detail: it is what makes the artifact archivable.</p>
+        </div>
+        <div class="budget">450 w</div>
+      </li>
+      <li class="osec">
+        <div class="num">5</div>
+        <div>
+          <h4>Evaluation</h4>
+          <p>Six subsections. Three have data, three do not. See the ledger below.</p>
+          <ul>
+            <li>5.1 The forge as a storage tier</li>
+            <li>5.2 Capture fidelity</li>
+            <li>5.3 End to end cost</li>
+            <li>5.4 Scale</li>
+            <li>5.5 Dedup across commits</li>
+            <li>5.6 Compaction</li>
+          </ul>
+        </div>
+        <div class="budget">1400 w</div>
+      </li>
+      <li class="osec">
+        <div class="num">6</div>
+        <div>
+          <h4>Discussion and limitations</h4>
+          <p>Acceptable use, single-vendor dependence, the private-repo fork, and the honest statement that every number comes from one account on one network.</p>
+        </div>
+        <div class="budget">500 w</div>
+      </li>
+      <li class="osec">
+        <div class="num">7</div>
+        <div>
+          <h4>Conclusion</h4>
+          <p>Short. The forge is storage limited, not rate limited, and that is where the next work goes.</p>
+        </div>
+        <div class="budget">200 w</div>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-label">Ledger</div>
+  <div class="sec-body">
+    <h2>Supported claims</h2>
+    <p>Every row here has a number behind it from this session's runs. These are safe to write as findings.</p>
+
+    <h3>5.1 The forge as a storage tier</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Claim</th><th>Evidence</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>C1 Object ids computable client side</td><td>141 of 141 blobs matched the server on public repos, 129 of 129 on private, zero mismatches</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C2 force:false is a CAS</td><td>stale parent rejected with 422 in every attempt across runs</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C3 Documented limits are not enforced</td><td>80/min and 500/hr never fired; 145/min sustained passed, 841 writes in one window passed</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C4 The points limit is what binds</td><td>trip at 541/min after 40 s, 403 with retry-after 60, consistent with 900 points/min at 5 per write</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C5 Concurrency scales near-linearly</td><td>134, 294, 567, 1033, 2021 writes/min at c = 1, 2, 4, 8, 16 with p50 flat near 400 ms</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C6 Concurrency reaches but does not raise the bandwidth ceiling</td><td>1.21 MB/s at c=8 versus 1.56 MB/s single stream on one 4 MB blob</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C7 Backpressure precedes refusal</td><td>628 ms p50 sustained at c=8 against 386 ms in short bursts</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C8 The raw media type is worth 17 percent</td><td>90,615 bytes versus 65,536 for one blob, 1.383x; 1.47 against 1.72 MB/s head to head</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C9 Public repos allow ranged cross-origin reads</td><td>206 with Content-Range and ACAO star, verified out of band</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C10 Private repos cannot use the CDN from a browser</td><td>Authorization preflight answered 403 with no Allow-Headers</td><td><span class="pill ok">solid</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>5.2 Capture fidelity</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Claim</th><th>Evidence</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>C11 The dirty set is capturable</td><td>zero writes during boot, one intercepted call per guest write</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C12 Replay is lossless under overlap</td><td>0 differing bytes across 16 MB after mkfs, mount, write, unmount</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C13 Capture is complete, not merely byte-equal</td><td>a second machine mounted the replayed disk and read the file; a filesystem missing metadata does not mount</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C14 One hook covers both device stacks</td><td>2,164 of 2,164 device-recorded blocks reproduced on the streamed buffer</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C15 Flushing is a correctness requirement</td><td>the file write produced zero disk writes; all four landed at sync and unmount</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C16 Capture granularity is the transfer, not the sector</td><td>550 KB in 7 calls, about 79 KB per call against a 512 byte sector</td><td><span class="pill ok">solid</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>5.3 End to end cost</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Claim</th><th>Evidence</th><th></th></tr></thead>
+        <tbody>
+          <tr><td>C17 The loop closes</td><td>machine rebuilt from one commit mounted and read back its marker</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C18 A sync costs 9 requests and 5.1 s</td><td>5 chunk blobs, manifest, tree, commit, ref</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C19 Alignment amplification is 2.3x at 256 KB</td><td>550 KB dirty became 1.25 MB uploaded</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C20 Coalescing tracks filesystem structure</td><td>dirty chunks 0 to 2 and 32 to 33, matching ext2 superblock and backup at block 8193</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C21 The write pattern is deterministic</td><td>2/1/0/4 writes per stage, identical across four runs and both device stacks</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C22 Incremental syncs are cheap and flat</td><td>6 successive syncs: 2 dirty chunks and 6 requests each, 3.3 to 3.7 s, against 5 and 9 for the first</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C23 Restore cost is constant in sync count</td><td>every commit's tree references 6 objects regardless of how many syncs preceded it</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C24 Dedup is exactly the reciprocal of occupancy</td><td>146x at 3 percent full, 1.09x at 94 percent; every duplicate chunk was free space</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C25 Repo growth per edit is severe</td><td>512 KB of new objects per 17 byte append; 3.75 MB for ~100 bytes of user content</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C26 Cost tracks content, not disk size</td><td>adding 7.4 MB of content grew the snapshot by 8 MB, a ratio of 1.08</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C27 Client-side sync cost is negligible</td><td>65 chunks hashed in 0.1 s, about 2 ms each</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C28 The manifest stays a single blob</td><td>51 bytes per chunk, so about 200 KB at 1 GB</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C29 Re-baseline cost is content sized</td><td>1.75 MB when blank, 9.75 MB with 7.4 MB of files; a 500 MB rootfs projects to about 540 MB</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C30 History versus state depends on fullness</td><td>compaction wins after ~4 edits when sparse, after ~1,000 when populated</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C31 Compaction is read bound, not write bound</td><td>9.8 s to read and hash 1,024 chunks against a small upload</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C32 All three hosts allow browser calls</td><td>GitHub, GitLab and Codeberg all answer with Access-Control-Allow-Origin star</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C33 The git object write API is GitHub-specific</td><td>Forgejo and GitLab expose blobs, trees and commits read only, per Forgejo's own OpenAPI spec</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C34 The portable abstraction is one operation</td><td>Forgejo POST /contents and GitLab POST /repository/commits each take a file list and produce one commit</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C35 GitHub is the most expensive of the three</td><td>a sync costing 11 requests on GitHub costs 1 on either batch-commit host</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C36 Alignment amplification depends on write pattern</td><td>2.3x for scattered metadata writes, 1.22x for sequential bulk writes</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C37 Snapshot cost is content times 1.07</td><td>235 MB snapshot for 220 MB of content at 94 percent occupancy</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C38 Compaction read cost falls as the disk fills</td><td>1.1 s to hash 1,024 chunks at 94 percent full against 9.8 s when nearly empty</td><td><span class="pill ok">solid</span></td></tr>
+          <tr><td>C39 Compaction of a full machine is rate-limit bound</td><td>945 requests at 180 per minute is 5.3 min, against 2.8 min of bandwidth; ~20 min projected at 1 GB</td><td><span class="pill ok">solid</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-label">Holes</div>
+  <div class="sec-body">
+    <h2>Unsupported claims</h2>
+    <p>Each of these currently appears in the design note as an assertion. None has data. Writing them as findings would be dishonest, and a reviewer would catch at least the first three.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Claim</th><th>Why it is a hole</th><th></th></tr></thead>
+        <tbody>
+          
+          <tr><td>U3 Compaction bounds growth in practice</td><td>the cost is measured and the operation is implemented, but an actual orphan commit has not been pushed and reclamation depends on the host GC</td><td><span class="pill gap">weakening</span></td></tr>
+          <tr><td>U4 The protocol runs on a second host</td><td>API shapes and CORS are characterised, but nothing has actually been pushed to Forgejo or GitLab</td><td><span class="pill gap">weakening</span></td></tr>
+          <tr><td>U10 Compare-and-swap ports</td><td>GitHub's fast-forward-only ref update has no clear equivalent on either batch-commit host</td><td><span class="pill gap">weakening</span></td></tr>
+          <tr><td>U5 Boot survives CDN propagation lag</td><td>the fallback is designed; the window was never measured because of a local CORS block</td><td><span class="pill gap">weakening</span></td></tr>
+          <tr><td>U6 Conflict handling works</td><td>CAS is proven, but rebase-if-disjoint and fork-if-overlapping are designed, not implemented</td><td><span class="pill gap">weakening</span></td></tr>
+          <tr><td>U7 Replay works from a non-blank base</td><td>every test replayed onto zeros because the base image is blank</td><td><span class="pill gap">weakening</span></td></tr>
+          <tr><td>U8 The safe sustained rate is 150/min</td><td>we know it passes at 149 and trips at 541; the boundary between is unprobed</td><td><span class="pill gap">minor</span></td></tr>
+          <tr><td>U9 A machine can live in a repo indefinitely</td><td>no longitudinal data on repo growth against the 1 GB soft limit</td><td><span class="pill gap">minor</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note crit">
+      <p><strong>U7 is the one I would fix first in code rather than in an experiment.</strong> Replaying onto zeros is correct only because the base is blank. The implementation must replay onto the base, and the current prototypes would silently produce a corrupt disk the moment the base has content. It is a two-line change and a latent bug.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-label">Experiments</div>
+  <div class="sec-body">
+    <h2>Four experiments, in the order I would run them</h2>
+
+    <div class="gapcard">
+      <div class="top"><h4>E1. Dedup across commits</h4><span class="cost">done · closed U2</span></div>
+      <p><strong>Result:</strong> incremental syncs upload 2 chunks against the first sync's 5, while every commit's tree still references all 6 objects, so restore cost is constant in sync count. Content dedup was zero: the saving is incremental sync, not deduplication. Each 17 byte append cost 512 KB of new git objects.</p>
+      <div class="exp">6 syncs measured. Open follow-up: which two chunk indices are dirtied by an append, and whether 64 KB chunks cut the 512 KB per-edit cost proportionally</div>
+    </div>
+
+    <div class="gapcard">
+      <div class="top"><h4>E2. Realistic scale</h4><span class="cost">done · closed U1</span></div>
+      <p><strong>Result:</strong> measured at 3, 6 and 94 percent occupancy on a 256 MB streamed disk. Deduplication turns out to be exactly the reciprocal of occupancy, so content dedup is zero and the early ratios were measuring emptiness. Snapshot cost is content times 1.07. Compaction reads get faster as the disk fills, and compaction of a full machine becomes rate-limit bound at 945 requests, the only place in the project where a limit binds.</p>
+      <div class="exp">follow-up if wanted: 1 GB rather than 256 MB, to confirm the 20 minute compaction projection and find the tab memory ceiling</div>
+    </div>
+
+    <div class="gapcard">
+      <div class="top"><h4>E3. Compaction and re-baselining</h4><span class="cost">measured · push pending</span></div>
+      <p><strong>Measured:</strong> a full snapshot of the 256 MB machine is 7 distinct blobs and 1.75 MB, because 990 of 1,024 chunks are zero. Reading the disk to compute that took 9.8 s, so the operation is read bound. A re-baseline costs about the same as three or four incremental syncs, which means it can run routinely rather than as an emergency rebuild. <strong>Implemented</strong> as an orphan commit plus a forced ref update. <strong>Pending:</strong> actually pushing one, and confirming what the host reclaims, which depends on GitHub GC timing rather than on us.</p>
+      <div class="exp">remaining: push a real orphan commit, restore from it, and observe whether the repo size the API reports actually falls</div>
+    </div>
+
+    <div class="gapcard">
+      <div class="top"><h4>E4. Replication on a second host</h4><span class="cost">mapped · push pending</span></div>
+      <p><strong>Finding:</strong> the API does not map, and that is the interesting part. Forgejo and GitLab expose git blobs, trees and commits read only; both instead offer a batch commit endpoint taking a file list, so a sync costing 11 requests on GitHub costs 1 on either. The portable abstraction is <code>commit(files)</code>, not five operations, and GitHub turns out to be the most expensive host for this workload. <strong>Pending:</strong> actually pushing to one, and establishing whether the compare-and-swap in P7 has any equivalent there.</p>
+      <div class="exp">remaining: push a real commit to Forgejo or GitLab, measure the envelope, and test whether concurrent writers can be made safe without fast-forward-only refs</div>
+    </div>
+
+    <div class="note warn">
+      <p><strong>Not on the list, deliberately.</strong> Networking, a polished interface, multi-user support, and anything else that makes this feel like a product. None of it strengthens a claim, all of it adds surface to explain, and a short paper's prototype should be the smallest thing that supports the argument.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-label">Sequence</div>
+  <div class="sec-body">
+    <h2>What to do on Monday</h2>
+    <p>Fix U7 first, because it is a latent correctness bug rather than a missing measurement, and E2 will trip over it anyway. Then run E1, which is half a day and likely produces a headline number. Then E2, which is the long pole and the one that decides whether this reads as a systems result or a demo. E3 and E4 can run in either order after that.</p>
+    <p>Draft prose only once E1 and E2 are in. Writing before then means writing sentences you will have to delete, and the section that most needs care, the evaluation, is exactly the one whose shape those two experiments determine.</p>
+    <p>On venue: no deadline is forcing anything. HotStorage '26 has already happened, and FAST '27's fall deadline is too near and too demanding for this evidence. A HotStorage-class workshop in spring is the natural target, with ACM REP as the alternative if the reproducibility framing turns out to carry more weight than the storage framing. Decide that after E2, not before.</p>
+  </div>
+</section>
+
+</div>
+</body>
+</html>

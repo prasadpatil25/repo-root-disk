@@ -1,0 +1,21 @@
+n,t,op,bytes,ms,status,remaining,resource,retryAfter,write,note
+1,411,GET /user,0,411,200,4986,core,,false,
+2,821,GET /repos,0,408,200,4985,core,,false,
+3,822,environment,0,0,-,,,,false,"origin http://localhost:8000, repo public"
+4,5662,E4 bootstrap,0,0,-,,,,false,"no commit in this session yet, creating a minimal one (4 writes)"
+5,6354,putBlob (E4 bootstrap),65536,691,201,3832,core,,true,sha verified locally
+6,6822,putTree,0,466,201,3831,core,,true,
+7,7289,putCommit,0,466,201,3830,core,,true,
+8,7951,createRef,0,662,201,3829,core,,true,
+9,7982,"GET raw (control, old file)",0,31,network,,,,false,fetch failed: Failed to fetch
+10,8643,GET tree,0,659,200,4984,core,,false,
+11,9266,GET blob (API),0,622,200,4983,core,,false,
+12,9294,GET raw (no auth),0,27,network,,,,false,fetch failed: Failed to fetch
+13,9322,GET raw (range 0-65535),0,27,network,,,,false,fetch failed: Failed to fetch
+14,9704,GET raw (no-cors probe),0,381,opaque,,,,false,"host reachable, opaque response: CORS is the blocker, not the network"
+15,10157,GET jsDelivr,0,452,network,,,,false,fetch failed: Failed to fetch
+16,10187,raw poll 1,0,29,network,,,,false,fetch failed: Failed to fetch
+17,13238,raw poll 2,0,44,network,,,,false,fetch failed: Failed to fetch
+18,16277,raw poll 3,0,26,network,,,,false,fetch failed: Failed to fetch
+19,19315,raw poll 4,0,28,network,,,,false,fetch failed: Failed to fetch
+20,22372,raw poll 5,0,45,network,,,,false,fetch failed: Failed to fetch

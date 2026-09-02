@@ -1,0 +1,1055 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spike A: Git Object Layer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root {
+  --bg: #EFF2F1; --surface: #FBFCFC; --surface-2: #E6EBE9;
+  --ink: #131C1A; --ink-2: #4A5754; --ink-3: #6E7C78;
+  --rule: #D1D9D6; --rule-soft: #E1E7E5;
+  --accent: #14685A; --accent-soft: #DBEAE5;
+  --warn: #8A6318; --warn-soft: #F0E6CE;
+  --crit: #8E4230; --crit-soft: #F2DDD7;
+  --code-bg: #E8EDEB;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D1412; --surface: #141D1A; --surface-2: #1A2521;
+    --ink: #E1E9E6; --ink-2: #A2B0AC; --ink-3: #7E8C88;
+    --rule: #263330; --rule-soft: #1E2A27;
+    --accent: #55C4A6; --accent-soft: #16322B;
+    --warn: #D6A751; --warn-soft: #2C2617;
+    --crit: #DD8A72; --crit-soft: #32201B;
+    --code-bg: #18231F;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D1412; --surface: #141D1A; --surface-2: #1A2521;
+  --ink: #E1E9E6; --ink-2: #A2B0AC; --ink-3: #7E8C88;
+  --rule: #263330; --rule-soft: #1E2A27;
+  --accent: #55C4A6; --accent-soft: #16322B;
+  --warn: #D6A751; --warn-soft: #2C2617;
+  --crit: #DD8A72; --crit-soft: #32201B;
+  --code-bg: #18231F;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0 22px 80px; background: var(--bg); color: var(--ink);
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px; line-height: 1.55; -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1180px; margin: 0 auto; }
+h1 {
+  font-family: Archivo, "Helvetica Neue", Arial, sans-serif; font-weight: 700;
+  font-size: clamp(26px, 4vw, 38px); letter-spacing: -.025em; margin: 0 0 10px; line-height: 1.05;
+}
+h2 {
+  font-family: Archivo, Arial, sans-serif; font-weight: 600; font-size: 15px;
+  margin: 0 0 4px; letter-spacing: -.005em;
+}
+.eyebrow {
+  font-size: 10.5px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--accent); margin: 0 0 16px;
+}
+header.top { padding: 48px 0 24px; border-bottom: 1px solid var(--rule); }
+.lede { color: var(--ink-2); max-width: 78ch; margin: 0 0 18px; }
+.danger {
+  background: var(--crit-soft); color: var(--crit); border-left: 2px solid var(--crit);
+  padding: 12px 16px; border-radius: 0 4px 4px 0; max-width: 82ch;
+}
+.danger b { font-weight: 600; }
+section.panel {
+  background: var(--surface); border: 1px solid var(--rule); border-radius: 5px;
+  padding: 20px; margin: 20px 0;
+}
+.panel > header { margin-bottom: 16px; }
+.panel > header p { margin: 0; color: var(--ink-3); font-size: 12px; max-width: 80ch; }
+.row { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; }
+.f { display: flex; flex-direction: column; gap: 6px; }
+.f label, .lbl {
+  font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); font-weight: 500;
+}
+input[type="text"], input[type="password"], input[type="number"], select {
+  font-family: inherit; font-size: 12.5px; color: var(--ink); background: var(--bg);
+  border: 1px solid var(--rule); border-radius: 4px; padding: 8px 10px;
+}
+input[type="text"], input[type="password"] { min-width: 260px; }
+input[type="number"] { width: 92px; }
+button {
+  font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
+  background: var(--accent); color: var(--bg); border: 1px solid var(--accent);
+  border-radius: 4px; padding: 8px 15px;
+}
+button.ghost { background: transparent; color: var(--accent); }
+button.stop { background: var(--crit); border-color: var(--crit); color: var(--bg); }
+button:disabled { opacity: .4; cursor: not-allowed; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ack { display: flex; gap: 9px; align-items: flex-start; margin-top: 16px; max-width: 78ch; color: var(--ink-2); }
+.ack input { margin-top: 3px; accent-color: var(--crit); }
+.status { margin-top: 14px; font-size: 12px; color: var(--ink-2); }
+.status.ok { color: var(--accent); }
+.status.bad { color: var(--crit); }
+
+.meters { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 18px; }
+.m dt { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 5px; }
+.m dd {
+  margin: 0 0 7px; font-family: Archivo, Arial, sans-serif; font-size: 22px; font-weight: 600;
+  letter-spacing: -.02em; font-variant-numeric: tabular-nums;
+}
+.m dd small { font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 400; color: var(--ink-3); }
+.bar { height: 7px; background: var(--surface-2); border-radius: 2px; overflow: hidden; }
+.bar > i { display: block; height: 100%; width: 0; background: var(--accent); }
+.bar > i.tight { background: var(--warn); }
+.bar > i.over { background: var(--crit); }
+
+.exps { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 16px; }
+.exp { background: var(--surface); border: 1px solid var(--rule); border-radius: 5px; padding: 17px; display: flex; flex-direction: column; gap: 13px; }
+.exp .id { color: var(--accent); font-weight: 600; font-size: 11px; letter-spacing: .1em; }
+.exp p { margin: 0; font-size: 12px; color: var(--ink-2); }
+.exp .foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: auto; }
+.cost { font-size: 11px; color: var(--ink-3); }
+.cost b { color: var(--ink); font-weight: 500; }
+
+.tablewrap { overflow-x: auto; max-height: 460px; overflow-y: auto; border: 1px solid var(--rule); border-radius: 5px; }
+table { border-collapse: collapse; width: 100%; min-width: 900px; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+thead th {
+  position: sticky; top: 0; background: var(--surface); text-align: left; font-weight: 500;
+  font-size: 9.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3);
+  padding: 9px 12px; border-bottom: 1px solid var(--rule);
+}
+tbody td { padding: 6px 12px; border-bottom: 1px solid var(--rule-soft); color: var(--ink-2); white-space: nowrap; }
+tbody tr.err td { background: var(--crit-soft); color: var(--crit); }
+tbody tr.trip td { background: var(--warn-soft); color: var(--warn); font-weight: 500; }
+td.num { text-align: right; }
+.pill { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; background: var(--surface-2); color: var(--ink-3); }
+.pill.w { background: var(--accent-soft); color: var(--accent); }
+.empty { padding: 26px; text-align: center; color: var(--ink-3); font-size: 12px; }
+.findings { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 9px; }
+.findings li { padding-left: 15px; position: relative; color: var(--ink-2); font-size: 12.5px; }
+.findings li::before { content: "\2192"; position: absolute; left: 0; color: var(--accent); }
+code { background: var(--code-bg); padding: .1em .35em; border-radius: 3px; font-size: .92em; }
+a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <p class="eyebrow">Spike A</p>
+  <h1>Git Object Layer</h1>
+  <p class="lede">Proves the write path for <em>Repo as Root Disk</em>: <code>putBlob</code>, <code>putTree</code>, <code>putCommit</code>, <code>casRef</code> driven from a plain page with no server, then measures where GitHub's limits actually trip. No VM involved. The numbers this produces are the spine of the rate-limit budget.</p>
+  <div class="danger">
+    <b>Point this at a throwaway repository.</b> Every experiment writes real git objects and consumes your account's content-generating budget, which is 500 writes per hour and shared across everything you do on GitHub. Runs are capped and stoppable, but nothing here is undoable except by deleting the repo.
+  </div>
+</header>
+
+<section class="panel">
+  <header><h2>Connection</h2><p>Fine-grained PAT scoped to one repository, with <code>Contents: Read and write</code>. Nothing else is needed.</p></header>
+  <div class="row">
+    <div class="f">
+      <label for="tok">Token</label>
+      <input type="password" id="tok" placeholder="github_pat_..." autocomplete="off" spellcheck="false">
+    </div>
+    <div class="f">
+      <label for="repo">Owner / repo</label>
+      <input type="text" id="repo" placeholder="you/spike-scratch" spellcheck="false">
+    </div>
+    <button id="connect">Validate</button>
+    <button class="ghost" id="forget">Forget token</button>
+  </div>
+  <label class="ack"><input type="checkbox" id="remember"><span>Remember the token in this browser's localStorage. Leave unchecked to keep it in memory only, which is the safer default.</span></label>
+  <label class="ack"><input type="checkbox" id="ack"><span><b>I confirm this is a throwaway repository</b> whose history I am willing to lose, and I accept that these runs consume my hourly write budget.</span></label>
+  <p class="status" id="conn">Not connected.</p>
+</section>
+
+<section class="panel">
+  <header><h2>Budget</h2><p>Local count is every content-generating request this page has made in the last hour. Remaining comes from GitHub's own headers on the last response.</p></header>
+  <dl class="meters">
+    <div class="m"><dt>Writes this hour (local)</dt><dd id="m-local">0 <small>/ 500</small></dd><div class="bar"><i id="b-local"></i></div></div>
+    <div class="m"><dt>Writes last 60s (local)</dt><dd id="m-burst">0 <small>/ 80</small></dd><div class="bar"><i id="b-burst"></i></div></div>
+    <div class="m"><dt>Core remaining (header)</dt><dd id="m-core">&ndash; <small>/ 5000</small></dd><div class="bar"><i id="b-core"></i></div></div>
+    <div class="m"><dt>Limit resets</dt><dd id="m-reset">&ndash;</dd></div>
+  </dl>
+</section>
+
+<section class="panel">
+  <header><h2>Experiments</h2><p>Each run appends to the log below. Run E2 before E4, which needs a commit to read back.</p></header>
+  <div class="exps">
+
+    <div class="exp">
+      <span class="id">E1</span>
+      <h2>Blob size sweep</h2>
+      <p>POST blobs at 64 KB, 256 KB, 1 MB and 4 MB. Gives latency against payload size, which is what decides the chunk size in the design. Two warm-up writes are discarded first, and sizes are interleaved rather than grouped, so connection setup cost does not land entirely on whichever size runs first.</p>
+      <div class="row">
+        <div class="f"><label for="e1reps">Reps per size</label><input type="number" id="e1reps" value="5" min="3" max="20"></div>
+      </div>
+      <div class="foot"><span class="cost">writes: <b id="e1cost">12</b></span><button data-run="e1" disabled>Run E1</button></div>
+    </div>
+
+    <div class="exp">
+      <span class="id">E2</span>
+      <h2>Commit cycle</h2>
+      <p>Full blobs, tree, commit, ref update. Compares chunk-exploded against a single delta pack of the same total size, so the N+3 versus 4 request model gets checked end to end.</p>
+      <div class="row">
+        <div class="f"><label for="e2shape">Shape</label><select id="e2shape"><option value="exploded">chunk-exploded</option><option value="pack">delta pack</option></select></div>
+        <div class="f"><label for="e2k">Chunks</label><input type="number" id="e2k" value="8" min="1" max="40"></div>
+        <div class="f"><label for="e2size">Chunk KB</label><input type="number" id="e2size" value="256" min="4" max="4096"></div>
+        <div class="f"><label for="e2reps">Cycles</label><input type="number" id="e2reps" value="2" min="1" max="10"></div>
+      </div>
+      <div class="foot"><span class="cost">writes: <b id="e2cost">22</b></span><button data-run="e2" disabled>Run E2</button></div>
+    </div>
+
+    <div class="exp">
+      <span class="id">E3</span>
+      <h2>Secondary limit probe</h2>
+      <p>Small blobs back to back until a 403 or 429 arrives, recording the exact request index and elapsed time. This is the measurement that confirms or refutes 80 per minute and 500 per hour.</p>
+      <p style="color:var(--warn)"><b>Run this last.</b> Tripping the limit throttles the whole account for the rest of the hour and poisons every measurement that follows it.</p>
+      <div class="row">
+        <div class="f"><label for="e3cap">Hard cap</label><input type="number" id="e3cap" value="100" min="10" max="600"></div>
+        <div class="f"><label for="e3gap">Gap ms</label><input type="number" id="e3gap" value="0" min="0" max="5000"></div>
+        <div class="f"><label for="e3conc">Concurrency</label><input type="number" id="e3conc" value="1" min="1" max="32"></div>
+      </div>
+      <div class="foot"><span class="cost">writes: up to <b id="e3cost">100</b></span><button data-run="e3" disabled>Run E3</button></div>
+    </div>
+
+    <div class="exp">
+      <span class="id">E4</span>
+      <h2>Read path</h2>
+      <p>Same content through three routes: the blobs API, <code>raw.githubusercontent.com</code>, and a ranged request. Answers whether the boot path can stay off the API entirely, and whether it works at all on a private repo.</p>
+      <p id="origin-warn" style="display:none;color:var(--crit)"><b>This page is open as a <code>file://</code> URL, so its origin is <code>null</code>.</b> The API tolerates that, but the CDN may reject it outright, which looks identical to a real CORS failure. Serve this page over http before trusting an E4 result.</p>
+      <p>Self-contained: if no commit exists in this session it creates a minimal one first. A 404 from jsDelivr moments after a commit may be CDN propagation rather than a CORS or visibility problem, so re-run it if that is the only failure.</p>
+      <div class="foot"><span class="cost">writes: <b>0</b>, or 4 if it must bootstrap</span><button data-run="e4" disabled>Run E4</button></div>
+    </div>
+
+    <div class="exp">
+      <span class="id">E7</span>
+      <h2>Boot path read benchmark</h2>
+      <p>Writes n chunks, then reads them all back through <code>GET /git/blobs/:sha</code> at concurrency. This is the fallback read path on a public repo and the <strong>only</strong> read path on a private one, since the CDN refuses an <code>Authorization</code> preflight. Reports both directions and the read throughput a cold boot would see.</p>
+      <div class="row">
+        <div class="f"><label for="e7n">Chunks</label><input type="number" id="e7n" value="16" min="4" max="64"></div>
+        <div class="f"><label for="e7size">Chunk KB</label><input type="number" id="e7size" value="256" min="4" max="4096"></div>
+        <div class="f"><label for="e7conc">Concurrency</label><input type="number" id="e7conc" value="8" min="1" max="32"></div>
+      </div>
+      <div class="foot"><span class="cost">writes: <b id="e7cost">16</b>, then equal reads</span><button data-run="e7" disabled>Run E7</button></div>
+    </div>
+
+    <div class="exp">
+      <span class="id">E6</span>
+      <h2>Concurrency ramp</h2>
+      <p>The same batch uploaded at rising concurrency, to find the operating point for P5. Serial round trips cap a client near 145 writes per minute, so parallelism is the only way to reach, or trip, the real secondary ceiling. GitHub permits 100 concurrent requests.</p>
+      <div class="row">
+        <div class="f"><label for="e6n">Blobs per level</label><input type="number" id="e6n" value="16" min="4" max="64"></div>
+      </div>
+      <div class="foot"><span class="cost">writes: <b id="e6cost">80</b></span><button data-run="e6" disabled>Run E6</button></div>
+    </div>
+
+    <div class="exp">
+      <span class="id">E5</span>
+      <h2>Compare and swap</h2>
+      <p>Updates the ref with a stale parent and <code>force: false</code>. Expects a rejection, which is the concurrency primitive the sync protocol depends on in P7.</p>
+      <div class="foot"><span class="cost">writes: <b>1</b> attempt</span><button data-run="e5" disabled>Run E5</button></div>
+    </div>
+
+  </div>
+  <div class="row" style="margin-top:18px">
+    <button class="stop" id="stop" disabled>Stop</button>
+    <button class="ghost" id="csv">Export CSV</button>
+    <button class="ghost" id="json">Export JSON</button>
+    <button class="ghost" id="clear">Clear log</button>
+    <span class="cost" id="runstate"></span>
+  </div>
+</section>
+
+<section class="panel">
+  <header><h2>Findings</h2><p>Derived from the log as it fills. These are the lines that go into the paper.</p></header>
+  <ul class="findings" id="findings"><li>Run an experiment to populate.</li></ul>
+</section>
+
+<section class="panel">
+  <header><h2>Log</h2><p>Every request, in order. Latency covers the full round trip including reading the response body.</p></header>
+  <div class="tablewrap">
+    <table>
+      <thead><tr>
+        <th>#</th><th>t+ms</th><th>op</th><th>bytes</th><th class="num">ms</th><th>status</th>
+        <th class="num">remaining</th><th>resource</th><th>note</th>
+      </tr></thead>
+      <tbody id="log"><tr><td colspan="9" class="empty">No requests yet.</td></tr></tbody>
+    </table>
+  </div>
+</section>
+
+</div>
+
+<script>
+"use strict";
+
+var API = "https://api.github.com";
+var state = { token: "", owner: "", repo: "", branch: "", head: "", firstCommit: "", path: "", ok: false };
+var log = [];
+var writeTimes = [];
+var stopped = false, running = false, t0 = 0;
+
+var $ = function (id) { return document.getElementById(id); };
+
+/* ---------- storage ---------- */
+
+try {
+  var saved = localStorage.getItem("spikea.token");
+  if (saved) { $("tok").value = saved; $("remember").checked = true; }
+  var savedRepo = localStorage.getItem("spikea.repo");
+  if (savedRepo) $("repo").value = savedRepo;
+  var savedWrites = JSON.parse(localStorage.getItem("spikea.writes") || "[]");
+  if (Array.isArray(savedWrites)) writeTimes = savedWrites;
+} catch (e) { /* private mode, storage blocked: run in memory */ }
+
+function persistWrites() {
+  try { localStorage.setItem("spikea.writes", JSON.stringify(writeTimes)); } catch (e) {}
+}
+
+/* ---------- helpers ---------- */
+
+function randomBytes(n) {
+  var out = new Uint8Array(n);
+  for (var off = 0; off < n; off += 65536) {
+    crypto.getRandomValues(out.subarray(off, Math.min(off + 65536, n)));
+  }
+  return out;
+}
+
+function toBase64(bytes) {
+  var CH = 0x8000, parts = [];
+  for (var i = 0; i < bytes.length; i += CH) {
+    parts.push(String.fromCharCode.apply(null, bytes.subarray(i, i + CH)));
+  }
+  return btoa(parts.join(""));
+}
+
+function hex(buf) {
+  var b = new Uint8Array(buf), s = "";
+  for (var i = 0; i < b.length; i++) s += b[i].toString(16).padStart(2, "0");
+  return s;
+}
+
+// git object id: sha1("blob " + len + "\0" + bytes)
+async function gitBlobSha(bytes) {
+  if (!(crypto.subtle && crypto.subtle.digest)) return null;
+  var head = new TextEncoder().encode("blob " + bytes.length + "\0");
+  var all = new Uint8Array(head.length + bytes.length);
+  all.set(head, 0); all.set(bytes, head.length);
+  try { return hex(await crypto.subtle.digest("SHA-1", all)); } catch (e) { return null; }
+}
+
+function fmtBytes(n) {
+  if (n === 0 || n === undefined) return "";
+  if (n < 1024) return n + " B";
+  if (n < 1048576) return (n / 1024).toFixed(n < 10240 ? 1 : 0) + " KB";
+  return (n / 1048576).toFixed(2) + " MB";
+}
+
+function pct(a, b) { return Math.min(100, a / b * 100); }
+
+function quantile(arr, q) {
+  if (!arr.length) return 0;
+  var s = arr.slice().sort(function (x, y) { return x - y; });
+  var i = Math.min(s.length - 1, Math.floor(q * s.length));
+  return s[i];
+}
+
+/* ---------- request core ---------- */
+
+var WRITE_METHODS = { POST: 1, PATCH: 1, PUT: 1, DELETE: 1 };
+
+async function req(method, path, body, opts) {
+  opts = opts || {};
+  var url = path.indexOf("http") === 0 ? path : API + path;
+  var headers = {
+    "Accept": "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28"
+  };
+  if (opts.accept) headers["Accept"] = opts.accept;
+  if (state.token && !opts.noAuth) headers["Authorization"] = "Bearer " + state.token;
+  if (body) headers["Content-Type"] = "application/json";
+  if (opts.range) headers["Range"] = opts.range;
+  // no-cors forbids non-safelisted headers, so send none at all
+  if (opts.bare) headers = {};
+
+  var isWrite = !!WRITE_METHODS[method];
+  var started = performance.now();
+  var res, text = "", err = null;
+
+  try {
+    var init = { method: method, headers: headers, body: body ? JSON.stringify(body) : undefined };
+    if (opts.mode) init.mode = opts.mode;
+    res = await fetch(url, init);
+    if (res.type !== "opaque") text = await res.text();
+  } catch (e) {
+    err = e;
+  }
+  var ms = Math.round(performance.now() - started);
+
+  if (isWrite) {
+    var now = Date.now();
+    writeTimes.push(now);
+    writeTimes = writeTimes.filter(function (t) { return now - t < 3600000; });
+    persistWrites();
+  }
+
+  var entry = {
+    n: log.length + 1,
+    t: t0 ? Math.round(performance.now() - t0) : 0,
+    op: opts.label || (method + " " + path),
+    bytes: opts.bytes || 0,
+    ms: ms,
+    status: err ? "network" : res.status,
+    remaining: err ? "" : res.headers.get("x-ratelimit-remaining"),
+    resource: err ? "" : res.headers.get("x-ratelimit-resource"),
+    reset: err ? "" : res.headers.get("x-ratelimit-reset"),
+    retryAfter: err ? "" : res.headers.get("retry-after"),
+    write: isWrite,
+    note: ""
+  };
+
+  var json = null;
+  if (!err && text) { try { json = JSON.parse(text); } catch (e2) { json = null; } }
+
+  if (err) {
+    entry.note = "fetch failed: " + err.message;
+  } else if (res.type === "opaque") {
+    entry.status = "opaque";
+    entry.note = "host reachable, opaque response: CORS is the blocker, not the network";
+  } else if (!res.ok) {
+    var msg = (json && json.message) || text.slice(0, 90);
+    entry.note = msg;
+    if (res.status === 403 || res.status === 429) {
+      entry.trip = true;
+      if (entry.retryAfter) entry.note += " (retry-after " + entry.retryAfter + "s)";
+    }
+  }
+
+  log.push(entry);
+  renderRow(entry);
+  updateMeters(entry);
+  renderFindings();
+
+  return { ok: !err && res.ok, status: entry.status, json: json, text: text, entry: entry, res: res || null };
+}
+
+/* ---------- git object operations ---------- */
+
+function base(p) { return "/repos/" + state.owner + "/" + state.repo + p; }
+
+async function putBlob(bytes, label) {
+  var r = await req("POST", base("/git/blobs"),
+    { content: toBase64(bytes), encoding: "base64" },
+    { label: label || "putBlob", bytes: bytes.length });
+  if (!r.ok) return null;
+  var local = await gitBlobSha(bytes);
+  if (local && r.json && r.json.sha && local !== r.json.sha) {
+    r.entry.note = "local sha mismatch (" + local.slice(0, 7) + " vs " + r.json.sha.slice(0, 7) + ")";
+    redrawRow(r.entry);
+  } else if (local) {
+    r.entry.note = "sha verified locally";
+    redrawRow(r.entry);
+  }
+  return r.json ? r.json.sha : null;
+}
+
+async function putTree(entries) {
+  var r = await req("POST", base("/git/trees"), { tree: entries }, { label: "putTree" });
+  return r.ok && r.json ? r.json.sha : null;
+}
+
+async function putCommit(message, tree, parents) {
+  var r = await req("POST", base("/git/commits"),
+    { message: message, tree: tree, parents: parents || [] }, { label: "putCommit" });
+  return r.ok && r.json ? r.json.sha : null;
+}
+
+async function createRef(ref, sha) {
+  var r = await req("POST", base("/git/refs"), { ref: ref, sha: sha }, { label: "createRef" });
+  return r.ok;
+}
+
+async function casRef(branch, sha, force) {
+  var r = await req("PATCH", base("/git/refs/heads/" + branch),
+    { sha: sha, force: !!force }, { label: "casRef" });
+  return r;
+}
+
+/* ---------- connection ---------- */
+
+$("connect").addEventListener("click", async function () {
+  var tok = $("tok").value.trim();
+  var repo = $("repo").value.trim();
+  var parts = repo.split("/");
+  if (!tok || parts.length !== 2 || !parts[0] || !parts[1]) {
+    setConn("Enter a token and an owner/repo pair.", "bad"); return;
+  }
+  state.token = tok; state.owner = parts[0]; state.repo = parts[1];
+  if (!t0) t0 = performance.now();
+
+  try {
+    if ($("remember").checked) { localStorage.setItem("spikea.token", tok); }
+    localStorage.setItem("spikea.repo", repo);
+  } catch (e) {}
+
+  setConn("Checking...", "");
+  var who = await req("GET", "/user", null, { label: "GET /user" });
+  if (!who.ok) { setConn("Token rejected: " + (who.entry.note || who.status), "bad"); return; }
+
+  var rp = await req("GET", base(""), null, { label: "GET /repos" });
+  if (!rp.ok) { setConn("Cannot read that repo: " + (rp.entry.note || rp.status), "bad"); return; }
+
+  var canPush = rp.json && rp.json.permissions && rp.json.permissions.push;
+  state.private = !!(rp.json && rp.json.private);
+  if (!canPush) { setConn("Connected as " + who.json.login + ", but the token cannot write to " + repo + ".", "bad"); return; }
+
+  state.ok = true;
+  state.branch = "spike-a-" + Date.now().toString(36);
+  // Recorded so an exported run is self-describing: file:// origins are null and
+  // the CDN may refuse them, which is indistinguishable from a real CORS failure.
+  logNote("environment", "origin " +
+    (typeof location !== "undefined" ? (location.origin || "null (" + location.protocol + ")") : "unknown") +
+    ", repo " + (state.private ? "private" : "public"));
+  setConn("Connected as " + who.json.login + ". Repo " + repo + " is " +
+    (state.private ? "private" : "public") + ", write access confirmed. Runs will use branch " +
+    state.branch + ".", "ok");
+  refreshButtons();
+});
+
+$("forget").addEventListener("click", function () {
+  try { localStorage.removeItem("spikea.token"); } catch (e) {}
+  $("tok").value = ""; state.token = ""; state.ok = false;
+  setConn("Token cleared.", ""); refreshButtons();
+});
+
+$("ack").addEventListener("change", refreshButtons);
+
+function setConn(msg, cls) { var e = $("conn"); e.textContent = msg; e.className = "status " + (cls || ""); }
+
+function refreshButtons() {
+  var ready = state.ok && $("ack").checked && !running;
+  document.querySelectorAll("button[data-run]").forEach(function (b) { b.disabled = !ready; });
+  $("stop").disabled = !running;
+}
+
+/* ---------- cost estimates ---------- */
+
+function updateCosts() {
+  $("e1cost").textContent = 4 * (+$("e1reps").value || 1) + 2;
+  var k = +$("e2k").value || 1, reps = +$("e2reps").value || 1;
+  var per = $("e2shape").value === "pack" ? 4 : k + 3;
+  $("e2cost").textContent = per * reps;
+  $("e3cost").textContent = +$("e3cap").value || 0;
+  $("e6cost").textContent = 5 * (+$("e6n").value || 16);
+  $("e7cost").textContent = +$("e7n").value || 16;
+}
+["e1reps", "e2k", "e2reps", "e2shape", "e3cap", "e6n", "e7n"].forEach(function (id) {
+  $(id).addEventListener("input", updateCosts);
+});
+updateCosts();
+
+/* ---------- experiment runner ---------- */
+
+async function guard(planned, name) {
+  var now = Date.now();
+  var hour = writeTimes.filter(function (t) { return now - t < 3600000; }).length;
+  if (hour + planned > 500) {
+    return confirm(name + " plans " + planned + " writes. You have already made " + hour +
+      " this hour, so this run is expected to exceed the 500 per hour limit and start failing.\n\nRun anyway? " +
+      "(For E3 that is the point. For the others it will just produce errors.)");
+  }
+  return true;
+}
+
+async function withRun(name, fn) {
+  if (running) return;
+  running = true; stopped = false;
+  if (!t0) t0 = performance.now();
+  refreshButtons(); $("stop").disabled = false;
+  $("runstate").textContent = "running " + name + "...";
+  try { await fn(); } catch (e) { $("runstate").textContent = name + " threw: " + e.message; }
+  running = false; refreshButtons();
+  $("runstate").textContent = stopped ? name + " stopped." : name + " done.";
+  renderFindings();
+}
+
+$("stop").addEventListener("click", function () { stopped = true; $("runstate").textContent = "stopping..."; });
+
+async function runPool(tasks, concurrency) {
+  var i = 0;
+  async function worker() {
+    while (i < tasks.length && !stopped) { await tasks[i++](); }
+  }
+  var workers = [];
+  for (var k = 0; k < concurrency; k++) workers.push(worker());
+  await Promise.all(workers);
+}
+
+function logNote(op, note) {
+  var e = {
+    n: log.length + 1, t: t0 ? Math.round(performance.now() - t0) : 0, op: op,
+    bytes: 0, ms: 0, status: "-", remaining: "", resource: "", reset: "",
+    retryAfter: "", write: false, note: note
+  };
+  log.push(e); renderRow(e); return e;
+}
+
+async function ensureBranch(commitSha) {
+  if (state.head) return true;
+  var okRef = await createRef("refs/heads/" + state.branch, commitSha);
+  if (okRef) { state.head = commitSha; state.firstCommit = commitSha; }
+  return okRef;
+}
+
+var RUN = {
+  e1: async function () {
+    var reps = +$("e1reps").value || 1;
+    var sizes = [65536, 262144, 1048576, 4194304];
+    if (!(await guard(sizes.length * reps + 2, "E1"))) return;
+    // The first requests of a session pay TCP, TLS and HTTP/2 slow-start costs.
+    // Without these the whole warm-up bill lands on whichever size runs first.
+    for (var w = 0; w < 2; w++) {
+      if (stopped) return;
+      await putBlob(randomBytes(65536), "warmup (discarded)");
+    }
+    // Interleaved, not grouped: a stall then hits every bucket rather than one.
+    for (var r = 0; r < reps; r++) {
+      for (var s = 0; s < sizes.length; s++) {
+        if (stopped) return;
+        await putBlob(randomBytes(sizes[s]), "putBlob " + fmtBytes(sizes[s]));
+      }
+    }
+  },
+
+  e2: async function () {
+    var shape = $("e2shape").value;
+    var k = +$("e2k").value || 1;
+    var chunk = (+$("e2size").value || 256) * 1024;
+    var reps = +$("e2reps").value || 1;
+    var per = shape === "pack" ? 4 : k + 3;
+    if (!(await guard(per * reps, "E2"))) return;
+
+    for (var c = 0; c < reps; c++) {
+      if (stopped) return;
+      var cycleStart = performance.now();
+      var entries = [];
+
+      if (shape === "pack") {
+        var sha = await putBlob(randomBytes(k * chunk), "putBlob pack " + fmtBytes(k * chunk));
+        if (!sha) return;
+        entries.push({ path: "pack/" + Date.now() + ".bin", mode: "100644", type: "blob", sha: sha });
+      } else {
+        for (var i = 0; i < k; i++) {
+          if (stopped) return;
+          var s2 = await putBlob(randomBytes(chunk), "putBlob chunk " + fmtBytes(chunk));
+          if (!s2) return;
+          entries.push({ path: "chunks/" + Date.now() + "-" + i + ".bin", mode: "100644", type: "blob", sha: s2 });
+        }
+      }
+
+      var tree = await putTree(entries);
+      if (!tree) return;
+      var commit = await putCommit("spike-a cycle " + (c + 1) + " (" + shape + ")", tree,
+        state.head ? [state.head] : []);
+      if (!commit) return;
+
+      if (!state.head) {
+        if (!(await ensureBranch(commit))) return;
+      } else {
+        var r2 = await casRef(state.branch, commit, false);
+        if (!r2.ok) return;
+        state.head = commit;
+      }
+      state.path = entries[0].path;
+
+      var total = Math.round(performance.now() - cycleStart);
+      log[log.length - 1].note = "cycle end to end: " + total + " ms for " + per + " requests";
+      redrawRow(log[log.length - 1]);
+    }
+  },
+
+  e3: async function () {
+    var cap = +$("e3cap").value || 50;
+    var gap = +$("e3gap").value || 0;
+    var conc = +$("e3conc").value || 1;
+    if (!(await guard(cap, "E3"))) return;
+    var start = performance.now();
+    var tripped = false, done = 0;
+    var tasks = [];
+    for (var i = 0; i < cap; i++) {
+      tasks.push(async function () {
+        if (tripped) return;
+        var seq = ++done;
+        var r = await req("POST", base("/git/blobs"),
+          { content: toBase64(randomBytes(4096)), encoding: "base64" },
+          { label: "probe " + seq, bytes: 4096 });
+        if (!r.ok && (r.status === 403 || r.status === 429)) {
+          tripped = true;
+          var el = (performance.now() - start) / 1000;
+          r.entry.note = "TRIPPED at write " + seq + " after " + el.toFixed(1) + "s (" +
+            Math.round(seq / el * 60) + "/min at concurrency " + conc + "). " + r.entry.note;
+          redrawRow(r.entry);
+        }
+        if (gap) await new Promise(function (res) { setTimeout(res, gap); });
+      });
+    }
+    await runPool(tasks, conc);
+    if (!tripped && !stopped) {
+      var el2 = (performance.now() - start) / 1000;
+      logNote("E3 result", "no trip: " + cap + " writes in " + el2.toFixed(1) + "s = " +
+        Math.round(cap / el2 * 60) + "/min sustained at concurrency " + conc);
+    }
+  },
+
+  e4: async function () {
+    // Bootstrap its own commit rather than silently no-opping on a fresh session.
+    if (!state.head || !state.path) {
+      logNote("E4 bootstrap", "no commit in this session yet, creating a minimal one (4 writes)");
+      var bsha = await putBlob(randomBytes(65536), "putBlob (E4 bootstrap)");
+      if (!bsha) return;
+      var bpath = "e4/probe-" + Date.now() + ".bin";
+      var btree = await putTree([{ path: bpath, mode: "100644", type: "blob", sha: bsha }]);
+      if (!btree) return;
+      var bcommit = await putCommit("spike-a E4 bootstrap", btree, state.head ? [state.head] : []);
+      if (!bcommit) return;
+      if (!state.head) {
+        if (!(await ensureBranch(bcommit))) return;
+      } else {
+        var bref = await casRef(state.branch, bcommit, false);
+        if (!bref.ok) return;
+        state.head = bcommit;
+      }
+      state.path = bpath;
+    }
+    var raw = "https://raw.githubusercontent.com/" + state.owner + "/" + state.repo +
+      "/" + state.head + "/" + state.path;
+
+    // 0. Control: a long-lived, definitely public file. This separates "raw plus CORS
+    //    is broken in this browser" from "this particular commit has not propagated".
+    await req("GET", "https://raw.githubusercontent.com/github/gitignore/main/README.md",
+      null, { label: "GET raw (control, old file)", noAuth: true });
+
+    // 1. through the API
+    var t = await req("GET", base("/git/trees/" + state.head + "?recursive=1"), null, { label: "GET tree" });
+    var sha = null;
+    if (t.ok && t.json && t.json.tree) {
+      for (var i = 0; i < t.json.tree.length; i++) {
+        if (t.json.tree[i].path === state.path) { sha = t.json.tree[i].sha; break; }
+      }
+    }
+    if (sha) await req("GET", base("/git/blobs/" + sha), null, { label: "GET blob (API)" });
+
+    // 2. through the CDN, unauthenticated
+    await req("GET", raw, null, { label: "GET raw (no auth)", noAuth: true });
+
+    // 3. through the CDN, ranged
+    var rr = await req("GET", raw, null, { label: "GET raw (range 0-65535)", noAuth: true, range: "bytes=0-65535" });
+    if (rr.res && rr.res.type !== "opaque") {
+      rr.entry.note = (rr.status === 206 ? "206, range requests supported" :
+        "no 206, got " + rr.status + ", ranged streaming unavailable on this route");
+      redrawRow(rr.entry);
+    }
+
+    // 4. discriminator: a no-cors probe still reaches the host. If this comes back
+    // opaque while the cors attempts failed, the blocker is CORS, not the network.
+    await req("GET", raw, null, { label: "GET raw (no-cors probe)", noAuth: true, bare: true, mode: "no-cors" });
+
+    // 5. jsDelivr, which serves public repos with permissive CORS
+    var jsd = "https://cdn.jsdelivr.net/gh/" + state.owner + "/" + state.repo +
+      "@" + state.head + "/" + state.path;
+    await req("GET", jsd, null, { label: "GET jsDelivr", noAuth: true });
+
+    // 6. Propagation poll. If the CDN simply lags a fresh commit, the boot path has a
+    //    consistency window, which is a design constraint rather than a broken route.
+    var pollStart = performance.now();
+    for (var attempt = 1; attempt <= 10 && !stopped; attempt++) {
+      var pr = await req("GET", raw, null, { label: "raw poll " + attempt, noAuth: true });
+      var waited = ((performance.now() - pollStart) / 1000).toFixed(1);
+      if (pr.ok) {
+        pr.entry.note = "readable via CDN after " + waited + "s";
+        redrawRow(pr.entry);
+        break;
+      }
+      if (attempt === 10) {
+        pr.entry.note = "still unreadable after " + waited + "s, not a propagation delay";
+        redrawRow(pr.entry);
+      }
+      await new Promise(function (r) { setTimeout(r, 3000); });
+    }
+  },
+
+  e7: async function () {
+    var n = +$("e7n").value || 16;
+    var chunk = (+$("e7size").value || 256) * 1024;
+    var conc = +$("e7conc").value || 8;
+    if (!(await guard(n, "E7"))) return;
+
+    // Write phase: build a set of chunks to read back.
+    var shas = [];
+    var wStart = performance.now();
+    var wtasks = [];
+    for (var i = 0; i < n; i++) {
+      wtasks.push(async function () {
+        var s = await putBlob(randomBytes(chunk), "E7 write " + fmtBytes(chunk));
+        if (s) shas.push(s);
+      });
+    }
+    await runPool(wtasks, conc);
+    var wMs = Math.round(performance.now() - wStart);
+    if (!shas.length) return;
+    var mb = shas.length * chunk / 1048576;
+    logNote("E7 write phase", shas.length + " chunks, " + mb.toFixed(1) + " MB in " + wMs +
+      " ms = " + (mb / (wMs / 1000)).toFixed(2) + " MB/s at concurrency " + conc);
+
+    if (stopped) return;
+
+    // Read phase, twice. The default media type returns base64 inside JSON, which
+    // inflates the payload by a third; the raw media type returns the bytes.
+    var modes = [
+      { label: "E7 read base64", accept: "application/vnd.github+json" },
+      { label: "E7 read raw", accept: "application/vnd.github.raw" }
+    ];
+    for (var m = 0; m < modes.length; m++) {
+      if (stopped) return;
+      var mode = modes[m];
+      var rStart = performance.now();
+      var rtasks = shas.map(function (sha) {
+        return function () {
+          return req("GET", base("/git/blobs/" + sha), null,
+            { label: mode.label, bytes: chunk, accept: mode.accept });
+        };
+      });
+      await runPool(rtasks, conc);
+      var rMs = Math.round(performance.now() - rStart);
+      logNote(mode.label + " phase", shas.length + " chunks, " + mb.toFixed(1) + " MB in " + rMs +
+        " ms = " + (mb / (rMs / 1000)).toFixed(2) + " MB/s at concurrency " + conc +
+        " (a cold boot of this much state costs " + shas.length + " of the 5,000 hourly primary budget)");
+    }
+  },
+
+  e6: async function () {
+    var n = +$("e6n").value || 16;
+    var levels = [1, 2, 4, 8, 16];
+    if (!(await guard(levels.length * n, "E6"))) return;
+    for (var li = 0; li < levels.length; li++) {
+      if (stopped) return;
+      var c = levels[li];
+      var tasks = [];
+      for (var i = 0; i < n; i++) {
+        tasks.push(function () { return putBlob(randomBytes(4096), "conc c=" + c); });
+      }
+      var started = performance.now();
+      await runPool(tasks, c);
+      var elapsed = Math.round(performance.now() - started);
+      var last = log[log.length - 1];
+      last.note = "concurrency " + c + ": " + n + " blobs in " + elapsed + " ms = " +
+        Math.round(n / (elapsed / 1000) * 60) + " writes/min";
+      redrawRow(last);
+    }
+  },
+
+  e5: async function () {
+    if (!state.head || !state.firstCommit || state.head === state.firstCommit) {
+      $("runstate").textContent = "E5 needs at least two commits. Run E2 with 2 or more cycles.";
+      return;
+    }
+    var r = await casRef(state.branch, state.firstCommit, false);
+    r.entry.note = r.ok
+      ? "UNEXPECTED: stale update accepted, force:false is not a compare and swap"
+      : "rejected as expected (" + r.status + "), CAS confirmed: " + r.entry.note;
+    redrawRow(r.entry);
+  }
+};
+
+document.querySelectorAll("button[data-run]").forEach(function (btn) {
+  btn.addEventListener("click", function () {
+    var key = btn.getAttribute("data-run");
+    withRun(key.toUpperCase(), RUN[key]);
+  });
+});
+
+/* ---------- rendering ---------- */
+
+function rowHtml(e) {
+  return "<td>" + e.n + "</td>" +
+    "<td>" + e.t + "</td>" +
+    "<td>" + (e.write ? '<span class="pill w">W</span> ' : '<span class="pill">R</span> ') + e.op + "</td>" +
+    "<td>" + fmtBytes(e.bytes) + "</td>" +
+    '<td class="num">' + e.ms + "</td>" +
+    "<td>" + e.status + "</td>" +
+    '<td class="num">' + (e.remaining || "") + "</td>" +
+    "<td>" + (e.resource || "") + "</td>" +
+    "<td>" + (e.note || "") + "</td>";
+}
+
+function renderRow(e) {
+  var body = $("log");
+  if (body.querySelector(".empty")) body.innerHTML = "";
+  var tr = document.createElement("tr");
+  tr.id = "r" + e.n;
+  if (e.trip) tr.className = "trip";
+  else if (e.status !== 200 && e.status !== 201 && e.status !== 206) tr.className = "err";
+  tr.innerHTML = rowHtml(e);
+  body.appendChild(tr);
+  tr.scrollIntoView({ block: "nearest" });
+}
+
+function redrawRow(e) {
+  var tr = document.getElementById("r" + e.n);
+  if (tr) tr.innerHTML = rowHtml(e);
+}
+
+function updateMeters(e) {
+  var now = Date.now();
+  var hour = writeTimes.filter(function (t) { return now - t < 3600000; }).length;
+  var min = writeTimes.filter(function (t) { return now - t < 60000; }).length;
+
+  $("m-local").innerHTML = hour + " <small>/ 500</small>";
+  $("m-burst").innerHTML = min + " <small>/ 80</small>";
+  setBar("b-local", pct(hour, 500));
+  setBar("b-burst", pct(min, 80));
+
+  if (e && e.remaining !== null && e.remaining !== "" && e.resource === "core") {
+    $("m-core").innerHTML = e.remaining + " <small>/ 5000</small>";
+    setBar("b-core", 100 - pct(+e.remaining, 5000));
+  }
+  if (e && e.reset) {
+    var d = new Date(+e.reset * 1000);
+    $("m-reset").textContent = d.toTimeString().slice(0, 8);
+  }
+}
+
+function setBar(id, p) {
+  var el = $(id);
+  el.style.width = p + "%";
+  el.className = p > 90 ? "over" : p > 65 ? "tight" : "";
+}
+
+function renderFindings() {
+  var out = [];
+  var writes = log.filter(function (e) { return e.write && (e.status === 200 || e.status === 201); });
+
+  var bySize = {};
+  log.forEach(function (e) {
+    if (e.op.indexOf("putBlob") === 0 && e.bytes && (e.status === 200 || e.status === 201)) {
+      (bySize[e.bytes] = bySize[e.bytes] || []).push(e.ms);
+    }
+  });
+  Object.keys(bySize).sort(function (a, b) { return a - b; }).forEach(function (sz) {
+    var a = bySize[sz];
+    var med = quantile(a, 0.5);
+    out.push("putBlob " + fmtBytes(+sz) + ": median " + med + " ms over " + a.length +
+      " calls, " + (med > 0 ? (sz / 1024 / (med / 1000) / 1024).toFixed(1) : "?") + " MB/s effective");
+  });
+
+  var trips = log.filter(function (e) { return e.trip; });
+  if (trips.length) {
+    var t = trips[0];
+    var before = log.filter(function (e) { return e.write && e.n < t.n; }).length;
+    out.push("Secondary limit tripped after " + before + " writes at t+" + t.t + " ms" +
+      (t.retryAfter ? ", retry-after " + t.retryAfter + "s" : "") + ". Documented caps are 80/min and 500/hr.");
+  }
+
+  var raw = log.filter(function (e) { return e.op.indexOf("GET raw") === 0; });
+  if (raw.length) {
+    var okRaw = raw.filter(function (e) { return e.status === 200 || e.status === 206; });
+    out.push(okRaw.length
+      ? "CDN read path works" + (state.private ? " on a PRIVATE repo, which the design did not assume" : " on a public repo") +
+        ", median " + quantile(okRaw.map(function (e) { return e.ms; }), 0.5) + " ms, and it does not touch the API budget."
+      : "CDN read path FAILED (" + raw[0].status + "). On this repo the boot path cannot avoid the API, which changes the budget entirely.");
+  }
+
+  log.forEach(function (e) {
+    if (/^concurrency \d+:/.test(e.note)) out.push(e.note);
+    if (e.op.indexOf("E7 ") === 0 && e.op.indexOf(" phase") > 0) out.push(e.op + ": " + e.note);
+  });
+
+  var ctrl = log.filter(function (e) { return e.op.indexOf("GET raw (control") === 0; });
+  if (ctrl.length) {
+    out.push(ctrl[0].status === 200
+      ? "CONTROL PASSED: a long-lived public raw file loads cross-origin from this browser, so raw plus CORS works here. Any failure on the fresh commit is propagation or path, not CORS policy."
+      : "CONTROL FAILED (" + ctrl[0].status + "): even a long-lived public raw file will not load from this browser. The blocker is local, an extension, proxy or filter, and not a property of the design.");
+  }
+
+  var poll = log.filter(function (e) { return /readable via CDN after/.test(e.note); });
+  if (poll.length) out.push("Fresh commit " + poll[0].note + ": the boot path has a consistency window of that order.");
+
+  var opaque = log.filter(function (e) { return e.status === "opaque"; });
+  if (opaque.length) {
+    out.push("A no-cors probe returned an opaque response while the cors attempts failed: " +
+      "the host is reachable and CORS is the blocker, not the network.");
+  }
+
+  var cas = log.filter(function (e) { return e.op === "casRef"; });
+  if (cas.length > 1) {
+    var rejected = cas.filter(function (e) { return e.status === 422; }).length;
+    if (rejected) out.push("Stale ref update rejected with 422: force:false is a usable compare and swap for P7.");
+  }
+
+  if (writes.length) {
+    var all = writes.map(function (e) { return e.ms; });
+    out.push("All writes: p50 " + quantile(all, 0.5) + " ms, p90 " + quantile(all, 0.9) +
+      " ms, p99 " + quantile(all, 0.99) + " ms over " + all.length + " calls.");
+  }
+
+  var ul = $("findings");
+  ul.innerHTML = out.length
+    ? out.map(function (s) { return "<li>" + s + "</li>"; }).join("")
+    : "<li>Run an experiment to populate.</li>";
+}
+
+/* ---------- export ---------- */
+
+function download(name, text, type) {
+  var b = new Blob([text], { type: type });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(b);
+  a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+}
+
+$("csv").addEventListener("click", function () {
+  var cols = ["n", "t", "op", "bytes", "ms", "status", "remaining", "resource", "retryAfter", "write", "note"];
+  var rows = [cols.join(",")];
+  log.forEach(function (e) {
+    rows.push(cols.map(function (c) {
+      var v = e[c] === undefined || e[c] === null ? "" : String(e[c]);
+      return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+    }).join(","));
+  });
+  download("spike-a-" + Date.now() + ".csv", rows.join("\n"), "text/csv");
+});
+
+$("json").addEventListener("click", function () {
+  download("spike-a-" + Date.now() + ".json", JSON.stringify({
+    when: new Date().toISOString(),
+    repo: state.owner + "/" + state.repo,
+    private: !!state.private,
+    branch: state.branch,
+    userAgent: navigator.userAgent,
+    log: log
+  }, null, 2), "application/json");
+});
+
+$("clear").addEventListener("click", function () {
+  log = []; t0 = 0;
+  $("log").innerHTML = '<tr><td colspan="9" class="empty">No requests yet.</td></tr>';
+  renderFindings();
+});
+
+if (typeof location !== "undefined" && location.protocol === "file:") {
+  $("origin-warn").style.display = "block";
+}
+
+updateMeters(null);
+refreshButtons();
+</script>
+</body>
+</html>

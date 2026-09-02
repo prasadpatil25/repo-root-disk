@@ -1,0 +1,281 @@
+n,t,op,bytes,ms,status,remaining,resource,retryAfter,write,note
+1,663,GET /user,0,662,200,5000,core,,false,
+2,1291,GET /repos,0,627,200,4999,core,,false,
+3,1292,environment,0,0,-,,,,false,"origin http://localhost:8000, repo private"
+4,10071,warmup (discarded),65536,1045,201,4999,core,,true,sha verified locally
+5,10522,warmup (discarded),65536,448,201,4998,core,,true,sha verified locally
+6,11326,putBlob 64 KB,65536,804,201,4997,core,,true,sha verified locally
+7,12190,putBlob 256 KB,262144,861,201,4996,core,,true,sha verified locally
+8,14414,putBlob 1.00 MB,1048576,2213,201,4995,core,,true,sha verified locally
+9,16549,putBlob 4.00 MB,4194304,2113,201,4994,core,,true,sha verified locally
+10,17345,putBlob 64 KB,65536,790,201,4993,core,,true,sha verified locally
+11,18011,putBlob 256 KB,262144,662,201,4992,core,,true,sha verified locally
+12,19704,putBlob 1.00 MB,1048576,1685,201,4991,core,,true,sha verified locally
+13,21650,putBlob 4.00 MB,4194304,1909,201,4990,core,,true,sha verified locally
+14,22167,putBlob 64 KB,65536,507,201,4989,core,,true,sha verified locally
+15,22870,putBlob 256 KB,262144,697,201,4988,core,,true,sha verified locally
+16,24574,putBlob 1.00 MB,1048576,1692,201,4987,core,,true,sha verified locally
+17,26474,putBlob 4.00 MB,4194304,1843,201,4986,core,,true,sha verified locally
+18,27309,putBlob 64 KB,65536,827,201,4985,core,,true,sha verified locally
+19,28519,putBlob 256 KB,262144,1206,201,4984,core,,true,sha verified locally
+20,30187,putBlob 1.00 MB,1048576,1657,201,4983,core,,true,sha verified locally
+21,33021,putBlob 4.00 MB,4194304,2772,201,4982,core,,true,sha verified locally
+22,34011,putBlob 64 KB,65536,979,201,4981,core,,true,sha verified locally
+23,35287,putBlob 256 KB,262144,1271,201,4980,core,,true,sha verified locally
+24,37362,putBlob 1.00 MB,1048576,2060,201,4979,core,,true,sha verified locally
+25,39183,putBlob 4.00 MB,4194304,1775,201,4978,core,,true,sha verified locally
+26,75822,putBlob chunk 256 KB,262144,1443,201,4977,core,,true,sha verified locally
+27,77140,putBlob chunk 256 KB,262144,1312,201,4976,core,,true,sha verified locally
+28,78179,putBlob chunk 256 KB,262144,1036,201,4975,core,,true,sha verified locally
+29,79443,putBlob chunk 256 KB,262144,1262,201,4974,core,,true,sha verified locally
+30,80649,putBlob chunk 256 KB,262144,1202,201,4973,core,,true,sha verified locally
+31,81914,putBlob chunk 256 KB,262144,1260,201,4972,core,,true,sha verified locally
+32,83276,putBlob chunk 256 KB,262144,1355,201,4971,core,,true,sha verified locally
+33,84555,putBlob chunk 256 KB,262144,1275,201,4970,core,,true,sha verified locally
+34,85306,putTree,0,747,201,4969,core,,true,
+35,85953,putCommit,0,646,201,4968,core,,true,
+36,86960,createRef,0,1004,201,4967,core,,true,cycle end to end: 12585 ms for 11 requests
+37,88195,putBlob chunk 256 KB,262144,1230,201,4966,core,,true,sha verified locally
+38,88783,putBlob chunk 256 KB,262144,581,201,4965,core,,true,sha verified locally
+39,89835,putBlob chunk 256 KB,262144,1049,201,4964,core,,true,sha verified locally
+40,91061,putBlob chunk 256 KB,262144,1219,201,4963,core,,true,sha verified locally
+41,92275,putBlob chunk 256 KB,262144,1208,201,4962,core,,true,sha verified locally
+42,93510,putBlob chunk 256 KB,262144,1228,201,4961,core,,true,sha verified locally
+43,94532,putBlob chunk 256 KB,262144,1016,201,4960,core,,true,sha verified locally
+44,95744,putBlob chunk 256 KB,262144,1206,201,4959,core,,true,sha verified locally
+45,96301,putTree,0,552,201,4958,core,,true,
+46,96816,putCommit,0,513,201,4957,core,,true,
+47,97666,casRef,0,847,200,4956,core,,true,cycle end to end: 10708 ms for 11 requests
+48,339431,probe 1,4096,473,201,4955,core,,true,
+49,339851,probe 2,4096,413,201,4954,core,,true,
+50,340331,probe 3,4096,478,201,4953,core,,true,
+51,340715,probe 4,4096,382,201,4952,core,,true,
+52,341470,probe 5,4096,752,201,4951,core,,true,
+53,341883,probe 6,4096,411,201,4950,core,,true,
+54,342329,probe 7,4096,444,201,4949,core,,true,
+55,342734,probe 8,4096,401,201,4948,core,,true,
+56,343151,probe 9,4096,414,201,4947,core,,true,
+57,343525,probe 10,4096,373,201,4946,core,,true,
+58,343918,probe 11,4096,391,201,4945,core,,true,
+59,344269,probe 12,4096,349,201,4944,core,,true,
+60,344734,probe 13,4096,463,201,4943,core,,true,
+61,345100,probe 14,4096,364,201,4942,core,,true,
+62,345479,probe 15,4096,375,201,4941,core,,true,
+63,346006,probe 16,4096,523,201,4940,core,,true,
+64,346406,probe 17,4096,399,201,4939,core,,true,
+65,346780,probe 18,4096,372,201,4938,core,,true,
+66,347147,probe 19,4096,361,201,4937,core,,true,
+67,347533,probe 20,4096,380,201,4936,core,,true,
+68,347961,probe 21,4096,422,201,4935,core,,true,
+69,348378,probe 22,4096,413,201,4934,core,,true,
+70,348775,probe 23,4096,394,201,4933,core,,true,
+71,349223,probe 24,4096,446,201,4932,core,,true,
+72,349580,probe 25,4096,353,201,4931,core,,true,
+73,349957,probe 26,4096,374,201,4930,core,,true,
+74,350347,probe 27,4096,388,201,4929,core,,true,
+75,350860,probe 28,4096,509,201,4928,core,,true,
+76,351222,probe 29,4096,359,201,4927,core,,true,
+77,351628,probe 30,4096,401,201,4926,core,,true,
+78,352010,probe 31,4096,378,201,4925,core,,true,
+79,352363,probe 32,4096,350,201,4924,core,,true,
+80,352796,probe 33,4096,430,201,4923,core,,true,
+81,353170,probe 34,4096,372,201,4922,core,,true,
+82,353587,probe 35,4096,414,201,4921,core,,true,
+83,353947,probe 36,4096,354,201,4920,core,,true,
+84,354313,probe 37,4096,364,201,4919,core,,true,
+85,354881,probe 38,4096,567,201,4918,core,,true,
+86,355343,probe 39,4096,460,201,4917,core,,true,
+87,355715,probe 40,4096,370,201,4916,core,,true,
+88,356141,probe 41,4096,423,201,4915,core,,true,
+89,356604,probe 42,4096,458,201,4914,core,,true,
+90,357046,probe 43,4096,436,201,4913,core,,true,
+91,357414,probe 44,4096,366,201,4912,core,,true,
+92,357786,probe 45,4096,368,201,4911,core,,true,
+93,358164,probe 46,4096,375,201,4910,core,,true,
+94,358539,probe 47,4096,370,201,4909,core,,true,
+95,358920,probe 48,4096,376,201,4908,core,,true,
+96,359298,probe 49,4096,367,201,4907,core,,true,
+97,359679,probe 50,4096,377,201,4906,core,,true,
+98,360117,probe 51,4096,433,201,4905,core,,true,
+99,360510,probe 52,4096,389,201,4904,core,,true,
+100,360937,probe 53,4096,420,201,4903,core,,true,
+101,361337,probe 54,4096,384,201,4902,core,,true,
+102,361733,probe 55,4096,393,201,4901,core,,true,
+103,362081,probe 56,4096,344,201,4900,core,,true,
+104,362465,probe 57,4096,381,201,4899,core,,true,
+105,362843,probe 58,4096,374,201,4898,core,,true,
+106,363258,probe 59,4096,413,201,4897,core,,true,
+107,363636,probe 60,4096,375,201,4896,core,,true,
+108,364067,probe 61,4096,427,201,4895,core,,true,
+109,364496,probe 62,4096,426,201,4894,core,,true,
+110,364854,probe 63,4096,352,201,4893,core,,true,
+111,365214,probe 64,4096,357,201,4892,core,,true,
+112,365573,probe 65,4096,352,201,4891,core,,true,
+113,365933,probe 66,4096,357,201,4890,core,,true,
+114,366440,probe 67,4096,504,201,4889,core,,true,
+115,366872,probe 68,4096,429,201,4888,core,,true,
+116,367227,probe 69,4096,352,201,4887,core,,true,
+117,367704,probe 70,4096,473,201,4886,core,,true,
+118,368123,probe 71,4096,413,201,4885,core,,true,
+119,368550,probe 72,4096,424,201,4884,core,,true,
+120,368951,probe 73,4096,395,201,4883,core,,true,
+121,369374,probe 74,4096,416,201,4882,core,,true,
+122,369768,probe 75,4096,389,201,4881,core,,true,
+123,370148,probe 76,4096,372,201,4880,core,,true,
+124,370512,probe 77,4096,362,201,4879,core,,true,
+125,370909,probe 78,4096,394,201,4878,core,,true,
+126,371272,probe 79,4096,360,201,4877,core,,true,
+127,371635,probe 80,4096,357,201,4876,core,,true,
+128,371992,probe 81,4096,349,201,4875,core,,true,
+129,372343,probe 82,4096,348,201,4874,core,,true,
+130,372685,probe 83,4096,340,201,4873,core,,true,
+131,373100,probe 84,4096,410,201,4872,core,,true,
+132,373479,probe 85,4096,374,201,4871,core,,true,
+133,373830,probe 86,4096,349,201,4870,core,,true,
+134,374183,probe 87,4096,347,201,4869,core,,true,
+135,374535,probe 88,4096,350,201,4868,core,,true,
+136,374934,probe 89,4096,396,201,4867,core,,true,
+137,375298,probe 90,4096,360,201,4866,core,,true,
+138,375680,probe 91,4096,376,201,4865,core,,true,
+139,376090,probe 92,4096,407,201,4864,core,,true,
+140,376455,probe 93,4096,359,201,4863,core,,true,
+141,376828,probe 94,4096,366,201,4862,core,,true,
+142,377299,probe 95,4096,469,201,4861,core,,true,
+143,377665,probe 96,4096,360,201,4860,core,,true,
+144,378031,probe 97,4096,360,201,4859,core,,true,
+145,378382,probe 98,4096,348,201,4858,core,,true,
+146,378885,probe 99,4096,497,201,4857,core,,true,
+147,379256,probe 100,4096,369,201,4856,core,,true,
+148,379266,E3 result,0,0,-,,,,false,no trip: 100 writes in 40.3s = 149/min sustained at concurrency 1
+149,417276,"GET raw (control, old file)",0,124,network,,,,false,fetch failed: Failed to fetch
+150,418053,GET tree,0,768,200,4998,core,,false,
+151,419157,GET blob (API),0,1102,200,4997,core,,false,
+152,419191,GET raw (no auth),0,32,network,,,,false,fetch failed: Failed to fetch
+153,419231,GET raw (range 0-65535),0,39,network,,,,false,fetch failed: Failed to fetch
+154,419584,GET raw (no-cors probe),0,350,opaque,,,,false,"host reachable, opaque response: CORS is the blocker, not the network"
+155,420452,GET jsDelivr,0,865,network,,,,false,fetch failed: Failed to fetch
+156,420482,raw poll 1,0,28,network,,,,false,fetch failed: Failed to fetch
+157,423521,raw poll 2,0,32,network,,,,false,fetch failed: Failed to fetch
+158,426557,raw poll 3,0,27,network,,,,false,fetch failed: Failed to fetch
+159,429594,raw poll 4,0,24,network,,,,false,fetch failed: Failed to fetch
+160,432639,raw poll 5,0,34,network,,,,false,fetch failed: Failed to fetch
+161,435678,raw poll 6,0,27,network,,,,false,fetch failed: Failed to fetch
+162,438714,raw poll 7,0,27,network,,,,false,fetch failed: Failed to fetch
+163,441799,raw poll 8,0,69,network,,,,false,fetch failed: Failed to fetch
+164,444834,raw poll 9,0,27,network,,,,false,fetch failed: Failed to fetch
+165,447868,raw poll 10,0,27,network,,,,false,"still unreadable after 27.4s, not a propagation delay"
+166,457148,casRef,0,475,422,4855,core,,true,"rejected as expected (422), CAS confirmed: Update is not a fast forward"
+167,469071,conc c=1,4096,418,201,4854,core,,true,sha verified locally
+168,469550,conc c=1,4096,477,201,4853,core,,true,sha verified locally
+169,469914,conc c=1,4096,362,201,4852,core,,true,sha verified locally
+170,470342,conc c=1,4096,423,201,4851,core,,true,sha verified locally
+171,470713,conc c=1,4096,368,201,4850,core,,true,sha verified locally
+172,471083,conc c=1,4096,368,201,4849,core,,true,sha verified locally
+173,471435,conc c=1,4096,350,201,4848,core,,true,sha verified locally
+174,471789,conc c=1,4096,352,201,4847,core,,true,sha verified locally
+175,472147,conc c=1,4096,355,201,4846,core,,true,sha verified locally
+176,472523,conc c=1,4096,374,201,4845,core,,true,sha verified locally
+177,472893,conc c=1,4096,367,201,4844,core,,true,sha verified locally
+178,473266,conc c=1,4096,368,201,4843,core,,true,sha verified locally
+179,473670,conc c=1,4096,402,201,4842,core,,true,sha verified locally
+180,474014,conc c=1,4096,342,201,4841,core,,true,sha verified locally
+181,474381,conc c=1,4096,364,201,4840,core,,true,sha verified locally
+182,474886,conc c=1,4096,503,201,4839,core,,true,concurrency 1: 16 blobs in 6236 ms = 154 writes/min
+183,475249,conc c=2,4096,360,201,4838,core,,true,sha verified locally
+184,475281,conc c=2,4096,393,201,4837,core,,true,sha verified locally
+185,475671,conc c=2,4096,384,201,4835,core,,true,sha verified locally
+186,475750,conc c=2,4096,499,201,4836,core,,true,sha verified locally
+187,476034,conc c=2,4096,360,201,4834,core,,true,sha verified locally
+188,476141,conc c=2,4096,386,201,4833,core,,true,sha verified locally
+189,476428,conc c=2,4096,391,201,4832,core,,true,sha verified locally
+190,476492,conc c=2,4096,348,201,4831,core,,true,sha verified locally
+191,476851,conc c=2,4096,356,201,4829,core,,true,sha verified locally
+192,476854,conc c=2,4096,423,201,4830,core,,true,sha verified locally
+193,477247,conc c=2,4096,391,201,4828,core,,true,sha verified locally
+194,477254,conc c=2,4096,401,201,4827,core,,true,sha verified locally
+195,477606,conc c=2,4096,357,201,4826,core,,true,sha verified locally
+196,477644,conc c=2,4096,387,201,4825,core,,true,sha verified locally
+197,478011,conc c=2,4096,402,201,4824,core,,true,sha verified locally
+198,478018,conc c=2,4096,372,201,4823,core,,true,concurrency 2: 16 blobs in 3132 ms = 307 writes/min
+199,478377,conc c=4,4096,358,201,4821,core,,true,sha verified locally
+200,478389,conc c=4,4096,369,201,4819,core,,true,sha verified locally
+201,478397,conc c=4,4096,377,201,4822,core,,true,sha verified locally
+202,478404,conc c=4,4096,384,201,4820,core,,true,sha verified locally
+203,478727,conc c=4,4096,347,201,4818,core,,true,sha verified locally
+204,478809,conc c=4,4096,402,201,4817,core,,true,sha verified locally
+205,478812,conc c=4,4096,416,201,4816,core,,true,sha verified locally
+206,478820,conc c=4,4096,421,201,4815,core,,true,sha verified locally
+207,479089,conc c=4,4096,360,201,4814,core,,true,sha verified locally
+208,479174,conc c=4,4096,362,201,4812,core,,true,sha verified locally
+209,479187,conc c=4,4096,372,201,4813,core,,true,sha verified locally
+210,479196,conc c=4,4096,373,201,4811,core,,true,sha verified locally
+211,479448,conc c=4,4096,356,201,4810,core,,true,sha verified locally
+212,479536,conc c=4,4096,358,201,4809,core,,true,sha verified locally
+213,479625,conc c=4,4096,425,201,4807,core,,true,sha verified locally
+214,479707,conc c=4,4096,512,201,4808,core,,true,concurrency 4: 16 blobs in 1690 ms = 568 writes/min
+215,480053,conc c=8,4096,343,201,4806,core,,true,sha verified locally
+216,480063,conc c=8,4096,352,201,4805,core,,true,sha verified locally
+217,480074,conc c=8,4096,363,201,4799,core,,true,sha verified locally
+218,480089,conc c=8,4096,378,201,4800,core,,true,sha verified locally
+219,480091,conc c=8,4096,380,201,4804,core,,true,sha verified locally
+220,480094,conc c=8,4096,384,201,4802,core,,true,sha verified locally
+221,480124,conc c=8,4096,412,201,4803,core,,true,sha verified locally
+222,480141,conc c=8,4096,431,201,4801,core,,true,sha verified locally
+223,480406,conc c=8,4096,350,201,4798,core,,true,sha verified locally
+224,480414,conc c=8,4096,348,201,4797,core,,true,sha verified locally
+225,480443,conc c=8,4096,346,201,4793,core,,true,sha verified locally
+226,480450,conc c=8,4096,356,201,4794,core,,true,sha verified locally
+227,480473,conc c=8,4096,397,201,4796,core,,true,sha verified locally
+228,480497,conc c=8,4096,354,201,4791,core,,true,sha verified locally
+229,480535,conc c=8,4096,404,201,4792,core,,true,sha verified locally
+230,480573,conc c=8,4096,483,201,4795,core,,true,concurrency 8: 16 blobs in 867 ms = 1107 writes/min
+231,480954,conc c=16,4096,377,201,4790,core,,true,sha verified locally
+232,480963,conc c=16,4096,386,201,4789,core,,true,sha verified locally
+233,480981,conc c=16,4096,403,201,4785,core,,true,sha verified locally
+234,480990,conc c=16,4096,410,201,4781,core,,true,sha verified locally
+235,480995,conc c=16,4096,417,201,4788,core,,true,sha verified locally
+236,480998,conc c=16,4096,420,201,4782,core,,true,sha verified locally
+237,481007,conc c=16,4096,427,201,4779,core,,true,sha verified locally
+238,481009,conc c=16,4096,431,201,4776,core,,true,sha verified locally
+239,481013,conc c=16,4096,434,201,4783,core,,true,sha verified locally
+240,481015,conc c=16,4096,436,201,4778,core,,true,sha verified locally
+241,481024,conc c=16,4096,445,201,4784,core,,true,sha verified locally
+242,481026,conc c=16,4096,446,201,4777,core,,true,sha verified locally
+243,481030,conc c=16,4096,451,201,4786,core,,true,sha verified locally
+244,481033,conc c=16,4096,453,201,4780,core,,true,sha verified locally
+245,481086,conc c=16,4096,507,201,4775,core,,true,sha verified locally
+246,481120,conc c=16,4096,542,201,4787,core,,true,concurrency 16: 16 blobs in 549 ms = 1749 writes/min
+247,486950,E7 write 256 KB,262144,1015,201,4771,core,,true,sha verified locally
+248,487099,E7 write 256 KB,262144,1167,201,4772,core,,true,sha verified locally
+249,487171,E7 write 256 KB,262144,1258,201,4774,core,,true,sha verified locally
+250,487184,E7 write 256 KB,262144,1255,201,4770,core,,true,sha verified locally
+251,487283,E7 write 256 KB,262144,1362,201,4773,core,,true,sha verified locally
+252,487498,E7 write 256 KB,262144,1557,201,4768,core,,true,sha verified locally
+253,487528,E7 write 256 KB,262144,1590,201,4767,core,,true,sha verified locally
+254,487550,E7 write 256 KB,262144,1625,201,4769,core,,true,sha verified locally
+255,487908,E7 write 256 KB,262144,713,201,4763,core,,true,sha verified locally
+256,488128,E7 write 256 KB,262144,626,201,4761,core,,true,sha verified locally
+257,488143,E7 write 256 KB,262144,1188,201,4766,core,,true,sha verified locally
+258,488445,E7 write 256 KB,262144,1341,201,4765,core,,true,sha verified locally
+259,488453,E7 write 256 KB,262144,1279,201,4764,core,,true,sha verified locally
+260,488537,E7 write 256 KB,262144,1250,201,4762,core,,true,sha verified locally
+261,488778,E7 write 256 KB,262144,1246,201,4760,core,,true,sha verified locally
+262,489205,E7 write 256 KB,262144,1646,201,4759,core,,true,sha verified locally
+263,489208,E7 write phase,0,0,-,,,,false,"16 chunks, 4.0 MB in 3298 ms = 1.21 MB/s at concurrency 8"
+264,490771,E7 read,262144,1561,200,4990,core,,false,
+265,490782,E7 read,262144,1572,200,4993,core,,false,
+266,491096,E7 read,262144,1886,200,4994,core,,false,
+267,491224,E7 read,262144,2014,200,4996,core,,false,
+268,491245,E7 read,262144,2035,200,4989,core,,false,
+269,491317,E7 read,262144,2107,200,4995,core,,false,
+270,491323,E7 read,262144,2113,200,4991,core,,false,
+271,491337,E7 read,262144,2127,200,4992,core,,false,
+272,492168,E7 read,262144,1069,200,4986,core,,false,
+273,492247,E7 read,262144,925,200,4983,core,,false,
+274,492290,E7 read,262144,1063,200,4985,core,,false,
+275,492390,E7 read,262144,1615,200,4987,core,,false,
+276,492527,E7 read,262144,1278,200,4984,core,,false,
+277,492545,E7 read,262144,1219,200,4982,core,,false,
+278,492629,E7 read,262144,1845,200,4988,core,,false,
+279,492773,E7 read,262144,1432,200,4981,core,,false,
+280,492777,E7 read phase,0,0,-,,,,false,"16 chunks, 4.0 MB in 3567 ms = 1.12 MB/s via the blobs API at concurrency 8 (a cold boot of this much state would cost 16 of the 5,000 hourly primary budget)"

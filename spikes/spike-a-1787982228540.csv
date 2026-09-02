@@ -1,0 +1,55 @@
+n,t,op,bytes,ms,status,remaining,resource,retryAfter,write,note
+1,401,GET /user,0,401,200,4981,core,,false,
+2,785,GET /repos,0,383,200,4980,core,,false,
+3,786,environment,0,0,-,,,,false,"origin http://localhost:8000, repo private"
+4,4839,E7 write 256 KB,262144,1174,201,4757,core,,true,sha verified locally
+5,4843,E7 write 256 KB,262144,1162,201,4752,core,,true,sha verified locally
+6,4881,E7 write 256 KB,262144,1219,201,4758,core,,true,sha verified locally
+7,4959,E7 write 256 KB,262144,1287,201,4755,core,,true,sha verified locally
+8,4978,E7 write 256 KB,262144,1303,201,4756,core,,true,sha verified locally
+9,4993,E7 write 256 KB,262144,1324,201,4751,core,,true,sha verified locally
+10,5022,E7 write 256 KB,262144,1344,201,4754,core,,true,sha verified locally
+11,5173,E7 write 256 KB,262144,1488,201,4753,core,,true,sha verified locally
+12,5482,E7 write 256 KB,262144,636,201,4749,core,,true,sha verified locally
+13,5515,E7 write 256 KB,262144,674,201,4750,core,,true,sha verified locally
+14,5639,E7 write 256 KB,262144,754,201,4748,core,,true,sha verified locally
+15,6004,E7 write 256 KB,262144,979,201,4744,core,,true,sha verified locally
+16,6127,E7 write 256 KB,262144,1166,201,4747,core,,true,sha verified locally
+17,6349,E7 write 256 KB,262144,1367,201,4746,core,,true,sha verified locally
+18,6428,E7 write 256 KB,262144,1433,201,4745,core,,true,sha verified locally
+19,6601,E7 write 256 KB,262144,1425,201,4743,core,,true,sha verified locally
+20,6602,E7 write phase,0,0,-,,,,false,"16 chunks, 4.0 MB in 2944 ms = 1.36 MB/s at concurrency 8"
+21,7450,E7 read base64,262144,846,200,4977,core,,false,
+22,7695,E7 read base64,262144,1092,200,4976,core,,false,
+23,7698,E7 read base64,262144,1094,200,4978,core,,false,
+24,7726,E7 read base64,262144,1122,200,4972,core,,false,
+25,7933,E7 read base64,262144,1329,200,4979,core,,false,
+26,7938,E7 read base64,262144,1334,200,4974,core,,false,
+27,8068,E7 read base64,262144,1464,200,4973,core,,false,
+28,8164,E7 read base64,262144,1560,200,4975,core,,false,
+29,8452,E7 read base64,262144,1001,200,4971,core,,false,
+30,8711,E7 read base64,262144,1011,200,4969,core,,false,
+31,8714,E7 read base64,262144,987,200,4970,core,,false,
+32,8925,E7 read base64,262144,990,200,4966,core,,false,
+33,9109,E7 read base64,262144,944,200,4965,core,,false,
+34,9266,E7 read base64,262144,1569,200,4968,core,,false,
+35,9283,E7 read base64,262144,1345,200,4967,core,,false,
+36,9314,E7 read base64,262144,1244,200,4964,core,,false,
+37,9316,E7 read base64 phase,0,0,-,,,,false,"16 chunks, 4.0 MB in 2712 ms = 1.47 MB/s at concurrency 8 (a cold boot of this much state costs 16 of the 5,000 hourly primary budget)"
+38,9730,E7 read raw,262144,412,200,4962,core,,false,
+39,9813,E7 read raw,262144,495,200,4959,core,,false,
+40,10201,E7 read raw,262144,883,200,4958,core,,false,
+41,10284,E7 read raw,262144,966,200,4956,core,,false,
+42,10449,E7 read raw,262144,1131,200,4960,core,,false,
+43,10453,E7 read raw,262144,1135,200,4963,core,,false,
+44,10716,E7 read raw,262144,1397,200,4961,core,,false,
+45,10745,E7 read raw,262144,1012,200,4955,core,,false,
+46,10750,E7 read raw,262144,1432,200,4957,core,,false,
+47,10885,E7 read raw,262144,1070,200,4954,core,,false,
+48,11036,E7 read raw,262144,833,200,4953,core,,false,
+49,11200,E7 read raw,262144,746,200,4950,core,,false,
+50,11405,E7 read raw,262144,659,200,4948,core,,false,
+51,11608,E7 read raw,262144,1158,200,4951,core,,false,
+52,11611,E7 read raw,262144,1325,200,4952,core,,false,
+53,11636,E7 read raw,262144,919,200,4949,core,,false,
+54,11638,E7 read raw phase,0,0,-,,,,false,"16 chunks, 4.0 MB in 2320 ms = 1.72 MB/s at concurrency 8 (a cold boot of this much state costs 16 of the 5,000 hourly primary budget)"

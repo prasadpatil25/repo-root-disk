@@ -1,0 +1,812 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spike B: Dirty Block Capture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root {
+  --bg: #EFF2F1; --surface: #FBFCFC; --surface-2: #E6EBE9;
+  --ink: #131C1A; --ink-2: #4A5754; --ink-3: #6E7C78;
+  --rule: #D1D9D6; --rule-soft: #E1E7E5;
+  --accent: #14685A; --accent-soft: #DBEAE5;
+  --warn: #8A6318; --warn-soft: #F0E6CE;
+  --crit: #8E4230; --crit-soft: #F2DDD7;
+  --code-bg: #E8EDEB;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D1412; --surface: #141D1A; --surface-2: #1A2521;
+    --ink: #E1E9E6; --ink-2: #A2B0AC; --ink-3: #7E8C88;
+    --rule: #263330; --rule-soft: #1E2A27;
+    --accent: #55C4A6; --accent-soft: #16322B;
+    --warn: #D6A751; --warn-soft: #2C2617;
+    --crit: #DD8A72; --crit-soft: #32201B;
+    --code-bg: #18231F;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D1412; --surface: #141D1A; --surface-2: #1A2521;
+  --ink: #E1E9E6; --ink-2: #A2B0AC; --ink-3: #7E8C88;
+  --rule: #263330; --rule-soft: #1E2A27;
+  --accent: #55C4A6; --accent-soft: #16322B;
+  --warn: #D6A751; --warn-soft: #2C2617;
+  --crit: #DD8A72; --crit-soft: #32201B;
+  --code-bg: #18231F;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0 22px 80px; background: var(--bg); color: var(--ink);
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px; line-height: 1.55; -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1140px; margin: 0 auto; }
+h1 {
+  font-family: Archivo, "Helvetica Neue", Arial, sans-serif; font-weight: 700;
+  font-size: clamp(26px, 4vw, 38px); letter-spacing: -.025em; margin: 0 0 10px; line-height: 1.05;
+}
+h2 { font-family: Archivo, Arial, sans-serif; font-weight: 600; font-size: 15px; margin: 0 0 4px; }
+.eyebrow {
+  font-size: 10.5px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--accent); margin: 0 0 16px;
+}
+header.top { padding: 48px 0 24px; border-bottom: 1px solid var(--rule); }
+.lede { color: var(--ink-2); max-width: 80ch; margin: 0 0 16px; }
+.claim {
+  background: var(--accent-soft); color: var(--accent); border-left: 2px solid var(--accent);
+  padding: 12px 16px; border-radius: 0 4px 4px 0; max-width: 82ch;
+}
+section.panel {
+  background: var(--surface); border: 1px solid var(--rule); border-radius: 5px;
+  padding: 20px; margin: 20px 0;
+}
+.panel > header { margin-bottom: 14px; }
+.panel > header p { margin: 0; color: var(--ink-3); font-size: 12px; max-width: 84ch; }
+.row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+button {
+  font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
+  background: var(--accent); color: var(--bg); border: 1px solid var(--accent);
+  border-radius: 4px; padding: 8px 15px;
+}
+button.ghost { background: transparent; color: var(--accent); }
+button:disabled { opacity: .4; cursor: not-allowed; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+input[type="text"] {
+  font-family: inherit; font-size: 12.5px; color: var(--ink); background: var(--bg);
+  border: 1px solid var(--rule); border-radius: 4px; padding: 8px 10px; flex: 1; min-width: 240px;
+}
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 4px; }
+.step {
+  border: 1px solid var(--rule); border-radius: 4px; padding: 12px 14px; background: var(--bg);
+}
+.step .n { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+.step .s { font-family: Archivo, Arial, sans-serif; font-size: 14px; font-weight: 600; margin-top: 4px; }
+.step.on { border-color: var(--accent); background: var(--accent-soft); }
+.step.on .s { color: var(--accent); }
+.step.bad { border-color: var(--crit); background: var(--crit-soft); }
+.step.bad .s { color: var(--crit); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin-top: 4px; }
+.stat dt { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 4px; }
+.stat dd {
+  margin: 0; font-family: Archivo, Arial, sans-serif; font-size: 21px; font-weight: 600;
+  letter-spacing: -.02em; font-variant-numeric: tabular-nums;
+}
+.stat dd span { font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 400; color: var(--ink-3); }
+pre.term {
+  background: var(--code-bg); border: 1px solid var(--rule); border-radius: 4px;
+  padding: 12px 14px; margin: 0; height: 300px; overflow-y: auto;
+  white-space: pre-wrap; word-break: break-all; font-size: 12px; line-height: 1.45; color: var(--ink-2);
+}
+
+/* Terminal colours for the guest console. Mapped to values that hold on both
+   grounds rather than the raw ANSI palette, which is unreadable on light. */
+pre.term .ln { min-height: 1.45em; }
+.t.bold { font-weight: 600; }
+.t.k { color: var(--ink-3); }
+.t.r { color: #B0442E; }
+.t.g { color: #1C7A55; }
+.t.y { color: #8A6318; }
+.t.b { color: #2A5FA8; }
+.t.m { color: #8B4A9C; }
+.t.c { color: #1A6F80; }
+.t.w { color: var(--ink); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .t.r { color: #E08A72; }
+  :root:not([data-theme="light"]) .t.g { color: #62C79F; }
+  :root:not([data-theme="light"]) .t.y { color: #D9AE5C; }
+  :root:not([data-theme="light"]) .t.b { color: #7FA9E8; }
+  :root:not([data-theme="light"]) .t.m { color: #C596D6; }
+  :root:not([data-theme="light"]) .t.c { color: #6BC2D1; }
+}
+:root[data-theme="dark"] .t.r { color: #E08A72; }
+:root[data-theme="dark"] .t.g { color: #62C79F; }
+:root[data-theme="dark"] .t.y { color: #D9AE5C; }
+:root[data-theme="dark"] .t.b { color: #7FA9E8; }
+:root[data-theme="dark"] .t.m { color: #C596D6; }
+:root[data-theme="dark"] .t.c { color: #6BC2D1; }
+pre.log {
+  background: var(--code-bg); border: 1px solid var(--rule); border-radius: 4px;
+  padding: 12px 14px; margin: 0; max-height: 260px; overflow-y: auto;
+  white-space: pre-wrap; font-size: 12px; line-height: 1.5; color: var(--ink-2);
+}
+.verdict { padding: 12px 15px; border-radius: 4px; font-size: 12.5px; line-height: 1.55; margin-top: 14px; }
+.verdict.pass { background: var(--accent-soft); color: var(--accent); }
+.verdict.fail { background: var(--crit-soft); color: var(--crit); }
+.verdict.idle { background: var(--surface-2); color: var(--ink-3); }
+code { background: var(--code-bg); padding: .1em .35em; border-radius: 3px; }
+#screen_container { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <p class="eyebrow">Spike B</p>
+  <h1>Dirty Block Capture</h1>
+  <p class="lede">The question that decides whether <em>Repo as Root Disk</em> is buildable at all: can the set of blocks a guest has written be captured out of a browser VM, and can replaying that set onto a blank disk reproduce the machine's state exactly? No network, no git host, no sync protocol. Just the storage layer.</p>
+  <div class="claim">
+    <b>The invariant under test:</b> <code>blank disk + captured writes === live disk, byte for byte</code>. If that holds, the dirty set is reachable and lossless, and every phase of the sync protocol has something real to operate on. If it does not, the design needs rethinking before anything else is built.
+  </div>
+</header>
+
+<section class="panel">
+  <header>
+    <h2>Progress</h2>
+    <p>Boot writes nothing to disk on its own, so the captured set should stay near zero until the guest is told to write.</p>
+  </header>
+  <div class="steps">
+    <div class="step" id="s1"><div class="n">step 1</div><div class="s">Boot guest</div></div>
+    <div class="step" id="s2"><div class="n">step 2</div><div class="s">Wrap block device</div></div>
+    <div class="step" id="s3"><div class="n">step 3</div><div class="s">Guest writes</div></div>
+    <div class="step" id="s4"><div class="n">step 4</div><div class="s">Replay and compare</div></div>
+  </div>
+  <div class="row" style="margin-top:16px">
+    <select id="image" style="font-family:inherit;font-size:12px;background:var(--bg);color:var(--ink);border:1px solid var(--rule);border-radius:4px;padding:8px 10px">
+      <option value="linux4" selected>Linux 4 (CD-ROM boot, has ATA)</option>
+      <option value="buildroot">Buildroot 6 (bzImage, 9p root, no ATA)</option>
+    </select>
+    <select id="disk" style="font-family:inherit;font-size:12px;background:var(--bg);color:var(--ink);border:1px solid var(--rule);border-radius:4px;padding:8px 10px">
+      <option value="mem" selected>Disk in memory (SyncBuffer)</option>
+      <option value="http">Disk streamed over HTTP (AsyncXHRBuffer)</option>
+    </select>
+    <button id="boot">Boot and capture</button>
+    <button class="ghost" id="write" disabled>Run guest write test</button>
+    <button class="ghost" id="fswrite" disabled>Filesystem variant</button>
+    <button class="ghost" id="verify" disabled>Replay and verify</button>
+    <button class="ghost" id="reboot" disabled>Boot from replay</button>
+    <button class="ghost" id="probe" disabled>Probe disk</button>
+    <button class="ghost" id="diag">Diagnose</button>
+    <button class="ghost" id="reset">Reset</button>
+  </div>
+  <dl class="stats" style="margin-top:18px">
+    <div class="stat"><dt>Writes captured</dt><dd id="m-count">0</dd></div>
+    <div class="stat"><dt>Bytes captured</dt><dd id="m-bytes">0<span> B</span></dd></div>
+    <div class="stat"><dt>Distinct sectors</dt><dd id="m-sectors">0</dd></div>
+    <div class="stat"><dt>Disk size</dt><dd id="m-disk">16<span> MB</span></dd></div>
+  </dl>
+  <p class="verdict idle" id="verdict">Not started. Serve this directory over http, not file://, or the wasm and image fetches will fail.</p>
+</section>
+
+<section class="panel">
+  <header>
+    <h2>Guest serial console</h2>
+    <p>A blank 16 MB disk is attached as the IDE primary master. Pick the guest above: the Linux ISO has ATA drivers, the Buildroot bzImage does not. Type commands here to drive it by hand.</p>
+  </header>
+  <pre class="term" id="term"></pre>
+  <div class="row" style="margin-top:12px">
+    <input type="text" id="cmd" placeholder="shell command, sent to the guest on Enter" spellcheck="false">
+    <button class="ghost" id="send">Send</button>
+  </div>
+</section>
+
+<section class="panel">
+  <header><h2>Capture log</h2><p>Every intercepted call to the block device, plus verification output.</p></header>
+  <pre class="log" id="log">waiting.</pre>
+</section>
+
+<div id="screen_container"><div style="white-space: pre; font: 14px monospace; line-height: 14px"></div><canvas style="display:none"></canvas></div>
+
+</div>
+
+<script src="node_modules/v86/build/libv86.js"></script>
+<script type="module">
+  // The renderer is shared with the reference app rather than copied, so a fix
+  // to escape handling reaches the spikes too.
+  import { Terminal } from "../src/ui/terminal.js";
+  window.__Terminal = Terminal;
+</script>
+
+<script>
+"use strict";
+
+var DISK_SIZE = 16 * 1024 * 1024;
+var MARKER = "SPIKE-B-" + Date.now().toString(36).toUpperCase();
+var SECTOR = 512;
+var MARKER_SECTOR = 100;
+
+var emulator = null;
+var liveDisk = null;        // ArrayBuffer handed to the VM
+var captured = [];          // [{offset, bytes}]
+var capturing = false;
+var rawVariantRan = false;
+var wrappedBuffer = null;
+var termBuf = "";
+
+var $ = function (id) { return document.getElementById(id); };
+
+// --- guest console ---------------------------------------------------------
+//
+// Display goes through the shared terminal renderer, which interprets escape
+// sequences instead of printing them. termBuf below is untouched: it feeds
+// prompt matching and command-output parsing, and those produced the numbers
+// in the write-up.
+
+var terminal = null, termPending = [];
+function termWrite(byte) {
+  if (!terminal) {
+    // The module script is deferred, so in principle a byte can arrive first.
+    // Queue rather than drop: losing the head of the boot log would be silent.
+    if (!window.__Terminal) { termPending.push(byte); return; }
+    terminal = new window.__Terminal($("term"));
+    for (var i = 0; i < termPending.length; i++) terminal.writeByte(termPending[i]);
+    termPending = [];
+  }
+  terminal.writeByte(byte);
+}
+function termClear() {
+  if (terminal) terminal.clear();
+  else $("term").textContent = "";
+}
+
+
+function log(msg) {
+  var el = $("log");
+  if (el.textContent === "waiting.") el.textContent = "";
+  el.textContent += msg + "\n";
+  el.scrollTop = el.scrollHeight;
+}
+
+function step(id, state) {
+  var el = $(id);
+  el.className = "step" + (state ? " " + state : "");
+}
+
+function verdict(text, cls) {
+  var el = $("verdict");
+  el.className = "verdict " + (cls || "idle");
+  el.textContent = text;
+}
+
+function fmtBytes(n) {
+  if (n < 1024) return n + " B";
+  if (n < 1048576) return (n / 1024).toFixed(1) + " KB";
+  return (n / 1048576).toFixed(2) + " MB";
+}
+
+function updateMeters() {
+  var bytes = 0, sectors = {};
+  for (var i = 0; i < captured.length; i++) {
+    bytes += captured[i].bytes.length;
+    var first = Math.floor(captured[i].offset / SECTOR);
+    var last = Math.floor((captured[i].offset + captured[i].bytes.length - 1) / SECTOR);
+    for (var s = first; s <= last; s++) sectors[s] = 1;
+  }
+  $("m-count").textContent = captured.length;
+  $("m-bytes").innerHTML = fmtBytes(bytes).replace(/ (\w+)$/, '<span> $1</span>');
+  $("m-sectors").textContent = Object.keys(sectors).length;
+}
+
+/* ---------- boot ---------- */
+
+// A kernel that boots off a CD-ROM must have ATA compiled in, since it reads
+// its own root through the IDE controller. The Buildroot bzImage does not: it
+// is built for a 9p root and shows an empty /proc/partitions.
+var IMAGES = {
+  linux4: {
+    label: "Linux 4, CD-ROM boot",
+    config: { cdrom: { url: "images/linux4.iso" } }
+  },
+  buildroot: {
+    label: "Buildroot 6, bzImage with 9p root",
+    config: {
+      bzimage: { url: "images/buildroot-bzimage.bin" },
+      cmdline: "tsc=reliable mitigations=off random.trust_cpu=on console=ttyS0"
+    }
+  }
+};
+
+function boot(diskBuffer) {
+  var img = IMAGES[$("image").value] || IMAGES.linux4;
+  log("booting: " + img.label + ", hda " +
+      (diskBuffer ? "in memory " + fmtBytes(diskBuffer.byteLength)
+                  : "streamed from images/blank-16mb.img, " + fmtBytes(DISK_SIZE)));
+  var cfg = {
+    wasm_path: "node_modules/v86/build/v86.wasm",
+    memory_size: 128 * 1024 * 1024,
+    vga_memory_size: 2 * 1024 * 1024,
+    screen_container: $("screen_container"),
+    bios: { url: "bios/seabios.bin" },
+    vga_bios: { url: "bios/vgabios.bin" },
+    hda: (diskBuffer
+      ? { buffer: diskBuffer }
+      : { url: "images/blank-16mb.img", size: DISK_SIZE, async: true }),
+    autostart: true,
+    disable_keyboard: true,
+    disable_mouse: true
+  };
+  for (var k in img.config) cfg[k] = img.config[k];
+  return new V86(cfg);
+}
+
+// The public config offers no hook for a custom buffer, so interception happens
+// on the constructed instance. v86's SyncBuffer is identifiable by its method
+// set: get, set, get_buffer, load. Rather than trust one hardcoded path through
+// minified code, try the likely ones and then search for it.
+// Confirmed by structure walk: IDEController holds primary/secondary channels,
+// each with master/slave. There is no ide.master.
+var CANDIDATE_PATHS = [
+  "v86.cpu.devices.ide.primary.master.buffer",
+  "v86.cpu.devices.ide.primary.slave.buffer",
+  "v86.cpu.devices.ide.secondary.master.buffer",
+  "v86.cpu.devices.ide.master.buffer",
+  "v86.cpu.devices.ide.slave.buffer"
+];
+
+function getPath(root, path) {
+  var parts = path.split("."), o = root;
+  for (var i = 0; i < parts.length; i++) {
+    if (o === null || o === undefined) return null;
+    try { o = o[parts[i]]; } catch (e) { return null; }
+  }
+  return o;
+}
+
+function looksLikeBuffer(o) {
+  return !!o && typeof o === "object" &&
+    typeof o.set === "function" && typeof o.get === "function" &&
+    typeof o.get_buffer === "function" && typeof o.load === "function";
+}
+
+// Collects every match rather than returning the first: sb16 also owns a
+// SyncBuffer for DMA, and taking the first hit wraps the sound card.
+function searchForBuffer(root, rootName, maxDepth) {
+  var seen = new Set(), queue = [{ o: root, p: rootName, d: 0 }], visited = 0, hits = [];
+  while (queue.length && visited < 6000) {
+    var cur = queue.shift(), o = cur.o;
+    if (!o || typeof o !== "object") continue;
+    if (o instanceof ArrayBuffer || ArrayBuffer.isView(o)) continue;
+    if (seen.has(o)) continue;
+    seen.add(o); visited++;
+    if (looksLikeBuffer(o)) { hits.push({ buf: o, path: cur.p }); continue; }
+    if (cur.d >= maxDepth) continue;
+    var keys;
+    try { keys = Object.keys(o); } catch (e) { continue; }
+    for (var i = 0; i < keys.length && i < 300; i++) {
+      try { queue.push({ o: o[keys[i]], p: cur.p + "." + keys[i], d: cur.d + 1 }); } catch (e) {}
+    }
+  }
+  if (!hits.length) return null;
+  for (var h = 0; h < hits.length; h++) {
+    if (hits[h].path.indexOf(".ide.") !== -1) return hits[h];
+  }
+  log("search found " + hits.length + " buffer-shaped objects, none under .ide.: " +
+      hits.map(function (x) { return x.path; }).join(", "));
+  return hits[0];
+}
+
+function attach(buf, where) {
+  if (buf.__spikeB) return true;
+  var originalSet = buf.set.bind(buf);
+  buf.set = function (offset, data, cb) {
+    if (capturing) {
+      captured.push({ offset: offset, bytes: new Uint8Array(data) });
+      updateMeters();
+    }
+    return originalSet(offset, data, cb);
+  };
+  buf.__spikeB = true;
+  wrappedBuffer = buf;
+  log("WRAPPED block device at " + where + " (" + (buf.block_cache ? "streamed, AsyncXHRBuffer" : "in memory, SyncBuffer") + ")");
+  return true;
+}
+
+function wrapBlockDevice(quiet) {
+  if (!emulator) return false;
+  for (var i = 0; i < CANDIDATE_PATHS.length; i++) {
+    var o = getPath(emulator, CANDIDATE_PATHS[i]);
+    if (looksLikeBuffer(o)) return attach(o, "emulator." + CANDIDATE_PATHS[i]);
+  }
+  var found = searchForBuffer(emulator, "emulator", 6);
+  if (found) {
+    if (!quiet) log("known paths missed it; found by search instead");
+    return attach(found.buf, found.path);
+  }
+  return false;
+}
+
+function safeKeys(o, limit) {
+  if (o === null || o === undefined) return "(" + String(o) + ")";
+  if (typeof o !== "object") return "(" + typeof o + ")";
+  try {
+    var k = Object.keys(o);
+    return k.length ? k.slice(0, limit || 40).join(", ") + (k.length > (limit || 40) ? ", ..." : "") : "(no own keys)";
+  } catch (e) { return "(unreadable)"; }
+}
+
+function diagnose() {
+  log("--- structure walk ---");
+  if (!emulator) { log("no emulator yet"); return; }
+  log("emulator: " + safeKeys(emulator));
+  log("emulator.v86: " + safeKeys(getPath(emulator, "v86")));
+  log("v86.cpu: " + safeKeys(getPath(emulator, "v86.cpu"), 80));
+  log("cpu.devices: " + safeKeys(getPath(emulator, "v86.cpu.devices")));
+  var ide = getPath(emulator, "v86.cpu.devices.ide");
+  log("devices.ide: " + safeKeys(ide));
+  log("ide.master: " + safeKeys(getPath(emulator, "v86.cpu.devices.ide.master")));
+  log("ide.master.buffer: " + safeKeys(getPath(emulator, "v86.cpu.devices.ide.master.buffer")));
+  log("ide.slave.buffer: " + safeKeys(getPath(emulator, "v86.cpu.devices.ide.slave.buffer")));
+  var found = searchForBuffer(emulator, "emulator", 6);
+  log(found ? "SEARCH FOUND a SyncBuffer-shaped object at: " + found.path
+            : "SEARCH FOUND NOTHING with get/set/get_buffer/load. The disk was probably never attached.");
+}
+
+// The streamed path needs a server that answers Range with 206. python -m http.server
+// ignores it and returns the whole file with a 200, which fails in a way that looks
+// like a v86 problem rather than a server problem. Check before booting.
+async function checkRangeSupport() {
+  try {
+    var r = await fetch("images/blank-16mb.img", { headers: { Range: "bytes=0-255" } });
+    if (r.status === 206) {
+      log("range check: 206 Partial Content, server supports Range");
+      return true;
+    }
+    log("range check: server answered " + r.status + " instead of 206");
+    return false;
+  } catch (e) {
+    log("range check failed: " + e.message);
+    return false;
+  }
+}
+
+function waitForDevice(timeoutMs) {
+  var deadline = Date.now() + (timeoutMs || 20000);
+  return new Promise(function (resolve, reject) {
+    (function poll() {
+      if (wrapBlockDevice(true)) return resolve();
+      if (Date.now() > deadline) {
+        diagnose();
+        return reject(new Error("no block device found, see the structure walk in the capture log"));
+      }
+      setTimeout(poll, 100);
+    })();
+  });
+}
+
+function waitForPrompt(timeoutMs) {
+  var deadline = Date.now() + (timeoutMs || 90000);
+  return new Promise(function (resolve, reject) {
+    (function poll() {
+      if (/[#$%>]\s*$/.test(termBuf.slice(-400))) return resolve();
+      if (Date.now() > deadline) return reject(new Error("no shell prompt within timeout"));
+      setTimeout(poll, 250);
+    })();
+  });
+}
+
+// Guest output goes into the capture log as well as the console, so one paste
+// of the log contains the whole picture.
+async function run(line, timeoutMs) {
+  termBuf = "";
+  emulator.serial0_send(line + "\n");
+  log("guest <- " + line);
+  try {
+    await waitForPrompt(timeoutMs || 60000);
+  } catch (e) {
+    log("guest -> (no prompt within timeout)");
+    throw e;
+  }
+  var out = termBuf.replace(/\x1b\[[0-9;]*m/g, "").replace(/\r/g, "");
+  var parts = out.split("\n");
+  if (parts.length && parts[0].trim() === line.trim()) parts.shift();
+  while (parts.length && /^[~\w/]*[%#$]\s*$/.test(parts[parts.length - 1])) parts.pop();
+  out = parts.join("\n").trim();
+  log(out ? "guest -> " + out.split("\n").join("\n         ") : "guest -> (no output)");
+  return out;
+}
+
+async function runScript(lines) {
+  for (var i = 0; i < lines.length; i++) await run(lines[i]);
+}
+
+/* ---------- controls ---------- */
+
+$("boot").addEventListener("click", async function () {
+  $("boot").disabled = true;
+  captured = [];
+  updateMeters();
+  var streamed = $("disk").value === "http";
+  if (streamed && !(await checkRangeSupport())) {
+    verdict("The streamed disk needs a server with Range support. Stop python -m http.server " +
+      "and run: python serve.py 8000", "fail");
+    $("boot").disabled = false;
+    return;
+  }
+  liveDisk = streamed ? null : new ArrayBuffer(DISK_SIZE);
+  step("s1", "on");
+  verdict("Booting Buildroot. First boot fetches a 5 MB kernel, so give it a moment.", "idle");
+
+  try {
+    emulator = boot(liveDisk);
+    emulator.add_listener("serial0-output-byte", function (b) {
+      termBuf += String.fromCharCode(b);
+      termWrite(b);
+    });
+
+    // Not fatal. The guest may boot perfectly while the wrapper misses the
+    // device, and that distinction is exactly what we need to see.
+    var wrapped = true;
+    try {
+      await waitForDevice(30000);
+      step("s2", "on");
+      capturing = true;
+      log("capture armed. boot itself should write nothing to /dev/sda.");
+    } catch (deviceErr) {
+      wrapped = false;
+      step("s2", "bad");
+      log("WRAP FAILED: " + deviceErr.message);
+    }
+
+    await waitForPrompt(120000);
+    step("s1", "on");
+    log("shell is up. writes captured during boot: " + captured.length);
+
+    if (wrapped) {
+      verdict("Guest is up and the block device is wrapped. Run the write test.", "idle");
+    } else {
+      verdict("Guest booted, but no block device was found to wrap. Check the capture log for the structure walk, " +
+        "then run 'cat /proc/partitions' in the console below to see whether the disk reached the guest at all.", "fail");
+    }
+    $("write").disabled = false;
+    $("fswrite").disabled = false;
+    $("probe").disabled = false;
+  } catch (e) {
+    step("s1", "bad");
+    log("ERROR: " + e.message);
+    verdict("Boot failed: " + e.message, "fail");
+    $("boot").disabled = false;
+  }
+});
+
+$("reboot").addEventListener("click", async function () {
+  $("reboot").disabled = true;
+  log("--- booting a second machine from the replayed disk ---");
+  var replayed = new Uint8Array(DISK_SIZE);
+  for (var i = 0; i < captured.length; i++) replayed.set(captured[i].bytes, captured[i].offset);
+
+  try {
+    capturing = false;
+    await emulator.destroy();
+    log("first machine destroyed");
+    termClear();
+    termBuf = "";
+
+    emulator = boot(replayed.buffer);
+    emulator.add_listener("serial0-output-byte", function (b) {
+      termBuf += String.fromCharCode(b);
+      termWrite(b);
+    });
+    await waitForPrompt(180000);
+    log("second machine is up, reading state written by the first");
+
+    await run("DISK=/dev/sda; [ -b $DISK ] || DISK=/dev/hda; echo using $DISK");
+    var raw = await run("dd if=$DISK bs=512 skip=" + MARKER_SECTOR + " count=1 2>/dev/null | strings | head -3");
+    var fs = await run("mkdir -p /mnt/d && mount $DISK /mnt/d 2>/dev/null && cat /mnt/d/spike.txt; true");
+
+    var seen = raw.indexOf(MARKER) !== -1 || fs.indexOf(MARKER) !== -1;
+    if (seen) {
+      verdict("END TO END PASS. A second machine booted from nothing but the replayed write set and read back " +
+        MARKER + ", state written by the first machine. This is the whole design in miniature, minus the git host.", "pass");
+    } else {
+      verdict("The second machine booted but the marker was not found. Replay reproduced the bytes, " +
+        "so look at whether the guest is reading the device we replayed into.", "fail");
+    }
+  } catch (e) {
+    log("ERROR: " + e.message);
+    verdict("Second boot failed: " + e.message, "fail");
+  }
+});
+
+$("diag").addEventListener("click", function () {
+  diagnose();
+  if (!emulator) return;
+  var ok = wrapBlockDevice();
+  if (ok) {
+    capturing = true;
+    step("s2", "on");
+    verdict("Block device found and wrapped on this attempt. Capture is armed.", "idle");
+  }
+});
+
+$("write").addEventListener("click", async function () {
+  $("write").disabled = true; $("fswrite").disabled = true;
+  step("s3", "on");
+  var before = captured.length;
+  rawVariantRan = true;
+  log("--- raw block write, marker " + MARKER + " at sector " + MARKER_SECTOR + " ---");
+  try {
+    await runScript([
+      "DISK=/dev/sda; [ -b $DISK ] || DISK=/dev/hda; echo using $DISK",
+      "echo " + MARKER + " | dd of=$DISK bs=" + SECTOR + " seek=" + MARKER_SECTOR + " conv=notrunc",
+      "sync"
+    ]);
+    log("guest wrote. new captured entries: " + (captured.length - before));
+    verdict("Guest has written to /dev/sda. Now replay and verify.", "idle");
+    $("verify").disabled = false;
+    $("reboot").disabled = false;
+  } catch (e) {
+    step("s3", "bad");
+    log("ERROR: " + e.message);
+    verdict("Write test failed: " + e.message, "fail");
+  }
+});
+
+$("fswrite").addEventListener("click", async function () {
+  $("write").disabled = true; $("fswrite").disabled = true;
+  step("s3", "on");
+  log("--- filesystem write: mkfs, mount, write, umount ---");
+  try {
+    await run("DISK=/dev/sda; [ -b $DISK ] || DISK=/dev/hda; echo using $DISK");
+
+    // busybox builds vary in which mkfs applets are compiled in
+    var tool = await run("for t in mkfs.ext2 mke2fs mkfs.minix mkfs.vfat; do " +
+                         "command -v $t >/dev/null 2>&1 && { echo $t; break; }; done");
+    var toolParts = (tool || "").trim().split(/\s+/);
+    tool = toolParts[toolParts.length - 1] || "";
+    if (!tool || tool.indexOf("mkfs") === -1 && tool.indexOf("mke2fs") === -1) {
+      log("no mkfs applet found in this guest; the raw variant is the one to use here");
+      verdict("This guest has no mkfs applet, so the filesystem variant cannot run. " +
+        "The raw block write already proved capture; use that result.", "fail");
+      return;
+    }
+    log("using " + tool);
+
+    var marks = [];
+    async function stage(label, cmd, timeout) {
+      var before = captured.length;
+      await run(cmd, timeout || 60000);
+      var delta = captured.length - before;
+      marks.push(label + ": " + delta);
+      log("   [" + label + " produced " + delta + " captured writes]");
+    }
+
+    await stage("mkfs", tool + " " + (tool === "mkfs.vfat" ? "" : "-F ") + "$DISK", 180000);
+    await stage("mount", "mkdir -p /mnt/d && mount $DISK /mnt/d");
+    await stage("write", "echo " + MARKER + " > /mnt/d/spike.txt");
+    await stage("umount", "sync && umount /mnt/d");
+
+    log("per-stage write counts -> " + marks.join(", "));
+    log("total captured: " + captured.length);
+    verdict("Filesystem written across " + captured.length + " captured writes, many of them overlapping. " +
+      "Replay and verify now tests last-writer-wins, not just a single sector.", "idle");
+    $("verify").disabled = false;
+    $("reboot").disabled = false;
+  } catch (e) {
+    step("s3", "bad");
+    log("ERROR: " + e.message);
+    verdict("Filesystem variant failed: " + e.message, "fail");
+  }
+});
+
+$("verify").addEventListener("click", function () {
+  step("s4", "on");
+  capturing = false;
+  log("--- replay ---");
+
+  var replayed = new Uint8Array(DISK_SIZE);
+  for (var i = 0; i < captured.length; i++) {
+    replayed.set(captured[i].bytes, captured[i].offset);
+  }
+  log("replayed " + captured.length + " writes onto a blank " + fmtBytes(DISK_SIZE) + " disk");
+
+  // A streamed disk has no single ArrayBuffer to compare against: AsyncXHRBuffer's
+  // get_buffer is a no-op that returns nothing. It does keep its own record of which
+  // 256-byte blocks were written, which is a better cross-check anyway, because it
+  // comes from the device rather than from our interceptor.
+  var diff = 0, firstDiff = -1;
+  if (!liveDisk) {
+    var buf = wrappedBuffer;
+    if (!buf || !buf.block_cache || !buf.block_cache_is_write) {
+      log("streamed disk, but the wrapped buffer exposes no block_cache to cross-check against");
+      verdict("Cannot verify: no block_cache on this buffer.", "fail");
+      return;
+    }
+    var BS = 256, checked = 0, badBlocks = 0, firstBadBlock = -1;
+    buf.block_cache_is_write.forEach(function (idx) {
+      var blk = buf.block_cache.get(idx);
+      if (!blk) return;
+      checked++;
+      for (var b = 0; b < blk.length; b++) {
+        if (replayed[idx * BS + b] !== blk[b]) {
+          badBlocks++;
+          if (firstBadBlock < 0) firstBadBlock = idx;
+          break;
+        }
+      }
+    });
+    log("streamed disk: device recorded " + checked + " written blocks of " + BS + " bytes");
+    log("blocks not reproduced by replay: " + badBlocks +
+        (firstBadBlock >= 0 ? " (first at block " + firstBadBlock + ")" : ""));
+    diff = badBlocks;
+    firstDiff = firstBadBlock >= 0 ? firstBadBlock * BS : -1;
+    if (badBlocks === 0) {
+      verdict("PASS on the streamed path. Every one of the " + checked +
+        " blocks the device itself recorded as written was reproduced exactly by replaying " +
+        captured.length + " intercepted writes. Boot from replay to confirm end to end.", "pass");
+    } else {
+      step("s4", "bad");
+      verdict("FAIL on the streamed path. " + badBlocks + " of " + checked +
+        " written blocks differ after replay, so the async buffer takes a write path the wrapper does not see.", "fail");
+    }
+    $("reboot").disabled = false;
+    return;
+  }
+
+  var live = new Uint8Array(liveDisk);
+  for (var j = 0; j < live.length; j++) {
+    if (live[j] !== replayed[j]) { diff++; if (firstDiff < 0) firstDiff = j; }
+  }
+
+  var marker = new TextEncoder().encode(MARKER);
+  var at = MARKER_SECTOR * SECTOR;
+  var markerOk = true;
+  for (var k = 0; k < marker.length; k++) {
+    if (replayed[at + k] !== marker[k]) { markerOk = false; break; }
+  }
+
+  log("differing bytes: " + diff + (firstDiff >= 0 ? " (first at offset " + firstDiff + ")" : ""));
+  // Only meaningful for the raw variant. The filesystem variant never touches
+  // this sector, so reporting false there reads as a failure when it is not.
+  log(rawVariantRan
+    ? "marker present in replayed image at sector " + MARKER_SECTOR + ": " + markerOk
+    : "sector " + MARKER_SECTOR + " check skipped, not applicable to the filesystem variant");
+
+  if (diff === 0) {
+    step("s4", "on");
+    verdict("PASS. Replaying " + captured.length + " captured writes onto a blank disk reproduced the live disk byte for byte. " +
+      "The dirty set is reachable and lossless, so the sync protocol has something real to operate on.", "pass");
+  } else {
+    step("s4", "bad");
+    verdict("FAIL. " + diff + " bytes differ, first at offset " + firstDiff +
+      ". Capture is incomplete: some writes reach the disk by a path the wrapper does not see.", "fail");
+  }
+});
+
+$("send").addEventListener("click", function () {
+  var v = $("cmd").value;
+  if (v && emulator) { $("cmd").value = ""; run(v).catch(function (e) { log("ERROR: " + e.message); }); }
+});
+
+$("probe").addEventListener("click", async function () {
+  log("--- disk probe: does the guest see the disk at all? ---");
+  try {
+    await run("cat /proc/partitions");
+    await run("ls -l /dev/sd* /dev/hd* 2>&1 | head -8");
+    await run("dmesg | grep -iE 'ata|ide|sda|hda' | tail -12");
+  } catch (e) { log("probe stopped: " + e.message); }
+});
+$("cmd").addEventListener("keydown", function (e) {
+  if (e.key === "Enter") $("send").click();
+});
+
+$("reset").addEventListener("click", function () { location.reload(); });
+
+if (location.protocol === "file:") {
+  verdict("This page is on a file:// origin. WebAssembly and the image fetches will fail. Serve the directory over http first.", "fail");
+  $("boot").disabled = true;
+}
+</script>
+</body>
+</html>

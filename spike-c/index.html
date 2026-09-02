@@ -1,0 +1,803 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spike C: The Full Loop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root {
+  --bg: #EFF2F1; --surface: #FBFCFC; --surface-2: #E6EBE9;
+  --ink: #131C1A; --ink-2: #4A5754; --ink-3: #6E7C78;
+  --rule: #D1D9D6; --rule-soft: #E1E7E5;
+  --accent: #14685A; --accent-soft: #DBEAE5;
+  --warn: #8A6318; --warn-soft: #F0E6CE;
+  --crit: #8E4230; --crit-soft: #F2DDD7;
+  --code-bg: #E8EDEB;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D1412; --surface: #141D1A; --surface-2: #1A2521;
+    --ink: #E1E9E6; --ink-2: #A2B0AC; --ink-3: #7E8C88;
+    --rule: #263330; --rule-soft: #1E2A27;
+    --accent: #55C4A6; --accent-soft: #16322B;
+    --warn: #D6A751; --warn-soft: #2C2617;
+    --crit: #DD8A72; --crit-soft: #32201B;
+    --code-bg: #18231F;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D1412; --surface: #141D1A; --surface-2: #1A2521;
+  --ink: #E1E9E6; --ink-2: #A2B0AC; --ink-3: #7E8C88;
+  --rule: #263330; --rule-soft: #1E2A27;
+  --accent: #55C4A6; --accent-soft: #16322B;
+  --warn: #D6A751; --warn-soft: #2C2617;
+  --crit: #DD8A72; --crit-soft: #32201B;
+  --code-bg: #18231F;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0 22px 80px; background: var(--bg); color: var(--ink);
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px; line-height: 1.55; -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1140px; margin: 0 auto; }
+h1 {
+  font-family: Archivo, "Helvetica Neue", Arial, sans-serif; font-weight: 700;
+  font-size: clamp(26px, 4vw, 38px); letter-spacing: -.025em; margin: 0 0 10px; line-height: 1.05;
+}
+h2 { font-family: Archivo, Arial, sans-serif; font-weight: 600; font-size: 15px; margin: 0 0 4px; }
+.eyebrow {
+  font-size: 10.5px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--accent); margin: 0 0 16px;
+}
+header.top { padding: 48px 0 24px; border-bottom: 1px solid var(--rule); }
+.lede { color: var(--ink-2); max-width: 84ch; margin: 0 0 16px; }
+.claim {
+  background: var(--accent-soft); color: var(--accent); border-left: 2px solid var(--accent);
+  padding: 12px 16px; border-radius: 0 4px 4px 0; max-width: 86ch;
+}
+.danger {
+  background: var(--crit-soft); color: var(--crit); border-left: 2px solid var(--crit);
+  padding: 12px 16px; border-radius: 0 4px 4px 0; max-width: 86ch; margin-top: 14px;
+}
+section.panel {
+  background: var(--surface); border: 1px solid var(--rule); border-radius: 5px;
+  padding: 20px; margin: 20px 0;
+}
+.panel > header { margin-bottom: 14px; }
+.panel > header p { margin: 0; color: var(--ink-3); font-size: 12px; max-width: 88ch; }
+.row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.f { display: flex; flex-direction: column; gap: 6px; }
+.f label, .lbl {
+  font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); font-weight: 500;
+}
+button {
+  font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
+  background: var(--accent); color: var(--bg); border: 1px solid var(--accent);
+  border-radius: 4px; padding: 8px 15px;
+}
+button.ghost { background: transparent; color: var(--accent); }
+button:disabled { opacity: .4; cursor: not-allowed; }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+input[type="text"], input[type="password"], input[type="number"], select {
+  font-family: inherit; font-size: 12.5px; color: var(--ink); background: var(--bg);
+  border: 1px solid var(--rule); border-radius: 4px; padding: 8px 10px;
+}
+input[type="text"], input[type="password"] { min-width: 240px; }
+input[type="number"] { width: 80px; }
+.ack { display: flex; gap: 9px; align-items: flex-start; margin-top: 14px; max-width: 82ch; color: var(--ink-2); }
+.ack input { margin-top: 3px; accent-color: var(--crit); }
+.status { margin-top: 12px; font-size: 12px; color: var(--ink-2); }
+.status.ok { color: var(--accent); }
+.status.bad { color: var(--crit); }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 16px; margin-top: 16px; }
+.stat dt { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 4px; }
+.stat dd {
+  margin: 0; font-family: Archivo, Arial, sans-serif; font-size: 21px; font-weight: 600;
+  letter-spacing: -.02em; font-variant-numeric: tabular-nums;
+}
+.stat dd span { font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 400; color: var(--ink-3); }
+
+.tablewrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 5px; margin-top: 14px; }
+table { border-collapse: collapse; width: 100%; min-width: 780px; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+thead th {
+  position: sticky; top: 0; background: var(--surface); text-align: right; font-weight: 500;
+  font-size: 9.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3);
+  padding: 9px 12px; border-bottom: 1px solid var(--rule);
+}
+thead th:first-child, tbody td:first-child { text-align: left; }
+tbody td { padding: 7px 12px; border-bottom: 1px solid var(--rule-soft); color: var(--ink-2); text-align: right; white-space: nowrap; }
+tbody tr:last-child td { border-bottom: none; }
+tbody td.hi { color: var(--accent); font-weight: 500; }
+.empty { padding: 22px; text-align: center; color: var(--ink-3); font-size: 12px; }
+
+pre.term, pre.log {
+  background: var(--code-bg); border: 1px solid var(--rule); border-radius: 4px;
+  padding: 12px 14px; margin: 0; overflow-y: auto;
+  white-space: pre-wrap; font-size: 12px; line-height: 1.45; color: var(--ink-2);
+}
+pre.term { height: 200px; word-break: break-all; }
+
+/* Terminal colours for the guest console. Mapped to values that hold on both
+   grounds rather than the raw ANSI palette, which is unreadable on light. */
+pre.term .ln { min-height: 1.45em; }
+.t.bold { font-weight: 600; }
+.t.k { color: var(--ink-3); }
+.t.r { color: #B0442E; }
+.t.g { color: #1C7A55; }
+.t.y { color: #8A6318; }
+.t.b { color: #2A5FA8; }
+.t.m { color: #8B4A9C; }
+.t.c { color: #1A6F80; }
+.t.w { color: var(--ink); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .t.r { color: #E08A72; }
+  :root:not([data-theme="light"]) .t.g { color: #62C79F; }
+  :root:not([data-theme="light"]) .t.y { color: #D9AE5C; }
+  :root:not([data-theme="light"]) .t.b { color: #7FA9E8; }
+  :root:not([data-theme="light"]) .t.m { color: #C596D6; }
+  :root:not([data-theme="light"]) .t.c { color: #6BC2D1; }
+}
+:root[data-theme="dark"] .t.r { color: #E08A72; }
+:root[data-theme="dark"] .t.g { color: #62C79F; }
+:root[data-theme="dark"] .t.y { color: #D9AE5C; }
+:root[data-theme="dark"] .t.b { color: #7FA9E8; }
+:root[data-theme="dark"] .t.m { color: #C596D6; }
+:root[data-theme="dark"] .t.c { color: #6BC2D1; }
+
+pre.log { max-height: 320px; }
+.verdict { padding: 12px 15px; border-radius: 4px; font-size: 12.5px; line-height: 1.55; margin-top: 14px; }
+.verdict.pass { background: var(--accent-soft); color: var(--accent); }
+.verdict.fail { background: var(--crit-soft); color: var(--crit); }
+.verdict.idle { background: var(--surface-2); color: var(--ink-3); }
+code { background: var(--code-bg); padding: .1em .35em; border-radius: 3px; }
+#screen_container { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <p class="eyebrow">Spike C</p>
+  <h1>The Full Loop</h1>
+  <p class="lede">A guest writes, the dirty set is captured, chunked and committed into a real repository, and a machine is rebuilt from that commit alone. Syncing repeatedly measures what an incremental commit actually costs, which is the experiment the chunk-exploded design has been asserting without evidence.</p>
+  <div class="claim">
+    <b>Two invariants:</b> a machine rebuilt from a commit reads back what the original wrote, and commit N uploads only the chunks whose content changed while still referencing every chunk the disk needs.
+  </div>
+  <div class="danger">
+    <b>Point this at a throwaway repository.</b> It writes real git objects and spends your write budget.
+  </div>
+</header>
+
+<section class="panel">
+  <header><h2>Connection</h2><p>Fine-grained PAT with <code>Contents: Read and write</code>.</p></header>
+  <div class="row">
+    <div class="f"><label for="tok">Token</label><input type="password" id="tok" placeholder="github_pat_..." autocomplete="off" spellcheck="false"></div>
+    <div class="f"><label for="repo">Owner / repo</label><input type="text" id="repo" placeholder="you/scratch" spellcheck="false"></div>
+    <button id="connect">Validate</button>
+  </div>
+  <label class="ack"><input type="checkbox" id="remember"><span>Remember the token in localStorage.</span></label>
+  <label class="ack"><input type="checkbox" id="ack"><span><b>This is a throwaway repository</b> whose history I am willing to lose.</span></label>
+  <p class="status" id="conn">Not connected.</p>
+</section>
+
+<section class="panel">
+  <header>
+    <h2>E1: incremental sync cost</h2>
+    <p>Prepare boots a guest and creates a filesystem. Each sync seals the current epoch, uploads only the chunks whose content is new to the repository, and commits a manifest referencing every chunk the disk needs. Edit and sync appends a line in the guest and syncs, which is the incremental case.</p>
+  </header>
+  <div class="row">
+    <div class="f"><label for="disksize">Disk</label>
+      <select id="disksize">
+        <option value="16" selected>16 MB</option>
+        <option value="256">256 MB</option>
+      </select>
+    </div>
+    <div class="f"><label for="chunksize">Chunk</label>
+      <select id="chunksize">
+        <option value="65536">64 KB</option>
+        <option value="262144" selected>256 KB</option>
+        <option value="1048576">1 MB</option>
+      </select>
+    </div>
+    <button id="prepare" disabled>Prepare guest</button>
+    <button class="ghost" id="sync" disabled>Sync now</button>
+    <button class="ghost" id="loop" disabled>Edit and sync</button>
+    <div class="f"><label for="reps">Repeat</label><input type="number" id="reps" value="5" min="1" max="20"></div>
+    <button class="ghost" id="compact" disabled>Compact</button>
+    <button class="ghost" id="restore" disabled>Restore from git</button>
+    <div class="f"><label for="branch">Machine ref</label><input type="text" id="branch" placeholder="filled by first sync" spellcheck="false"></div>
+    <button class="ghost" id="reset">Reset</button>
+  </div>
+  <dl class="stats">
+    <div class="stat"><dt>Syncs</dt><dd id="m-syncs">0</dd></div>
+    <div class="stat"><dt>Chunks in manifest</dt><dd id="m-manifest">0<span> / ?</span></dd></div>
+    <div class="stat"><dt>Blobs in repo</dt><dd id="m-blobs">0</dd></div>
+    <div class="stat"><dt>Uploaded total</dt><dd id="m-up">0<span> KB</span></dd></div>
+    <div class="stat"><dt>Git requests</dt><dd id="m-req">0</dd></div>
+  </dl>
+  <div class="tablewrap">
+    <table>
+      <thead><tr>
+        <th>sync</th><th>writes</th><th>dirty KB</th><th>dirty chunks</th>
+        <th>uploaded</th><th>reused</th><th>upload KB</th><th>tree refs</th><th>requests</th><th>seconds</th>
+      </tr></thead>
+      <tbody id="rows"><tr><td colspan="10" class="empty">No syncs yet.</td></tr></tbody>
+    </table>
+  </div>
+  <p class="verdict idle" id="verdict">Connect a repository to begin.</p>
+</section>
+
+<section class="panel">
+  <header><h2>Guest serial console</h2><p>Linux 4 from CD-ROM, 16 MB disk streamed over HTTP as the primary master.</p></header>
+  <pre class="term" id="term"></pre>
+</section>
+
+<section class="panel">
+  <header><h2>Log</h2></header>
+  <pre class="log" id="log">waiting.</pre>
+</section>
+
+<div id="screen_container"><div style="white-space: pre; font: 14px monospace; line-height: 14px"></div><canvas style="display:none"></canvas></div>
+
+</div>
+
+<script src="node_modules/v86/build/libv86.js"></script>
+<script type="module">
+  // The renderer is shared with the reference app rather than copied, so a fix
+  // to escape handling reaches the spikes too.
+  import { Terminal } from "../src/ui/terminal.js";
+  window.__Terminal = Terminal;
+</script>
+
+<script>
+"use strict";
+
+var API = "https://api.github.com";
+var DISKS = {
+  "16":  { size: 16 * 1024 * 1024,  url: "images/blank-16mb.img" },
+  "256": { size: 256 * 1024 * 1024, url: "images/blank-256mb.img" }
+};
+var DISK_SIZE = DISKS["16"].size;
+var CHUNK = 256 * 1024;
+var N_CHUNKS = Math.ceil(DISK_SIZE / CHUNK);
+var BASE_URL = DISKS["16"].url;
+var BASE_IS_BLANK = true;              // blank-16mb.img is all zeros
+var RUN = Date.now().toString(36).toUpperCase();
+
+var state = { token: "", owner: "", repo: "", branch: "", head: "", ok: false };
+var emulator = null, wrappedBuffer = null;
+var epoch = [], capturing = false;     // writes since the last sync
+var manifest = {};                     // cumulative chunk index -> sha, every chunk the disk needs
+var uploadedShas = {};                 // sha -> true, what the repo already holds
+var syncNo = 0, reqCount = 0, uploadedBytes = 0, termBuf = "";
+
+var $ = function (id) { return document.getElementById(id); };
+
+// --- guest console ---------------------------------------------------------
+//
+// Display goes through the shared terminal renderer, which interprets escape
+// sequences instead of printing them. termBuf below is untouched: it feeds
+// prompt matching and command-output parsing, and those produced the numbers
+// in the write-up.
+
+var terminal = null, termPending = [];
+function termWrite(byte) {
+  if (!terminal) {
+    // The module script is deferred, so in principle a byte can arrive first.
+    // Queue rather than drop: losing the head of the boot log would be silent.
+    if (!window.__Terminal) { termPending.push(byte); return; }
+    terminal = new window.__Terminal($("term"));
+    for (var i = 0; i < termPending.length; i++) terminal.writeByte(termPending[i]);
+    termPending = [];
+  }
+  terminal.writeByte(byte);
+}
+function termClear() {
+  if (terminal) terminal.clear();
+  else $("term").textContent = "";
+}
+
+function log(m) {
+  var el = $("log");
+  if (el.textContent === "waiting.") el.textContent = "";
+  el.textContent += m + "\n"; el.scrollTop = el.scrollHeight;
+}
+function verdict(t, c) { var e = $("verdict"); e.className = "verdict " + (c || "idle"); e.textContent = t; }
+function kb(n) { return (n / 1024).toFixed(1); }
+
+function meters() {
+  $("m-syncs").textContent = syncNo;
+  $("m-manifest").innerHTML = Object.keys(manifest).length + '<span> / ' + N_CHUNKS + '</span>';
+  $("m-blobs").textContent = Object.keys(uploadedShas).length;
+  $("m-up").innerHTML = kb(uploadedBytes) + '<span> KB</span>';
+  $("m-req").textContent = reqCount;
+}
+
+function addRow(r) {
+  var body = $("rows");
+  if (body.querySelector(".empty")) body.innerHTML = "";
+  var tr = document.createElement("tr");
+  tr.innerHTML = "<td>" + r.n + "</td><td>" + r.writes + "</td><td>" + kb(r.dirtyBytes) +
+    "</td><td>" + r.dirtyChunks + "</td><td class='hi'>" + r.uploaded + "</td><td>" + r.reused +
+    "</td><td>" + kb(r.uploadBytes) + "</td><td>" + r.treeRefs + "</td><td>" + r.requests +
+    "</td><td>" + r.seconds.toFixed(1) + "</td>";
+  body.appendChild(tr);
+}
+
+/* ---------- git ---------- */
+
+function toBase64(b) {
+  var CH = 0x8000, p = [];
+  for (var i = 0; i < b.length; i += CH) p.push(String.fromCharCode.apply(null, b.subarray(i, i + CH)));
+  return btoa(p.join(""));
+}
+function hex(buf) {
+  var b = new Uint8Array(buf), s = "";
+  for (var i = 0; i < b.length; i++) s += b[i].toString(16).padStart(2, "0");
+  return s;
+}
+async function gitBlobSha(bytes) {
+  var h = new TextEncoder().encode("blob " + bytes.length + "\0");
+  var all = new Uint8Array(h.length + bytes.length);
+  all.set(h, 0); all.set(bytes, h.length);
+  return hex(await crypto.subtle.digest("SHA-1", all));
+}
+async function req(method, path, body, opts) {
+  opts = opts || {};
+  var url = path.indexOf("http") === 0 ? path : API + path;
+  var headers = { "Accept": opts.accept || "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" };
+  if (state.token) headers["Authorization"] = "Bearer " + state.token;
+  if (body) headers["Content-Type"] = "application/json";
+  reqCount++;
+  var res = await fetch(url, { method: method, headers: headers, body: body ? JSON.stringify(body) : undefined });
+  if (opts.binary) {
+    if (!res.ok) throw new Error(method + " " + path + " -> " + res.status);
+    return new Uint8Array(await res.arrayBuffer());
+  }
+  var text = await res.text(), json = null;
+  try { json = JSON.parse(text); } catch (e) {}
+  if (!res.ok) throw new Error(method + " " + path + " -> " + res.status + " " + ((json && json.message) || text.slice(0, 80)));
+  return json;
+}
+function base(p) { return "/repos/" + state.owner + "/" + state.repo + p; }
+async function runPool(tasks, c) {
+  var i = 0;
+  async function w() { while (i < tasks.length) await tasks[i++](); }
+  var ws = [];
+  for (var k = 0; k < c; k++) ws.push(w());
+  await Promise.all(ws);
+}
+
+/* ---------- VM ---------- */
+
+function boot(diskBuffer) {
+  return new V86({
+    wasm_path: "node_modules/v86/build/v86.wasm",
+    memory_size: 128 * 1024 * 1024, vga_memory_size: 2 * 1024 * 1024,
+    screen_container: $("screen_container"),
+    bios: { url: "bios/seabios.bin" }, vga_bios: { url: "bios/vgabios.bin" },
+    cdrom: { url: "images/linux4.iso" },
+    hda: diskBuffer
+      ? { buffer: diskBuffer }
+      : { url: BASE_URL, size: DISK_SIZE, async: true, fixed_chunk_size: 256 * 1024 },
+    autostart: true, disable_keyboard: true, disable_mouse: true
+  });
+}
+function listenSerial() {
+  emulator.add_listener("serial0-output-byte", function (b) {
+    termBuf += String.fromCharCode(b);
+    termWrite(b);
+  });
+}
+function wrapDevice() {
+  var ide = emulator && emulator.v86 && emulator.v86.cpu && emulator.v86.cpu.devices && emulator.v86.cpu.devices.ide;
+  var buf = ide && ide.primary && ide.primary.master && ide.primary.master.buffer;
+  if (!buf || typeof buf.set !== "function" || typeof buf.get !== "function") return false;
+  if (buf.__spikeC) return true;
+  var original = buf.set.bind(buf);
+  buf.set = function (offset, data, cb) {
+    if (capturing) { epoch.push({ offset: offset, bytes: new Uint8Array(data) }); }
+    return original(offset, data, cb);
+  };
+  buf.__spikeC = true;
+  wrappedBuffer = buf;
+  log("wrapped ide.primary.master.buffer (" + (buf.block_cache ? "streamed" : "in memory") + ")");
+  return true;
+}
+
+// U7 fix. Chunk content is read back from the device, which already merges the
+// base image with everything written on top of it. A local shadow initialised to
+// zeros is only correct when the base happens to be blank, and would silently
+// produce a corrupt disk against any real rootfs.
+function readChunk(idx) {
+  var offset = idx * CHUNK;
+  var len = Math.min(CHUNK, DISK_SIZE - offset);
+  return new Promise(function (resolve, reject) {
+    try { wrappedBuffer.get(offset, len, function (data) { resolve(new Uint8Array(data)); }); }
+    catch (e) { reject(e); }
+  });
+}
+
+function waitFor(test, ms, what) {
+  var deadline = Date.now() + ms;
+  return new Promise(function (res, rej) {
+    (function poll() {
+      if (test()) return res();
+      if (Date.now() > deadline) return rej(new Error("timed out waiting for " + what));
+      setTimeout(poll, 120);
+    })();
+  });
+}
+function waitForPrompt(ms) {
+  return waitFor(function () { return /[#$%>]\s*$/.test(termBuf.slice(-400)); }, ms || 120000, "a shell prompt");
+}
+async function guest(line, ms) {
+  termBuf = "";
+  emulator.serial0_send(line + "\n");
+  log("guest <- " + line);
+  await waitForPrompt(ms);
+  var out = termBuf.replace(/\x1b\[[0-9;]*m/g, "").replace(/\r/g, "");
+  var parts = out.split("\n");
+  if (parts.length && parts[0].trim() === line.trim()) parts.shift();
+  while (parts.length && /^[~\w/]*[%#$]\s*$/.test(parts[parts.length - 1])) parts.pop();
+  out = parts.join("\n").trim();
+  if (out) log("guest -> " + out.split("\n").join("\n         "));
+  return out;
+}
+
+/* ---------- connection ---------- */
+
+try {
+  var t0 = localStorage.getItem("spikea.token"); if (t0) { $("tok").value = t0; $("remember").checked = true; }
+  var r0 = localStorage.getItem("spikea.repo"); if (r0) $("repo").value = r0;
+  var b0 = localStorage.getItem("spikec.branch"); if (b0) $("branch").value = b0;
+} catch (e) {}
+
+$("connect").addEventListener("click", async function () {
+  var tok = $("tok").value.trim(), repo = $("repo").value.trim(), parts = repo.split("/");
+  if (!tok || parts.length !== 2) { $("conn").textContent = "Enter a token and owner/repo."; $("conn").className = "status bad"; return; }
+  state.token = tok; state.owner = parts[0]; state.repo = parts[1];
+  try {
+    var who = await req("GET", "/user");
+    var rp = await req("GET", base(""));
+    if (!rp.permissions || !rp.permissions.push) throw new Error("token cannot write to " + repo);
+    state.ok = true;
+    try {
+      if ($("remember").checked) localStorage.setItem("spikea.token", tok);
+      localStorage.setItem("spikea.repo", repo);
+    } catch (e) {}
+    $("conn").textContent = "Connected as " + who.login + ", " + repo + " is " + (rp.private ? "private" : "public") + ", write access confirmed.";
+    $("conn").className = "status ok";
+    refresh();
+  } catch (e) { $("conn").textContent = e.message; $("conn").className = "status bad"; }
+});
+$("ack").addEventListener("change", refresh);
+$("branch").addEventListener("input", refresh);
+function refresh() {
+  var ready = state.ok && $("ack").checked;
+  $("prepare").disabled = !ready || !!emulator;
+  $("restore").disabled = !ready || !$("branch").value.trim();
+}
+
+/* ---------- prepare ---------- */
+
+$("prepare").addEventListener("click", async function () {
+  $("prepare").disabled = true;
+  try {
+    var pick = DISKS[$("disksize").value] || DISKS["16"];
+    DISK_SIZE = pick.size; BASE_URL = pick.url;
+    CHUNK = +$("chunksize").value || 262144;
+    N_CHUNKS = Math.ceil(DISK_SIZE / CHUNK);
+    meters();
+    log("--- prepare: " + (DISK_SIZE / 1048576) + " MB base streamed over HTTP, " +
+        (CHUNK / 1024) + " KB chunks, " + N_CHUNKS + " chunks on the disk ---");
+    verdict("Booting. The base disk streams over HTTP, so nothing is downloaded whole.", "idle");
+    emulator = boot(null);
+    listenSerial();
+    await waitFor(wrapDevice, 30000, "the block device");
+    capturing = true;
+    await waitForPrompt(180000);
+    log("shell up, writes during boot: " + epoch.length);
+    await guest("DISK=/dev/sda; [ -b $DISK ] || DISK=/dev/hda; echo using $DISK");
+    await guest("mke2fs -F $DISK", 180000);
+    await guest("mkdir -p /mnt/d && mount $DISK /mnt/d");
+    await guest("echo " + RUN + "-genesis > /mnt/d/spike.txt");
+    await guest("sync");
+    log("guest prepared, " + epoch.length + " writes pending in the first epoch");
+    verdict("Guest ready. Sync now writes the first commit; Edit and sync then measures the incremental case.", "idle");
+    $("sync").disabled = false; $("loop").disabled = false;
+  } catch (e) {
+    log("ERROR: " + e.message);
+    verdict("Prepare failed: " + e.message, "fail");
+    $("prepare").disabled = false;
+  }
+});
+
+/* ---------- sync ---------- */
+
+async function doSync() {
+  var t0 = performance.now();
+  var reqBefore = reqCount, upBefore = uploadedBytes;
+
+  // P1 and P2: seal the epoch. New guest writes accumulate in the next one.
+  var sealed = epoch;
+  epoch = [];
+  var dirtyBytes = sealed.reduce(function (a, w) { return a + w.bytes.length; }, 0);
+
+  // P3: coalesce captured ranges into chunk indices
+  var seen = {}, dirty = [];
+  sealed.forEach(function (w) {
+    var first = Math.floor(w.offset / CHUNK);
+    var last = Math.floor((w.offset + w.bytes.length - 1) / CHUNK);
+    for (var c = first; c <= last; c++) if (!seen[c]) { seen[c] = 1; dirty.push(c); }
+  });
+  dirty.sort(function (a, b) { return a - b; });
+
+  if (!dirty.length) { log("nothing dirty, skipping sync"); return null; }
+
+  // read each dirty chunk back from the device, then hash it
+  var shas = {};
+  for (var i = 0; i < dirty.length; i++) {
+    var bytes = await readChunk(dirty[i]);
+    shas[dirty[i]] = await gitBlobSha(bytes);
+  }
+
+  // P4: only upload content the repository does not already hold
+  var toUpload = {}, reused = 0;
+  dirty.forEach(function (idx) {
+    if (uploadedShas[shas[idx]]) reused++;
+    else toUpload[shas[idx]] = idx;
+  });
+  var uploadCount = Object.keys(toUpload).length;
+
+  // P5: upload concurrently
+  var upBytesBefore = uploadedBytes;
+  var tasks = Object.keys(toUpload).map(function (sha) {
+    return async function () {
+      var bytes = await readChunk(toUpload[sha]);
+      uploadedBytes += bytes.length;
+      var got = await req("POST", base("/git/blobs"), { content: toBase64(bytes), encoding: "base64" });
+      if (got.sha !== sha) log("WARNING: server sha differs from local for chunk " + toUpload[sha]);
+      uploadedShas[sha] = true;
+    };
+  });
+  await runPool(tasks, 8);
+
+  // the manifest is cumulative: every chunk the disk needs, not just this epoch's
+  dirty.forEach(function (idx) { manifest[idx] = shas[idx]; });
+
+  var manifestObj = {
+    version: 2, disk: DISK_SIZE, chunk: CHUNK, base: BASE_URL, base_is_blank: BASE_IS_BLANK,
+    run: RUN, sync: syncNo + 1, chunks: manifest
+  };
+  var manifestBytes = new TextEncoder().encode(JSON.stringify(manifestObj));
+  uploadedBytes += manifestBytes.length;
+  var manifestSha = (await req("POST", base("/git/blobs"),
+    { content: toBase64(manifestBytes), encoding: "base64" })).sha;
+
+  // P6: the tree references every chunk, including ones uploaded in earlier syncs
+  var entries = Object.keys(manifest).map(function (idx) {
+    return { path: "chunks/" + String(idx).padStart(6, "0") + ".bin", mode: "100644", type: "blob", sha: manifest[idx] };
+  });
+  entries.push({ path: "manifest.json", mode: "100644", type: "blob", sha: manifestSha });
+
+  var tree = await req("POST", base("/git/trees"), { tree: entries });
+  var commit = await req("POST", base("/git/commits"), {
+    message: "sync " + (syncNo + 1) + ": " + dirty.length + " dirty, " + uploadCount + " uploaded",
+    tree: tree.sha, parents: state.head ? [state.head] : []
+  });
+
+  // P7: publish by compare and swap
+  if (!state.branch) {
+    state.branch = "machine-" + RUN.toLowerCase();
+    await req("POST", base("/git/refs"), { ref: "refs/heads/" + state.branch, sha: commit.sha });
+  } else {
+    await req("PATCH", base("/git/refs/heads/" + state.branch), { sha: commit.sha, force: false });
+  }
+  state.head = commit.sha;
+  $("branch").value = state.branch;
+  try { localStorage.setItem("spikec.branch", state.branch); } catch (e) {}
+
+  syncNo++;
+  var row = {
+    n: syncNo, writes: sealed.length, dirtyBytes: dirtyBytes, dirtyChunks: dirty.length,
+    uploaded: uploadCount, reused: reused, uploadBytes: uploadedBytes - upBytesBefore,
+    treeRefs: entries.length, requests: reqCount - reqBefore,
+    seconds: (performance.now() - t0) / 1000
+  };
+  addRow(row); meters();
+  log("sync " + syncNo + ": " + dirty.length + " dirty chunks, " + uploadCount + " uploaded, " +
+      reused + " already in the repo, tree references " + entries.length + " objects, " +
+      row.requests + " requests, " + row.seconds.toFixed(1) + "s");
+  return row;
+}
+
+$("sync").addEventListener("click", async function () {
+  $("sync").disabled = true; $("loop").disabled = true;
+  try { await doSync(); verdict("Synced. Run Edit and sync to measure the incremental case.", "idle"); }
+  catch (e) { log("ERROR: " + e.message); verdict("Sync failed: " + e.message, "fail"); }
+  $("sync").disabled = false; $("loop").disabled = false; $("restore").disabled = false; $("compact").disabled = false;
+});
+
+$("loop").addEventListener("click", async function () {
+  $("sync").disabled = true; $("loop").disabled = true;
+  var reps = +$("reps").value || 1;
+  try {
+    for (var i = 0; i < reps; i++) {
+      await guest("echo " + RUN + "-edit-" + (syncNo + 1) + " >> /mnt/d/spike.txt");
+      await guest("sync");
+      var row = await doSync();
+      if (!row) break;
+    }
+    var rows = $("rows").querySelectorAll("tr");
+    verdict("Ran " + reps + " incremental syncs. Compare the uploaded column against tree refs: " +
+      "that ratio is what git's content-addressed store is buying.", "idle");
+  } catch (e) { log("ERROR: " + e.message); verdict("Loop failed: " + e.message, "fail"); }
+  $("sync").disabled = false; $("loop").disabled = false; $("restore").disabled = false;
+});
+
+/* ---------- compaction ---------- */
+
+// Re-baselining: snapshot the whole disk into one orphan commit and drop history.
+// force:true is correct here and only here, because discarding the old history is
+// the entire point of the operation.
+$("compact").addEventListener("click", async function () {
+  $("compact").disabled = true; $("sync").disabled = true; $("loop").disabled = true;
+  var t0 = performance.now();
+  var reqBefore = reqCount, upBefore = uploadedBytes;
+  log("--- compaction: full snapshot into an orphan commit ---");
+  try {
+    var pushedBefore = Object.keys(uploadedShas).length;
+
+    // read the entire disk, not just the dirty set
+    var shas = {}, distinct = {};
+    for (var i = 0; i < N_CHUNKS; i++) {
+      var bytes = await readChunk(i);
+      var sha = await gitBlobSha(bytes);
+      shas[i] = sha;
+      if (!distinct[sha]) distinct[sha] = i;
+    }
+    var readS = (performance.now() - t0) / 1000;
+    log("read and hashed " + N_CHUNKS + " chunks in " + readS.toFixed(1) + "s, " +
+        Object.keys(distinct).length + " distinct blobs");
+
+    var missing = Object.keys(distinct).filter(function (sha) { return !uploadedShas[sha]; });
+    await runPool(missing.map(function (sha) {
+      return async function () {
+        var bytes = await readChunk(distinct[sha]);
+        uploadedBytes += bytes.length;
+        await req("POST", base("/git/blobs"), { content: toBase64(bytes), encoding: "base64" });
+        uploadedShas[sha] = true;
+      };
+    }), 8);
+    log("uploaded " + missing.length + " blobs the repo did not already hold");
+
+    manifest = shas;
+    var manifestObj = {
+      version: 2, disk: DISK_SIZE, chunk: CHUNK, base: BASE_URL, base_is_blank: BASE_IS_BLANK,
+      run: RUN, sync: syncNo + 1, compacted: true, chunks: manifest
+    };
+    var mb = new TextEncoder().encode(JSON.stringify(manifestObj));
+    uploadedBytes += mb.length;
+    var manifestSha = (await req("POST", base("/git/blobs"), { content: toBase64(mb), encoding: "base64" })).sha;
+
+    var entries = Object.keys(manifest).map(function (idx) {
+      return { path: "chunks/" + String(idx).padStart(6, "0") + ".bin", mode: "100644", type: "blob", sha: manifest[idx] };
+    });
+    entries.push({ path: "manifest.json", mode: "100644", type: "blob", sha: manifestSha });
+
+    var tree = await req("POST", base("/git/trees"), { tree: entries });
+    var commit = await req("POST", base("/git/commits"), {
+      message: "compaction: full snapshot of " + N_CHUNKS + " chunks, history dropped",
+      tree: tree.sha, parents: []
+    });
+    await req("PATCH", base("/git/refs/heads/" + state.branch), { sha: commit.sha, force: true });
+    state.head = commit.sha;
+    syncNo++;
+
+    var dt = (performance.now() - t0) / 1000;
+    var reachable = Object.keys(distinct).length;
+    addRow({
+      n: "C", writes: 0, dirtyBytes: 0, dirtyChunks: N_CHUNKS,
+      uploaded: missing.length, reused: reachable - missing.length,
+      uploadBytes: uploadedBytes - upBefore, treeRefs: entries.length,
+      requests: reqCount - reqBefore, seconds: dt
+    });
+    meters();
+    log("compacted in " + dt.toFixed(1) + "s. blobs pushed over this machine's life: " + pushedBefore +
+        ", reachable from the new head: " + reachable +
+        ", now unreachable and reclaimable by the host's GC: " + Math.max(0, pushedBefore - reachable));
+    verdict("Compacted. History is gone: the ref now points at a parentless commit holding " +
+      reachable + " distinct blobs for the whole " + (DISK_SIZE / 1048576) + " MB disk. " +
+      "Restore still works, and now costs a bounded amount regardless of how many syncs preceded it.", "pass");
+  } catch (e) {
+    log("ERROR: " + e.message);
+    verdict("Compaction failed: " + e.message, "fail");
+  }
+  $("compact").disabled = false; $("sync").disabled = false; $("loop").disabled = false;
+});
+
+/* ---------- restore ---------- */
+
+// U7 fix. Restore starts from the base image, not from zeros. With a blank base
+// the two coincide, which is exactly why the bug was invisible until now.
+async function loadBase(m) {
+  if (m.base_is_blank) {
+    log("base is blank, starting from zeros");
+    return new Uint8Array(m.disk);
+  }
+  log("fetching base image " + m.base);
+  var res = await fetch(m.base);
+  if (!res.ok) throw new Error("base image " + m.base + " -> " + res.status);
+  var bytes = new Uint8Array(await res.arrayBuffer());
+  var disk = new Uint8Array(m.disk);
+  disk.set(bytes.subarray(0, Math.min(bytes.length, m.disk)));
+  log("base loaded, " + kb(bytes.length) + " KB");
+  return disk;
+}
+
+$("restore").addEventListener("click", async function () {
+  $("restore").disabled = true;
+  var branch = $("branch").value.trim();
+  var t0 = performance.now();
+  log("--- restore from git, branch " + branch + " ---");
+  try {
+    if (emulator) { try { await emulator.destroy(); } catch (e) {} emulator = null; }
+    termClear(); termBuf = "";
+
+    var ref = await req("GET", base("/git/ref/heads/" + branch));
+    var commit = await req("GET", base("/git/commits/" + ref.object.sha));
+    var tree = await req("GET", base("/git/trees/" + commit.tree.sha));
+    log("resolved " + branch + " -> " + ref.object.sha.slice(0, 8));
+
+    var me = tree.tree.filter(function (e) { return e.path === "manifest.json"; })[0];
+    if (!me) throw new Error("no manifest.json in that commit");
+    var mBytes = await req("GET", base("/git/blobs/" + me.sha), null, { accept: "application/vnd.github.raw", binary: true });
+    var m = JSON.parse(new TextDecoder().decode(mBytes));
+    var idxs = Object.keys(m.chunks);
+    log("manifest v" + m.version + ": sync " + m.sync + ", " + idxs.length + " chunks");
+
+    var disk = await loadBase(m);
+    var fetched = 0;
+    await runPool(idxs.map(function (idx) {
+      return async function () {
+        var bytes = await req("GET", base("/git/blobs/" + m.chunks[idx]), null,
+          { accept: "application/vnd.github.raw", binary: true });
+        disk.set(bytes, Number(idx) * m.chunk);
+        fetched++;
+      };
+    }), 8);
+    log("applied " + fetched + " chunks over the base");
+
+    emulator = boot(disk.buffer);
+    listenSerial();
+    await waitForPrompt(180000);
+    await guest("DISK=/dev/sda; [ -b $DISK ] || DISK=/dev/hda; echo using $DISK");
+    var out = await guest("mkdir -p /mnt/d && mount $DISK /mnt/d 2>/dev/null && cat /mnt/d/spike.txt; true");
+    var dt = (performance.now() - t0) / 1000;
+
+    var lines = out.split("\n").filter(function (l) { return l.indexOf(m.run) === 0; });
+    if (lines.length) {
+      verdict("RESTORE PASS in " + dt.toFixed(1) + "s. The rebuilt machine read back " + lines.length +
+        " line(s) written across " + m.sync + " syncs, ending with " + lines[lines.length - 1] + ".", "pass");
+    } else {
+      verdict("The rebuilt machine booted but the expected lines were not found.", "fail");
+    }
+  } catch (e) {
+    log("ERROR: " + e.message);
+    verdict("Restore failed: " + e.message, "fail");
+    $("restore").disabled = false;
+  }
+});
+
+$("reset").addEventListener("click", function () { location.reload(); });
+if (location.protocol === "file:") verdict("Serve this over http, not file://.", "fail");
+meters(); refresh();
+</script>
+</body>
+</html>

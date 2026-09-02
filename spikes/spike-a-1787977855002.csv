@@ -1,0 +1,147 @@
+n,t,op,bytes,ms,status,remaining,resource,retryAfter,write,note
+1,586,GET /user,0,586,200,4997,core,,false,
+2,1289,GET /repos,0,702,200,4996,core,,false,
+3,11713,putBlob 64 KB,65536,1517,201,4984,core,,true,sha verified locally
+4,13958,putBlob 64 KB,65536,2242,201,4983,core,,true,sha verified locally
+5,29008,putBlob 64 KB,65536,15049,201,4982,core,,true,sha verified locally
+6,37456,putBlob 256 KB,262144,8443,201,4999,core,,true,sha verified locally
+7,48245,putBlob 256 KB,262144,10783,201,4998,core,,true,sha verified locally
+8,55910,putBlob 256 KB,262144,7661,201,4997,core,,true,sha verified locally
+9,103909,putBlob 1.00 MB,1048576,47984,201,4996,core,,true,sha verified locally
+10,160678,putBlob 1.00 MB,1048576,56761,201,4995,core,,true,sha verified locally
+11,162790,putBlob 1.00 MB,1048576,2096,201,4994,core,,true,sha verified locally
+12,167103,putBlob 4.00 MB,4194304,4263,201,4993,core,,true,sha verified locally
+13,170069,putBlob 4.00 MB,4194304,2911,201,4992,core,,true,sha verified locally
+14,172943,putBlob 4.00 MB,4194304,2817,201,4991,core,,true,sha verified locally
+15,543634,putBlob chunk 256 KB,262144,1467,201,4990,core,,true,sha verified locally
+16,545206,putBlob chunk 256 KB,262144,1568,201,4989,core,,true,sha verified locally
+17,546724,putBlob chunk 256 KB,262144,1515,201,4988,core,,true,sha verified locally
+18,548240,putBlob chunk 256 KB,262144,1515,201,4987,core,,true,sha verified locally
+19,549786,putBlob chunk 256 KB,262144,1542,201,4986,core,,true,sha verified locally
+20,551746,putBlob chunk 256 KB,262144,1958,201,4985,core,,true,sha verified locally
+21,553317,putBlob chunk 256 KB,262144,1568,201,4984,core,,true,sha verified locally
+22,554179,putBlob chunk 256 KB,262144,859,201,4983,core,,true,sha verified locally
+23,555213,putTree,0,1033,201,4982,core,,true,
+24,556209,putCommit,0,994,201,4981,core,,true,
+25,557056,createRef,0,846,201,4980,core,,true,cycle end to end: 14891 ms for 11 requests
+26,558522,putBlob chunk 256 KB,262144,1465,201,4979,core,,true,sha verified locally
+27,559974,putBlob chunk 256 KB,262144,1449,201,4978,core,,true,sha verified locally
+28,560927,putBlob chunk 256 KB,262144,951,201,4977,core,,true,sha verified locally
+29,562519,putBlob chunk 256 KB,262144,1589,201,4976,core,,true,sha verified locally
+30,564131,putBlob chunk 256 KB,262144,1607,201,4975,core,,true,sha verified locally
+31,565722,putBlob chunk 256 KB,262144,1588,201,4974,core,,true,sha verified locally
+32,567171,putBlob chunk 256 KB,262144,1446,201,4973,core,,true,sha verified locally
+33,568112,putBlob chunk 256 KB,262144,938,201,4972,core,,true,sha verified locally
+34,568845,putTree,0,732,201,4971,core,,true,
+35,570027,putCommit,0,1181,201,4970,core,,true,
+36,570901,casRef,0,874,200,4969,core,,true,cycle end to end: 13846 ms for 11 requests
+37,587537,probe 1,4096,922,201,4968,core,,true,
+38,588194,probe 2,4096,655,201,4967,core,,true,
+39,588809,probe 3,4096,614,201,4966,core,,true,
+40,589462,probe 4,4096,652,201,4965,core,,true,
+41,590077,probe 5,4096,614,201,4964,core,,true,
+42,590730,probe 6,4096,652,201,4963,core,,true,
+43,591373,probe 7,4096,642,201,4962,core,,true,
+44,592027,probe 8,4096,653,201,4961,core,,true,
+45,592685,probe 9,4096,657,201,4960,core,,true,
+46,593406,probe 10,4096,720,201,4959,core,,true,
+47,594038,probe 11,4096,631,201,4958,core,,true,
+48,594648,probe 12,4096,609,201,4957,core,,true,
+49,595282,probe 13,4096,633,201,4956,core,,true,
+50,595955,probe 14,4096,672,201,4955,core,,true,
+51,596698,probe 15,4096,742,201,4954,core,,true,
+52,597436,probe 16,4096,736,201,4953,core,,true,
+53,598111,probe 17,4096,674,201,4952,core,,true,
+54,598784,probe 18,4096,671,201,4951,core,,true,
+55,599409,probe 19,4096,625,201,4950,core,,true,
+56,600144,probe 20,4096,734,201,4949,core,,true,
+57,600880,probe 21,4096,735,201,4948,core,,true,
+58,601510,probe 22,4096,629,201,4947,core,,true,
+59,602168,probe 23,4096,657,201,4946,core,,true,
+60,602772,probe 24,4096,603,201,4945,core,,true,
+61,603408,probe 25,4096,635,201,4944,core,,true,
+62,604129,probe 26,4096,720,201,4943,core,,true,
+63,604782,probe 27,4096,651,201,4942,core,,true,
+64,605427,probe 28,4096,643,201,4941,core,,true,
+65,606071,probe 29,4096,644,201,4940,core,,true,
+66,606918,probe 30,4096,844,201,4939,core,,true,
+67,607492,probe 31,4096,573,201,4938,core,,true,
+68,608134,probe 32,4096,640,201,4937,core,,true,
+69,608824,probe 33,4096,688,201,4936,core,,true,
+70,609648,probe 34,4096,822,201,4935,core,,true,
+71,610307,probe 35,4096,657,201,4934,core,,true,
+72,610925,probe 36,4096,617,201,4933,core,,true,
+73,611628,probe 37,4096,699,201,4932,core,,true,
+74,612306,probe 38,4096,675,201,4931,core,,true,
+75,612920,probe 39,4096,612,201,4930,core,,true,
+76,613632,probe 40,4096,710,201,4929,core,,true,
+77,614372,probe 41,4096,737,201,4928,core,,true,
+78,615020,probe 42,4096,645,201,4927,core,,true,
+79,615622,probe 43,4096,600,201,4926,core,,true,
+80,616262,probe 44,4096,638,201,4925,core,,true,
+81,616898,probe 45,4096,633,201,4924,core,,true,
+82,617586,probe 46,4096,686,201,4923,core,,true,
+83,618217,probe 47,4096,628,201,4922,core,,true,
+84,618844,probe 48,4096,625,201,4921,core,,true,
+85,619543,probe 49,4096,696,201,4920,core,,true,
+86,620137,probe 50,4096,592,201,4919,core,,true,
+87,620731,probe 51,4096,592,201,4918,core,,true,
+88,621364,probe 52,4096,632,201,4917,core,,true,
+89,622064,probe 53,4096,696,201,4916,core,,true,
+90,622763,probe 54,4096,697,201,4915,core,,true,
+91,623458,probe 55,4096,694,201,4914,core,,true,
+92,624128,probe 56,4096,668,201,4913,core,,true,
+93,624817,probe 57,4096,688,201,4912,core,,true,
+94,625477,probe 58,4096,658,201,4911,core,,true,
+95,626134,probe 59,4096,655,201,4910,core,,true,
+96,627125,probe 60,4096,990,201,4909,core,,true,
+97,627725,probe 61,4096,596,201,4908,core,,true,
+98,628375,probe 62,4096,649,201,4907,core,,true,
+99,629021,probe 63,4096,644,201,4906,core,,true,
+100,630026,probe 64,4096,1004,201,4905,core,,true,
+101,630656,probe 65,4096,622,201,4904,core,,true,
+102,631262,probe 66,4096,605,201,4903,core,,true,
+103,631860,probe 67,4096,597,201,4902,core,,true,
+104,632577,probe 68,4096,715,201,4901,core,,true,
+105,633296,probe 69,4096,715,201,4900,core,,true,
+106,633976,probe 70,4096,679,201,4899,core,,true,
+107,634602,probe 71,4096,625,201,4898,core,,true,
+108,635319,probe 72,4096,715,201,4897,core,,true,
+109,635963,probe 73,4096,644,201,4896,core,,true,
+110,636553,probe 74,4096,589,201,4895,core,,true,
+111,637237,probe 75,4096,683,201,4894,core,,true,
+112,637900,probe 76,4096,661,201,4893,core,,true,
+113,638565,probe 77,4096,662,201,4892,core,,true,
+114,639170,probe 78,4096,601,201,4891,core,,true,
+115,639799,probe 79,4096,624,201,4890,core,,true,
+116,640419,probe 80,4096,618,201,4889,core,,true,
+117,641910,probe 81,4096,1488,201,4888,core,,true,
+118,642574,probe 82,4096,662,201,4887,core,,true,
+119,643234,probe 83,4096,653,201,4886,core,,true,
+120,643957,probe 84,4096,718,201,4885,core,,true,
+121,644677,probe 85,4096,717,201,4884,core,,true,
+122,645290,probe 86,4096,610,201,4883,core,,true,
+123,645921,probe 87,4096,629,201,4882,core,,true,
+124,646527,probe 88,4096,601,201,4881,core,,true,
+125,647105,probe 89,4096,577,201,4880,core,,true,
+126,648013,probe 90,4096,905,201,4879,core,,true,
+127,648616,probe 91,4096,601,201,4878,core,,true,
+128,649215,probe 92,4096,595,201,4877,core,,true,
+129,649839,probe 93,4096,619,201,4876,core,,true,
+130,650482,probe 94,4096,640,201,4875,core,,true,
+131,651148,probe 95,4096,663,201,4874,core,,true,
+132,651810,probe 96,4096,657,201,4873,core,,true,
+133,652585,probe 97,4096,768,201,4872,core,,true,
+134,653179,probe 98,4096,589,201,4871,core,,true,
+135,653803,probe 99,4096,618,201,4870,core,,true,
+136,654425,probe 100,4096,619,201,4869,core,,true,
+137,713345,GET tree,0,620,200,4995,core,,false,
+138,714464,GET blob (API),0,1117,200,4994,core,,false,
+139,714554,GET raw (no auth),0,87,network,,,,false,fetch failed: Failed to fetch
+140,714589,GET raw (range 0-65535),0,26,network,,,,false,fetch failed: Failed to fetch
+141,743255,casRef,0,641,422,4868,core,,true,"rejected as expected (422), CAS confirmed: Update is not a fast forward"
+142,761496,casRef,0,587,422,4867,core,,true,"rejected as expected (422), CAS confirmed: Update is not a fast forward"
+143,765782,GET tree,0,209,200,4995,core,,false,
+144,765991,GET blob (API),0,208,200,4994,core,,false,
+145,766020,GET raw (no auth),0,27,network,,,,false,fetch failed: Failed to fetch
+146,766050,GET raw (range 0-65535),0,26,network,,,,false,fetch failed: Failed to fetch

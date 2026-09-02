@@ -1,0 +1,34 @@
+# Blank disk images: 288 MB of zeros across three files, recreated in one
+# command each (see README). The v86 kernel and ISO beside them are NOT ignored,
+# because they are only 25 MB and reproducing the exact build a measurement ran
+# against is harder than storing it.
+# A pattern containing a slash is anchored to this file's directory, so
+# "images/blank-*.img" matched nothing under spike-b/ or spike-c/ and a 256 MB
+# file sailed into the first commit. The leading ** is what makes it match at
+# any depth.
+**/images/blank-*.img
+
+# Installed dependencies. v86 comes from npm; it is a dependency here, not
+# something this repository redistributes.
+node_modules/
+
+# The manuscript is under review and is not published here. Nothing under
+# paper/ is tracked: not the PDF, not the LaTeX source, not the bibliography,
+# not the build scripts. They all stay local.
+paper/
+
+# Hand-made snapshots taken while editing. The *.bak rule below misses these
+# because they end in .tex.
+.bak*.tex
+
+# Traces captured during a run, before they are curated into traces/.
+trace.partial
+*.partial.json
+
+.DS_Store
+Thumbs.db
+
+# Editor and script backups. One of these was committed before this rule existed.
+*.bak
+*.orig
+*~

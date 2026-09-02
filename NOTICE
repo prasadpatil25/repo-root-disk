@@ -1,0 +1,63 @@
+Third-party material redistributed in this repository
+=====================================================
+
+The code in this repository is MIT licensed; see LICENSE. Everything below is
+other people's work, included here rather than fetched at run time, and keeping
+its own licence.
+
+
+vendor/alpine/
+--------------
+
+An unmodified Alpine Linux 3.20.10 x86 minirootfs and five unmodified .apk
+packages, redistributed under the terms of their respective licences.
+
+    alpine-minirootfs-3.20.10-x86.tar.gz
+    sha256 7a80c1cfc1a8ca542c0b553fc3d42b962ad72531ba28850aecc8473f3472dd7a
+
+    packages/libncursesw-6.4_p20240420-r2.apk
+    packages/ncurses-terminfo-base-6.4_p20240420-r2.apk
+    packages/vim-9.1.0707-r0.apk
+    packages/vim-common-9.1.0707-r0.apk
+    packages/xxd-9.1.0707-r0.apk
+
+Alpine Linux is a project of the Alpine Linux Development Team, distributed
+from https://alpinelinux.org/. A minirootfs is an aggregation of separately
+licensed components rather than a single work: musl is MIT, BusyBox is GPLv2,
+Vim carries the Vim licence, and ncurses is MIT-like. The licence texts ship
+inside the archive and the packages, which is where to read them.
+
+Why these files are here rather than downloaded. The offline package-install
+result the paper reports depends on installing from bytes the guest already
+holds, with no network reachable from inside it. Fetching at run time would not
+reproduce that, and pinning a URL would not survive the mirror rotating. The
+checksum above is what makes the result reproducible byte for byte, so verify it
+rather than trusting the file:
+
+    sha256sum -c vendor/alpine/alpine-minirootfs-3.20.10-x86.tar.gz.sha256
+
+
+vendor/v86/
+-----------
+
+The v86 emulator, version 0.5.445+gb0d8f2c, redistributed under BSD-2-Clause.
+Only the two files a browser needs are here:
+
+    libv86.js
+    v86.wasm
+    LICENSE     the copyright notice clause 2 requires to travel with them
+
+Upstream is https://github.com/copy/v86. They are committed rather than
+installed because a static host has no npm, and the page has to load the
+emulator from the same origin that serves it.
+
+src/device/v86.js is our own wrapper around v86's buffer interface. It is not
+part of v86 and is covered by LICENSE at the root.
+
+
+spikes/, traces/
+----------------
+
+Measurement output produced by this work, covered by LICENSE like the rest of
+the repository. traces/mke2fs-256mb.json is a real captured write trace, not
+synthetic.

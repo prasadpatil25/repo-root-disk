@@ -1,0 +1,18 @@
+n,t,op,bytes,ms,status,remaining,resource,retryAfter,write,note
+1,480,GET /user,0,480,200,4988,core,,false,
+2,849,GET /repos,0,368,200,4988,core,,false,
+3,850,environment,0,0,-,,,,false,"origin http://localhost:8000, repo public"
+4,3895,GET /user,0,2,200,4988,core,,false,
+5,3900,GET /repos,0,4,200,4988,core,,false,
+6,3902,environment,0,0,-,,,,false,"origin http://localhost:8000, repo public"
+7,12363,E4 bootstrap,0,0,-,,,,false,"no commit in this session yet, creating a minimal one (4 writes)"
+8,13218,putBlob (E4 bootstrap),65536,853,201,3836,core,,true,sha verified locally
+9,14034,putTree,0,814,201,3835,core,,true,
+10,14469,putCommit,0,433,201,3834,core,,true,
+11,15109,createRef,0,639,201,3833,core,,true,
+12,15683,GET tree,0,573,200,4987,core,,false,
+13,16261,GET blob (API),0,578,200,4986,core,,false,
+14,16331,GET raw (no auth),0,69,network,,,,false,fetch failed: Failed to fetch
+15,16356,GET raw (range 0-65535),0,24,network,,,,false,fetch failed: Failed to fetch
+16,16660,GET raw (no-cors probe),0,302,opaque,,,,false,"host reachable, opaque response: CORS is the blocker, not the network"
+17,16917,GET jsDelivr,0,255,network,,,,false,fetch failed: Failed to fetch

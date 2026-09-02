@@ -1,0 +1,25 @@
+# Shell scripts must keep LF endings whatever platform commits them. A build.sh
+# checked out with CRLF fails on Linux with "bad interpreter: /bin/sh^M", which
+# is a miserable first impression for anyone trying to reproduce the paper.
+*.sh text eol=lf
+
+# Everything else that is text can normalise normally.
+*.js   text
+*.mjs  text
+*.py   text
+*.md   text
+*.tex  text
+*.bib  text
+*.json text
+*.html text
+*.css  text
+
+# Binaries git must not touch. Normalising line endings inside a disk image or a
+# package archive corrupts it silently.
+*.img      binary
+*.iso      binary
+*.bin      binary
+*.apk      binary
+*.tar.gz   binary
+*.pdf      binary
+*.gz       binary

@@ -1,0 +1,152 @@
+n,t,op,bytes,ms,status,remaining,resource,retryAfter,write,note
+1,623,GET /user,0,623,200,4993,core,,false,
+2,1205,GET /repos,0,580,200,4992,core,,false,
+3,10310,warmup (discarded),65536,1069,201,4866,core,,true,sha verified locally
+4,11218,warmup (discarded),65536,906,201,4865,core,,true,sha verified locally
+5,11796,putBlob 64 KB,65536,576,201,4864,core,,true,sha verified locally
+6,13234,putBlob 256 KB,262144,1435,201,4863,core,,true,sha verified locally
+7,15065,putBlob 1.00 MB,1048576,1822,201,4862,core,,true,sha verified locally
+8,17960,putBlob 4.00 MB,4194304,2867,201,4861,core,,true,sha verified locally
+9,18810,putBlob 64 KB,65536,843,201,4860,core,,true,sha verified locally
+10,20274,putBlob 256 KB,262144,1462,201,4859,core,,true,sha verified locally
+11,22128,putBlob 1.00 MB,1048576,1848,201,4858,core,,true,sha verified locally
+12,24629,putBlob 4.00 MB,4194304,2480,201,4857,core,,true,sha verified locally
+13,25125,putBlob 64 KB,65536,491,201,4856,core,,true,sha verified locally
+14,26455,putBlob 256 KB,262144,1328,201,4855,core,,true,sha verified locally
+15,28231,putBlob 1.00 MB,1048576,1768,201,4854,core,,true,sha verified locally
+16,30856,putBlob 4.00 MB,4194304,2606,201,4853,core,,true,sha verified locally
+17,31688,putBlob 64 KB,65536,827,201,4852,core,,true,sha verified locally
+18,32254,putBlob 256 KB,262144,564,201,4851,core,,true,sha verified locally
+19,35161,putBlob 1.00 MB,1048576,2902,201,4850,core,,true,sha verified locally
+20,37749,putBlob 4.00 MB,4194304,2569,201,4849,core,,true,sha verified locally
+21,38544,putBlob 64 KB,65536,791,201,4848,core,,true,sha verified locally
+22,39624,putBlob 256 KB,262144,1077,201,4847,core,,true,sha verified locally
+23,40938,putBlob 1.00 MB,1048576,1309,201,4846,core,,true,sha verified locally
+24,43073,putBlob 4.00 MB,4194304,2115,201,4845,core,,true,sha verified locally
+25,48709,putBlob chunk 256 KB,262144,1385,201,4844,core,,true,sha verified locally
+26,49923,putBlob chunk 256 KB,262144,1212,201,4843,core,,true,sha verified locally
+27,50793,putBlob chunk 256 KB,262144,866,201,4842,core,,true,sha verified locally
+28,52426,putBlob chunk 256 KB,262144,1630,201,4841,core,,true,sha verified locally
+29,53677,putBlob chunk 256 KB,262144,1246,201,4840,core,,true,sha verified locally
+30,54305,putBlob chunk 256 KB,262144,625,201,4839,core,,true,sha verified locally
+31,55382,putBlob chunk 256 KB,262144,1072,201,4838,core,,true,sha verified locally
+32,56800,putBlob chunk 256 KB,262144,1413,201,4837,core,,true,sha verified locally
+33,57594,putTree,0,792,201,4836,core,,true,
+34,58211,putCommit,0,612,201,4835,core,,true,
+35,59101,createRef,0,887,201,4834,core,,true,cycle end to end: 11781 ms for 11 requests
+36,60469,putBlob chunk 256 KB,262144,1362,201,4833,core,,true,sha verified locally
+37,61075,putBlob chunk 256 KB,262144,596,201,4832,core,,true,sha verified locally
+38,61871,putBlob chunk 256 KB,262144,792,201,4831,core,,true,sha verified locally
+39,62624,putBlob chunk 256 KB,262144,748,201,4830,core,,true,sha verified locally
+40,63897,putBlob chunk 256 KB,262144,1266,201,4829,core,,true,sha verified locally
+41,65210,putBlob chunk 256 KB,262144,1307,201,4828,core,,true,sha verified locally
+42,66502,putBlob chunk 256 KB,262144,1287,201,4827,core,,true,sha verified locally
+43,67865,putBlob chunk 256 KB,262144,1358,201,4826,core,,true,sha verified locally
+44,68391,putTree,0,522,201,4825,core,,true,
+45,68831,putCommit,0,439,201,4824,core,,true,
+46,69774,casRef,0,938,200,4823,core,,true,cycle end to end: 10672 ms for 11 requests
+47,83702,probe 1,4096,458,201,4822,core,,true,
+48,84112,probe 2,4096,409,201,4821,core,,true,
+49,84485,probe 3,4096,372,201,4820,core,,true,
+50,84910,probe 4,4096,422,201,4819,core,,true,
+51,85301,probe 5,4096,389,201,4818,core,,true,
+52,85822,probe 6,4096,519,201,4817,core,,true,
+53,86291,probe 7,4096,468,201,4816,core,,true,
+54,86675,probe 8,4096,383,201,4815,core,,true,
+55,87138,probe 9,4096,462,201,4814,core,,true,
+56,87507,probe 10,4096,367,201,4813,core,,true,
+57,87977,probe 11,4096,467,201,4812,core,,true,
+58,88375,probe 12,4096,397,201,4811,core,,true,
+59,88797,probe 13,4096,422,201,4810,core,,true,
+60,89156,probe 14,4096,357,201,4809,core,,true,
+61,89514,probe 15,4096,357,201,4808,core,,true,
+62,89920,probe 16,4096,403,201,4807,core,,true,
+63,90351,probe 17,4096,430,201,4806,core,,true,
+64,90731,probe 18,4096,379,201,4805,core,,true,
+65,91189,probe 19,4096,457,201,4804,core,,true,
+66,91647,probe 20,4096,456,201,4803,core,,true,
+67,92054,probe 21,4096,405,201,4802,core,,true,
+68,92485,probe 22,4096,430,201,4801,core,,true,
+69,92931,probe 23,4096,444,201,4800,core,,true,
+70,93712,probe 24,4096,780,201,4799,core,,true,
+71,94105,probe 25,4096,392,201,4798,core,,true,
+72,94484,probe 26,4096,378,201,4797,core,,true,
+73,94868,probe 27,4096,383,201,4796,core,,true,
+74,95283,probe 28,4096,414,201,4795,core,,true,
+75,95658,probe 29,4096,373,201,4794,core,,true,
+76,96022,probe 30,4096,363,201,4793,core,,true,
+77,96433,probe 31,4096,409,201,4792,core,,true,
+78,96904,probe 32,4096,470,201,4791,core,,true,
+79,97297,probe 33,4096,391,201,4790,core,,true,
+80,97696,probe 34,4096,397,201,4789,core,,true,
+81,98127,probe 35,4096,431,201,4788,core,,true,
+82,98491,probe 36,4096,362,201,4787,core,,true,
+83,98856,probe 37,4096,364,201,4786,core,,true,
+84,99226,probe 38,4096,368,201,4785,core,,true,
+85,99591,probe 39,4096,364,201,4784,core,,true,
+86,99956,probe 40,4096,364,201,4783,core,,true,
+87,100378,probe 41,4096,421,201,4782,core,,true,
+88,100769,probe 42,4096,387,201,4781,core,,true,
+89,101167,probe 43,4096,397,201,4780,core,,true,
+90,101557,probe 44,4096,389,201,4779,core,,true,
+91,101955,probe 45,4096,396,201,4778,core,,true,
+92,102376,probe 46,4096,421,201,4777,core,,true,
+93,102853,probe 47,4096,475,201,4776,core,,true,
+94,103261,probe 48,4096,407,201,4775,core,,true,
+95,103671,probe 49,4096,409,201,4774,core,,true,
+96,104188,probe 50,4096,516,201,4773,core,,true,
+97,104593,probe 51,4096,403,201,4772,core,,true,
+98,104986,probe 52,4096,392,201,4771,core,,true,
+99,105401,probe 53,4096,414,201,4770,core,,true,
+100,105802,probe 54,4096,400,201,4769,core,,true,
+101,106176,probe 55,4096,369,201,4768,core,,true,
+102,106543,probe 56,4096,365,201,4767,core,,true,
+103,106952,probe 57,4096,406,201,4766,core,,true,
+104,107362,probe 58,4096,409,201,4765,core,,true,
+105,107760,probe 59,4096,396,201,4764,core,,true,
+106,108160,probe 60,4096,399,201,4763,core,,true,
+107,108546,probe 61,4096,384,201,4762,core,,true,
+108,108981,probe 62,4096,433,201,4761,core,,true,
+109,109355,probe 63,4096,373,201,4760,core,,true,
+110,109738,probe 64,4096,381,201,4759,core,,true,
+111,110118,probe 65,4096,379,201,4758,core,,true,
+112,110869,probe 66,4096,749,201,4757,core,,true,
+113,111316,probe 67,4096,445,201,4756,core,,true,
+114,111698,probe 68,4096,380,201,4755,core,,true,
+115,112136,probe 69,4096,437,201,4754,core,,true,
+116,112559,probe 70,4096,421,201,4753,core,,true,
+117,112929,probe 71,4096,369,201,4752,core,,true,
+118,113315,probe 72,4096,384,201,4751,core,,true,
+119,113751,probe 73,4096,435,201,4750,core,,true,
+120,114124,probe 74,4096,371,201,4749,core,,true,
+121,114600,probe 75,4096,474,201,4748,core,,true,
+122,114982,probe 76,4096,380,201,4747,core,,true,
+123,115392,probe 77,4096,408,201,4746,core,,true,
+124,115817,probe 78,4096,423,201,4745,core,,true,
+125,116266,probe 79,4096,448,201,4744,core,,true,
+126,116699,probe 80,4096,431,201,4743,core,,true,
+127,117073,probe 81,4096,372,201,4742,core,,true,
+128,117485,probe 82,4096,409,201,4741,core,,true,
+129,117862,probe 83,4096,375,201,4740,core,,true,
+130,118258,probe 84,4096,395,201,4739,core,,true,
+131,118704,probe 85,4096,444,201,4738,core,,true,
+132,119067,probe 86,4096,361,201,4737,core,,true,
+133,119457,probe 87,4096,389,201,4736,core,,true,
+134,119873,probe 88,4096,414,201,4735,core,,true,
+135,120249,probe 89,4096,375,201,4734,core,,true,
+136,120757,probe 90,4096,506,201,4733,core,,true,
+137,121264,probe 91,4096,506,201,4732,core,,true,
+138,121639,probe 92,4096,374,201,4731,core,,true,
+139,122168,probe 93,4096,527,201,4730,core,,true,
+140,122662,probe 94,4096,492,201,4729,core,,true,
+141,123100,probe 95,4096,436,201,4728,core,,true,
+142,123514,probe 96,4096,413,201,4727,core,,true,
+143,123896,probe 97,4096,380,201,4726,core,,true,
+144,124311,probe 98,4096,413,201,4725,core,,true,
+145,124781,probe 99,4096,468,201,4724,core,,true,
+146,125155,probe 100,4096,373,201,4723,core,,true,
+147,127845,GET tree,0,611,200,4991,core,,false,
+148,128745,GET blob (API),0,898,200,4990,core,,false,
+149,129121,GET raw (no auth),0,374,network,,,,false,fetch failed: Failed to fetch
+150,129152,GET raw (range 0-65535),0,24,network,,,,false,fetch failed: Failed to fetch
+151,132550,casRef,0,358,422,4722,core,,true,"rejected as expected (422), CAS confirmed: Update is not a fast forward"

@@ -1,0 +1,1166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Repo as Root Disk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+
+<style>
+:root {
+  --bg: #EFF2F1;
+  --surface: #FBFCFC;
+  --surface-2: #E6EBE9;
+  --ink: #131C1A;
+  --ink-2: #4A5754;
+  --ink-3: #6E7C78;
+  --rule: #D1D9D6;
+  --rule-soft: #E1E7E5;
+  --accent: #14685A;
+  --accent-soft: #DBEAE5;
+  --warn: #8A6318;
+  --warn-soft: #F0E6CE;
+  --crit: #8E4230;
+  --crit-soft: #F2DDD7;
+  --code-bg: #E8EDEB;
+  --shadow: 0 1px 2px rgba(19, 28, 26, .06), 0 8px 24px rgba(19, 28, 26, .05);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D1412;
+    --surface: #141D1A;
+    --surface-2: #1A2521;
+    --ink: #E1E9E6;
+    --ink-2: #A2B0AC;
+    --ink-3: #7E8C88;
+    --rule: #263330;
+    --rule-soft: #1E2A27;
+    --accent: #55C4A6;
+    --accent-soft: #16322B;
+    --warn: #D6A751;
+    --warn-soft: #2C2617;
+    --crit: #DD8A72;
+    --crit-soft: #32201B;
+    --code-bg: #18231F;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .28);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0D1412;
+  --surface: #141D1A;
+  --surface-2: #1A2521;
+  --ink: #E1E9E6;
+  --ink-2: #A2B0AC;
+  --ink-3: #7E8C88;
+  --rule: #263330;
+  --rule-soft: #1E2A27;
+  --accent: #55C4A6;
+  --accent-soft: #16322B;
+  --warn: #D6A751;
+  --warn-soft: #2C2617;
+  --crit: #DD8A72;
+  --crit-soft: #32201B;
+  --code-bg: #18231F;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .28);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Source Serif 4", Georgia, "Times New Roman", serif;
+  font-size: 17px;
+  line-height: 1.62;
+  margin: 0;
+  padding: 0 24px 96px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: 1080px; margin: 0 auto; }
+
+.mono { font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+.masthead { padding: 72px 0 40px; border-bottom: 1px solid var(--rule); }
+
+.eyebrow {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px; font-weight: 500; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--accent); margin: 0 0 20px;
+}
+
+h1 {
+  font-family: Archivo, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 700; font-size: clamp(38px, 6vw, 62px);
+  line-height: 1.02; letter-spacing: -.028em; text-wrap: balance; margin: 0 0 22px;
+}
+
+.thesis { font-size: 20px; line-height: 1.5; color: var(--ink-2); max-width: 34em; margin: 0 0 36px; }
+
+.meta {
+  display: flex; flex-wrap: wrap; gap: 10px 28px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11.5px; color: var(--ink-3);
+}
+.meta b {
+  font-weight: 500; color: var(--ink-2); letter-spacing: .08em;
+  text-transform: uppercase; font-size: 10.5px; margin-right: 7px;
+}
+
+.sec {
+  display: grid; grid-template-columns: 1fr; gap: 6px 40px;
+  padding: 52px 0; border-bottom: 1px solid var(--rule-soft);
+}
+@media (min-width: 940px) { .sec { grid-template-columns: 148px minmax(0, 1fr); } }
+
+.sec-label {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px; font-weight: 500; letter-spacing: .13em;
+  text-transform: uppercase; color: var(--ink-3); padding-top: 9px;
+}
+
+.sec-body { min-width: 0; }
+
+h2 {
+  font-family: Archivo, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 600; font-size: 27px; letter-spacing: -.016em;
+  line-height: 1.18; text-wrap: balance; margin: 0 0 18px;
+}
+
+h3 {
+  font-family: Archivo, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 600; font-size: 16px; margin: 34px 0 12px;
+}
+
+p { margin: 0 0 18px; max-width: 68ch; }
+p:last-child { margin-bottom: 0; }
+
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+
+code {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: .85em; background: var(--code-bg);
+  padding: .12em .4em; border-radius: 3px;
+}
+
+strong { font-weight: 600; }
+
+.note {
+  border-left: 2px solid var(--accent); background: var(--accent-soft);
+  padding: 16px 20px; margin: 26px 0; border-radius: 0 4px 4px 0;
+}
+.note p { margin: 0; max-width: 62ch; }
+.note.rev { border-left-color: var(--crit); background: var(--crit-soft); }
+.note.open { border-left-color: var(--warn); background: var(--warn-soft); }
+
+figure { margin: 30px 0; padding: 0; }
+.figframe {
+  background: var(--surface); border: 1px solid var(--rule);
+  border-radius: 5px; padding: 22px 20px; overflow-x: auto;
+}
+figure svg { display: block; width: 100%; min-width: 660px; height: auto; color: var(--ink-2); }
+figcaption {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11.5px; line-height: 1.6; color: var(--ink-3);
+  margin-top: 12px; max-width: 74ch;
+}
+figcaption b { color: var(--ink-2); font-weight: 500; }
+
+.tablewrap { overflow-x: auto; margin: 26px 0; }
+table {
+  border-collapse: collapse; width: 100%; min-width: 540px;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12.5px; font-variant-numeric: tabular-nums;
+}
+th {
+  text-align: left; font-weight: 500; font-size: 10.5px;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3);
+  border-bottom: 1px solid var(--rule); padding: 0 16px 9px 0;
+}
+td {
+  padding: 11px 16px 11px 0; border-bottom: 1px solid var(--rule-soft);
+  color: var(--ink-2); vertical-align: top;
+}
+td:first-child { color: var(--ink); }
+tr:last-child td { border-bottom: none; }
+.bind td { color: var(--ink); }
+
+.tag {
+  display: inline-block; font-size: 10px; font-weight: 500;
+  letter-spacing: .07em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 3px; white-space: nowrap;
+}
+.tag-bind { background: var(--crit-soft); color: var(--crit); }
+.tag-ok { background: var(--accent-soft); color: var(--accent); }
+.tag-no { background: var(--surface-2); color: var(--ink-3); }
+.tag-warn { background: var(--warn-soft); color: var(--warn); }
+
+.phases { margin: 26px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; }
+.phase {
+  display: grid; grid-template-columns: 46px minmax(0, 1fr) 108px;
+  gap: 0 18px; align-items: baseline; padding: 15px 0;
+  border-top: 1px solid var(--rule-soft);
+}
+.phase:last-child { border-bottom: 1px solid var(--rule-soft); }
+.phase-id {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12px; font-weight: 600; color: var(--accent);
+}
+.phase-body h4 {
+  font-family: Archivo, "Helvetica Neue", Arial, sans-serif;
+  font-size: 14.5px; font-weight: 600; margin: 0 0 5px;
+}
+.phase-body p { font-size: 15.5px; margin: 0; color: var(--ink-2); max-width: 60ch; }
+.phase-cost {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px; text-align: right; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.phase-cost.hot { color: var(--accent); font-weight: 500; }
+@media (max-width: 620px) {
+  .phase { grid-template-columns: 40px minmax(0, 1fr); }
+  .phase-cost { grid-column: 2; text-align: left; margin-top: 6px; }
+}
+
+.calc {
+  background: var(--surface); border: 1px solid var(--rule);
+  border-radius: 5px; padding: 24px; margin: 28px 0 0; box-shadow: var(--shadow);
+}
+.calc-grid { display: grid; grid-template-columns: 1fr; gap: 26px; }
+@media (min-width: 760px) { .calc-grid { grid-template-columns: 290px minmax(0, 1fr); } }
+
+.ctrl { display: flex; flex-direction: column; gap: 18px; }
+.field { display: flex; flex-direction: column; gap: 7px; }
+.field > label, .fieldset-label {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10.5px; font-weight: 500; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+select, input[type="range"] {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 13px; width: 100%; accent-color: var(--accent);
+}
+select {
+  background: var(--bg); color: var(--ink);
+  border: 1px solid var(--rule); border-radius: 4px; padding: 8px 10px;
+}
+.radios { display: flex; gap: 8px; }
+.radios label {
+  flex: 1; font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11.5px; text-align: center; padding: 9px 6px;
+  border: 1px solid var(--rule); border-radius: 4px; cursor: pointer;
+  color: var(--ink-2); background: var(--bg);
+}
+.radios input { position: absolute; opacity: 0; pointer-events: none; }
+.radios input:checked + span { color: var(--accent); font-weight: 600; }
+.radios label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.radios label:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+select:focus-visible, input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.rangerow { display: flex; align-items: baseline; justify-content: space-between; }
+.rangeval {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 13px; color: var(--ink); font-variant-numeric: tabular-nums;
+}
+
+.readout { display: flex; flex-direction: column; gap: 16px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); gap: 14px; }
+.stat { border-left: 2px solid var(--rule); padding-left: 11px; }
+.stat dt {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 10px; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--ink-3); margin-bottom: 5px;
+}
+.stat dd {
+  margin: 0; font-family: Archivo, Arial, sans-serif; font-size: 23px;
+  font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums;
+}
+.stat dd span {
+  font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 400;
+  color: var(--ink-3); letter-spacing: 0; margin-left: 3px;
+}
+
+.meter { display: flex; flex-direction: column; gap: 7px; }
+.meter-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11px; color: var(--ink-3);
+}
+.bar { height: 9px; background: var(--surface-2); border-radius: 2px; overflow: hidden; }
+.bar-fill {
+  height: 100%; width: 0; background: var(--accent);
+  border-radius: 2px; transition: width .18s ease;
+}
+.bar-fill.tight { background: var(--warn); }
+.bar-fill.over { background: var(--crit); }
+@media (prefers-reduced-motion: reduce) { .bar-fill { transition: none; } }
+
+.verdict {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12px; line-height: 1.55; padding: 11px 14px;
+  border-radius: 4px; background: var(--accent-soft); color: var(--accent);
+}
+.verdict.tight { background: var(--warn-soft); color: var(--warn); }
+.verdict.over { background: var(--crit-soft); color: var(--crit); }
+
+.foot { padding: 46px 0 0; }
+.foot h2 { font-size: 15px; margin-bottom: 14px; }
+.srcs {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 12px; line-height: 1.9; color: var(--ink-3);
+  margin: 0; padding: 0; list-style: none; columns: 2; column-gap: 40px;
+}
+@media (max-width: 700px) { .srcs { columns: 1; } }
+.srcs li { break-inside: avoid; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <p class="eyebrow">Design note, revised against measurements</p>
+  <h1>Repo as Root Disk</h1>
+  <p class="thesis">Committing a browser Linux VM's overlay back into a git host, so machine state gains version control semantics at zero infrastructure cost.</p>
+  <div class="meta">
+    <span><b>Status</b> Full loop proven end to end</span>
+    <span><b>Date</b> 29 Aug 2026</span>
+    <span><b>Evidence</b> 7 storage runs plus 4 VM runs, public and private</span>
+    <span><b>Target</b> v86 fork</span>
+  </div>
+</header>
+
+<section class="sec">
+  <div class="sec-label">Problem</div>
+  <div class="sec-body">
+    <h2>The loop is open in every existing system</h2>
+    <p>Browser Linux stacks all treat remote storage as read only. CheerpX streams a pre-chunked ext2 image through <code>HttpBytesDevice</code> or <code>GitHubDevice</code>, writes land in <code>IDBDevice</code>, and <code>OverlayDevice</code> merges the two. The documentation is explicit that changes persist to IndexedDB rather than being written back to the source repository.</p>
+    <p>The consequence is that machine state is trapped in one browser profile on one machine. It cannot be moved, shared, reviewed, archived, or cited. Clearing site data destroys it.</p>
+    <p>This note specifies the missing edge: a sync agent that commits the overlay into the git host as ordinary git objects. Once that edge exists, the machine's history is a git history, and fork, diff, checkout, and bisect apply to a running environment.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-label">Device layers</div>
+  <div class="sec-body">
+    <h2>Two paths, asymmetric costs</h2>
+
+    <figure>
+      <div class="figframe">
+        <svg viewBox="0 0 900 470" role="img" aria-label="Device stack diagram. Inside the browser, the guest Linux reads and writes blocks through an OverlayDevice, which merges dirty blocks held in IndexedDB with read-only base chunks. Base chunks are fetched across the network boundary from a CDN-served release asset without consuming API quota. A sync agent reads the dirty set from IndexedDB and writes it across the boundary as git blobs, a tree, and a commit, then updates a ref by compare-and-swap. On boot, the ref is resolved back into an overlay index.">
+          <defs>
+            <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"></path>
+            </marker>
+            <marker id="ar-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--accent)"></path>
+            </marker>
+          </defs>
+
+          <g font-family="IBM Plex Mono, monospace" font-size="10.5" letter-spacing="1.4" fill="var(--ink-3)">
+            <text x="40" y="26">BROWSER, NO SERVER</text>
+            <text x="536" y="26">GIT HOST</text>
+          </g>
+
+          <g stroke="var(--rule)" stroke-width="1" stroke-dasharray="3 5">
+            <line x1="468" y1="34" x2="468" y2="224"></line>
+            <line x1="468" y1="270" x2="468" y2="326"></line>
+            <line x1="468" y1="354" x2="468" y2="452"></line>
+          </g>
+
+          <g fill="none" stroke="currentColor" stroke-width="1.25">
+            <rect x="40" y="48" width="390" height="50" rx="3"></rect>
+            <rect x="40" y="126" width="390" height="50" rx="3"></rect>
+            <rect x="40" y="214" width="185" height="58" rx="3"></rect>
+            <rect x="245" y="214" width="185" height="58" rx="3"></rect>
+            <rect x="536" y="214" width="344" height="58" rx="3"></rect>
+            <rect x="536" y="316" width="344" height="58" rx="3"></rect>
+            <rect x="536" y="396" width="344" height="50" rx="3"></rect>
+          </g>
+          <rect x="40" y="316" width="185" height="58" rx="3" fill="none" stroke="var(--accent)" stroke-width="1.75"></rect>
+
+          <g font-family="Archivo, sans-serif" font-size="13" font-weight="600" fill="var(--ink)">
+            <text x="56" y="72">Guest Linux</text>
+            <text x="56" y="150">OverlayDevice</text>
+            <text x="56" y="240">IDBDevice</text>
+            <text x="261" y="240">Base chunks</text>
+            <text x="552" y="240">Release asset</text>
+            <text x="552" y="342">Git objects</text>
+            <text x="552" y="422">refs/heads/machine</text>
+          </g>
+          <text x="56" y="342" font-family="Archivo, sans-serif" font-size="13" font-weight="600" fill="var(--accent)">Sync agent</text>
+
+          <g font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--ink-3)">
+            <text x="56" y="88">unmodified x86 binaries</text>
+            <text x="56" y="166">dirty block wins, else base</text>
+            <text x="56" y="258">read-write, evictable</text>
+            <text x="261" y="258">read-only, LRU cached</text>
+            <text x="552" y="258">base.ext2, up to 2 GiB</text>
+            <text x="552" y="358">blobs, tree, commit</text>
+            <text x="552" y="438">single writer, CAS guarded</text>
+            <text x="56" y="358">chunk, hash, commit</text>
+          </g>
+
+          <g stroke="currentColor" stroke-width="1.25" fill="none">
+            <line x1="235" y1="98" x2="235" y2="122" marker-end="url(#ar)"></line>
+            <line x1="140" y1="176" x2="140" y2="210" marker-end="url(#ar)"></line>
+            <line x1="330" y1="176" x2="330" y2="210" marker-end="url(#ar)"></line>
+            <line x1="140" y1="272" x2="140" y2="312" marker-end="url(#ar)"></line>
+            <line x1="430" y1="243" x2="532" y2="243" marker-end="url(#ar)"></line>
+            <line x1="708" y1="374" x2="708" y2="392" marker-end="url(#ar)"></line>
+          </g>
+
+          <g stroke="var(--accent)" stroke-width="1.75" fill="none">
+            <line x1="225" y1="345" x2="532" y2="345" marker-end="url(#ar-a)"></line>
+          </g>
+
+          <polyline points="536,421 300,421 300,392" fill="none" stroke="currentColor" stroke-width="1.1" stroke-dasharray="4 4" marker-end="url(#ar)"></polyline>
+
+          <g font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--ink-3)">
+            <text x="245" y="115">block reads and writes</text>
+            <text x="150" y="296">dirty set</text>
+            <text x="481" y="234" text-anchor="middle">range GET</text>
+            <text x="481" y="262" text-anchor="middle">206, no quota</text>
+            <text x="716" y="388">PATCH ref, CAS</text>
+            <text x="310" y="414">boot: resolve ref, fetch manifest</text>
+          </g>
+          <text x="378" y="336" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--accent)">POST blobs, tree, commit</text>
+        </svg>
+      </div>
+      <figcaption><b>Figure 1.</b> The accented path is the one no existing system implements. The asymmetry is real and now measured: reads cross the boundary through a CDN that consumes no API quota, while writes are drawn from a per-minute allowance.</figcaption>
+    </figure>
+
+    <p>The read path is confirmed viable. <code>raw.githubusercontent.com</code> answers cross-origin requests with <code>Access-Control-Allow-Origin: *</code>, honours <code>Range</code> with a genuine <code>206 Partial Content</code> and a <code>Content-Range</code> header, and consumes no API rate limit at all. Ranged streaming of a base image from a repository works.</p>
+
+    <p>Reserve the API exclusively for writes and for fallback reads. This is still the single most valuable rule in the document, but it is now a preference rather than a necessity: API reads measured about 600 ms and draw on the 5,000 per hour primary budget, which a boot touching a few hundred chunks does not come close to exhausting. <strong>The CDN is an optimisation, not a dependency.</strong></p>
+
+    <div class="note">
+      <p><strong>Fixed-size chunking is sufficient here.</strong> Content-defined chunking (the rolling hash used by casync and restic) exists to survive byte insertions that shift every subsequent offset in a file. A block device has fixed offsets and never shifts, so that benefit does not apply. Align chunks to the overlay's block size and take the simpler code.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-label">Commit shape</div>
+  <div class="sec-body">
+    <h2>One blob per chunk, or one blob per sync</h2>
+
+    <figure>
+      <div class="figframe">
+        <svg viewBox="0 0 900 272" role="img" aria-label="Comparison of two commit shapes. In chunk-exploded commits, each dirty chunk becomes its own blob, so a second sync re-references three unchanged blobs and uploads only two new ones, costing five requests. In delta-pack commits, the entire dirty set becomes one blob, so each sync costs four requests regardless of size, but boot must replay every pack since the base image.">
+          <defs>
+            <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"></path>
+            </marker>
+          </defs>
+
+          <text x="20" y="24" font-family="Archivo, sans-serif" font-size="13.5" font-weight="600" fill="var(--ink)">A. Chunk-exploded</text>
+          <text x="20" y="42" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--ink-3)">one blob per dirty chunk</text>
+
+          <text x="490" y="24" font-family="Archivo, sans-serif" font-size="13.5" font-weight="600" fill="var(--ink)">B. Delta pack</text>
+          <text x="490" y="42" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--ink-3)">one blob per sync</text>
+
+          <line x1="455" y1="58" x2="455" y2="252" stroke="var(--rule)" stroke-width="1"></line>
+
+          <g fill="none" stroke="currentColor" stroke-width="1.2">
+            <rect x="20" y="72" width="62" height="26" rx="3"></rect>
+            <rect x="102" y="72" width="52" height="26" rx="3"></rect>
+            <rect x="20" y="146" width="62" height="26" rx="3"></rect>
+            <rect x="102" y="146" width="52" height="26" rx="3"></rect>
+            <rect x="180" y="72" width="34" height="26" rx="2"></rect>
+            <rect x="222" y="72" width="34" height="26" rx="2"></rect>
+            <rect x="264" y="72" width="34" height="26" rx="2"></rect>
+            <rect x="306" y="72" width="34" height="26" rx="2"></rect>
+            <rect x="348" y="72" width="34" height="26" rx="2"></rect>
+            <rect x="490" y="72" width="62" height="26" rx="3"></rect>
+            <rect x="572" y="72" width="52" height="26" rx="3"></rect>
+            <rect x="490" y="146" width="62" height="26" rx="3"></rect>
+            <rect x="572" y="146" width="52" height="26" rx="3"></rect>
+          </g>
+
+          <g fill="none" stroke="var(--accent)" stroke-width="1.6">
+            <rect x="306" y="146" width="34" height="26" rx="2"></rect>
+            <rect x="348" y="146" width="34" height="26" rx="2"></rect>
+            <rect x="650" y="146" width="120" height="26" rx="3"></rect>
+          </g>
+          <rect x="650" y="72" width="120" height="26" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"></rect>
+
+          <g font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--ink-2)" text-anchor="middle">
+            <text x="51" y="89">commit 1</text>
+            <text x="128" y="89">tree 1</text>
+            <text x="51" y="163">commit 2</text>
+            <text x="128" y="163">tree 2</text>
+            <text x="197" y="89">b1</text>
+            <text x="239" y="89">b2</text>
+            <text x="281" y="89">b3</text>
+            <text x="323" y="89">b4</text>
+            <text x="365" y="89">b5</text>
+            <text x="521" y="89">commit 1</text>
+            <text x="598" y="89">tree 1</text>
+            <text x="521" y="163">commit 2</text>
+            <text x="598" y="163">tree 2</text>
+            <text x="710" y="89">pack 1</text>
+          </g>
+          <g font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--accent)" text-anchor="middle">
+            <text x="323" y="163">b6</text>
+            <text x="365" y="163">b7</text>
+            <text x="710" y="163">pack 2</text>
+          </g>
+
+          <g stroke="currentColor" stroke-width="1.2" fill="none">
+            <line x1="82" y1="85" x2="98" y2="85" marker-end="url(#ar2)"></line>
+            <line x1="82" y1="159" x2="98" y2="159" marker-end="url(#ar2)"></line>
+            <line x1="154" y1="85" x2="176" y2="85" marker-end="url(#ar2)"></line>
+            <line x1="552" y1="85" x2="568" y2="85" marker-end="url(#ar2)"></line>
+            <line x1="552" y1="159" x2="568" y2="159" marker-end="url(#ar2)"></line>
+            <line x1="624" y1="85" x2="646" y2="85" marker-end="url(#ar2)"></line>
+            <line x1="51" y1="146" x2="51" y2="102" marker-end="url(#ar2)"></line>
+            <line x1="521" y1="146" x2="521" y2="102" marker-end="url(#ar2)"></line>
+          </g>
+          <g stroke="var(--accent)" stroke-width="1.6" fill="none">
+            <line x1="154" y1="159" x2="300" y2="159" marker-end="url(#ar2)"></line>
+            <line x1="624" y1="159" x2="646" y2="159" marker-end="url(#ar2)"></line>
+          </g>
+
+          <g stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" fill="none" opacity=".72">
+            <path d="M 140 146 L 140 122 L 197 122 L 197 102"></path>
+            <path d="M 140 122 L 239 122 L 239 102"></path>
+            <path d="M 140 122 L 281 122 L 281 102"></path>
+            <path d="M 610 146 L 610 122 L 710 122 L 710 102"></path>
+          </g>
+
+          <g font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--ink-3)">
+            <text x="150" y="134">reused, 0 bytes uploaded</text>
+            <text x="620" y="134">still required at boot</text>
+            <text x="59" y="128">parent</text>
+            <text x="529" y="128">parent</text>
+          </g>
+
+          <g font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--ink)">
+            <text x="20" y="212">sync 2 cost: 5 requests</text>
+            <text x="490" y="212">sync 2 cost: 4 requests</text>
+          </g>
+          <g font-family="IBM Plex Mono, monospace" font-size="10.5" fill="var(--ink-3)">
+            <text x="20" y="234">dedup across commits is free,</text>
+            <text x="20" y="249">requests scale with delta size</text>
+            <text x="490" y="234">flat request cost, no dedup,</text>
+            <text x="490" y="249">boot replays every pack since base</text>
+          </g>
+        </svg>
+      </div>
+      <figcaption><b>Figure 2.</b> Same delta, two encodings. Accented objects are what this sync actually uploads; dashed edges are references to objects already in the repository.</figcaption>
+    </figure>
+
+    <div class="note rev">
+      <p><strong>Revised.</strong> The original recommendation preferred delta packs largely because they collapse N+3 requests into 4. Measurement shows requests are not the scarce resource, so that argument no longer stands. <strong>Chunk-exploded is now the default</strong>, since free cross-commit dedup and per-chunk addressability cost almost nothing.</p>
+    </div>
+
+    <p>Chunk size should now be chosen for transfer efficiency and write amplification, with no reference to request budgets. The measured curve is steep:</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>chunk</th><th>p50 latency</th><th>ms per MB</th><th>effective</th></tr></thead>
+        <tbody>
+          <tr><td>64 KB</td><td>791 ms</td><td>12,656</td><td>0.08 MB/s</td></tr>
+          <tr><td>256 KB</td><td>1,328 ms</td><td>5,312</td><td>0.19 MB/s</td></tr>
+          <tr><td>1 MB</td><td>1,822 ms</td><td>1,822</td><td>0.55 MB/s</td></tr>
+          <tr class="bind"><td>4 MB</td><td>2,569 ms</td><td>642</td><td>1.56 MB/s</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Per-megabyte cost falls twentyfold from 64 KB to 4 MB, because every request pays a fixed round trip of roughly 400 ms before any payload moves. Against that, a large chunk amplifies small writes: at 4 MB a one-byte change costs 2,569 ms and 4 MB of upload, where at 64 KB the same change costs 791 ms and 64 KB.</p>
+
+    <p>So the hybrid survives, for a better reason than the one originally given. Use small chunks for scattered metadata writes where amplification dominates, and large packs for bulk transfer where the fixed round trip dominates. Compaction is where a run of packs gets folded into a chunk-exploded checkpoint.</p>
+
+    <p><strong>Alignment amplification is now measured rather than argued.</strong> In the full loop, 550 KB of genuinely dirty data landed in 5 chunks of 256 KB, so <strong>1.25 MB was uploaded for 550 KB of change, about 2.3 times</strong>. That is the real cost of chunk alignment on a small filesystem workload, and it falls with smaller chunks at the price of more requests. With requests shown to be cheap and bandwidth shown to be the binding term, the balance now favours chunks smaller than the 4 MB the transfer curve alone would suggest.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-label">Sync protocol</div>
+  <div class="sec-body">
+    <h2>Eight phases, three of which touch the network</h2>
+
+    <ol class="phases">
+      <li class="phase">
+        <div class="phase-id">P1</div>
+        <div class="phase-body">
+          <h4>Quiesce</h4>
+          <p>Take the Web Locks lock for this machine ref, flush the guest, and seal the current dirty set into a closed epoch. New guest writes open the next epoch and never block. <strong>The flush is a correctness requirement, not hygiene:</strong> writing a file to a mounted filesystem produced zero disk writes, with all of them landing later at <code>sync</code> and <code>umount</code>. Snapshot without flushing and the user's most recent work is silently absent.</p>
+        </div>
+        <div class="phase-cost">0 requests</div>
+      </li>
+      <li class="phase">
+        <div class="phase-id">P2</div>
+        <div class="phase-body">
+          <h4>Snapshot</h4>
+          <p>Read the sealed epoch's dirty block ranges out of IndexedDB. Everything from here on operates on an immutable snapshot, so a slow sync never stalls the VM.</p>
+        </div>
+        <div class="phase-cost">0 requests</div>
+      </li>
+      <li class="phase">
+        <div class="phase-id">P3</div>
+        <div class="phase-body">
+          <h4>Chunk and hash</h4>
+          <p>Coalesce the captured ranges into a dirty-region set first, then split into fixed chunks aligned to the block size, then compute each chunk's git object id locally as <code>sha1("blob " + len + "\0" + bytes)</code>. Verified against the server on 141 of 141 blobs with zero mismatches. Coalescing matters because capture granularity is the IDE transfer, not the sector: a format, mount, file write and unmount arrived as seven intercepted calls carrying 550 KB between them, roughly 79 KB per call against a 512 byte sector.</p>
+        </div>
+        <div class="phase-cost">0 requests</div>
+      </li>
+      <li class="phase">
+        <div class="phase-id">P4</div>
+        <div class="phase-body">
+          <h4>Dedup probe</h4>
+          <p>Skip any chunk whose object id is already in the locally held manifest of pushed objects. Prefer the local manifest over asking the server: reads are cheap, but round trips are not.</p>
+        </div>
+        <div class="phase-cost">0 requests</div>
+      </li>
+      <li class="phase">
+        <div class="phase-id">P5</div>
+        <div class="phase-body">
+          <h4>Upload, concurrently</h4>
+          <p><code>POST /git/blobs</code> per new object, base64 encoded, <strong>at concurrency 4 to 8</strong>. Serial upload wastes the round trip: throughput scales almost linearly to 16-way with no latency penalty. Governed to roughly 150 writes per minute sustained, for reasons in the next section.</p>
+        </div>
+        <div class="phase-cost hot">N requests</div>
+      </li>
+      <li class="phase">
+        <div class="phase-id">P6</div>
+        <div class="phase-body">
+          <h4>Commit</h4>
+          <p><code>POST /git/trees</code> carrying the chunk entries and the updated manifest, then <code>POST /git/commits</code> with the previous head as parent. Roughly 450 to 800 ms each, measured.</p>
+        </div>
+        <div class="phase-cost hot">2 requests</div>
+      </li>
+      <li class="phase">
+        <div class="phase-id">P7</div>
+        <div class="phase-body">
+          <h4>Publish</h4>
+          <p><code>PATCH /git/refs/heads/machine</code> with <code>force: false</code>. Confirmed: a stale parent is rejected with <code>422 Update is not a fast forward</code>, which gives a genuine compare and swap.</p>
+        </div>
+        <div class="phase-cost hot">1 request</div>
+      </li>
+      <li class="phase">
+        <div class="phase-id">P8</div>
+        <div class="phase-body">
+          <h4>Prune</h4>
+          <p>Mark the epoch synced, add its object ids to the local manifest, keep the chunk cache. Nothing is deleted from IndexedDB until a later boot proves the commit is reachable.</p>
+        </div>
+        <div class="phase-cost">0 requests</div>
+      </li>
+    </ol>
+
+    <h3>Concurrency</h3>
+    <p>One writer per machine ref, enforced at two levels. Within a device, the Web Locks API stops two tabs racing. Across devices, the compare and swap in P7 catches the race after the fact.</p>
+    <p>On a rejected ref update, fetch the winning commit's manifest and compare dirty sets. If the two epochs touch disjoint block ranges, rebase onto the new head and retry exactly once. If they overlap, stop and fork to <code>refs/heads/machine-&lt;timestamp&gt;</code>, then surface it to the user as a branch. Silently merging two divergent filesystem states corrupts the guest, so automatic merge of overlapping ranges is never correct.</p>
+
+    <h3>Boot</h3>
+    <p>Resolve the ref through the CDN, fetch the manifest blob, mount the base image with range requests, and hydrate the overlay index from the manifest. Overlay chunks are fetched lazily on first touch and cached in IndexedDB. Time to shell therefore depends on manifest size and hot block count, not on total image size.</p>
+    <p><strong>Read-your-writes fallback.</strong> When the CDN returns 404 for a chunk the manifest says exists, fall back to <code>GET /git/blobs/:sha</code> for that chunk, always with <code>Accept: application/vnd.github.raw</code>, rather than failing the boot. This costs primary quota, which is plentiful, and it covers both CDN propagation lag after a fresh commit and any environment where the CDN is unreachable. A boot must never fail because an optimisation was unavailable.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-label">Measured limits</div>
+  <div class="sec-body">
+    <h2>The points limit is the only one that is enforced</h2>
+
+    <div class="note rev">
+      <p><strong>Revised, and this was the largest error in the original note.</strong> It claimed the 500 per hour content-generating limit was the whole design constraint. Across five runs and roughly 1,400 writes, that limit never fired. Neither did the documented 80 per minute. The limit that does fire is the points system.</p>
+    </div>
+
+    <p>GitHub documents four limits that could plausibly bind. Only one does.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Limit</th><th>Documented</th><th>Observed</th><th>Binds</th></tr></thead>
+        <tbody>
+          <tr><td>Primary</td><td>5,000 / hour</td><td>decrements 1 per request, writes included</td><td><span class="tag tag-no">No</span></td></tr>
+          <tr><td>Content-generating</td><td>80 / minute</td><td>145 / min sustained passed cleanly</td><td><span class="tag tag-no">No</span></td></tr>
+          <tr><td>Content-generating</td><td>500 / hour</td><td>841 writes in one window, no refusal</td><td><span class="tag tag-no">No</span></td></tr>
+          <tr class="bind"><td>Points</td><td>900 / min, writes cost 5</td><td>trips at 541 / min after 40 s</td><td><span class="tag tag-bind">Binding</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>At 5 points per write the points limit implies a ceiling of <strong>180 writes per minute sustained</strong>, and every observation fits. The full envelope:</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>rate</th><th>sustained for</th><th>concurrency</th><th>points/min</th><th>result</th></tr></thead>
+        <tbody>
+          <tr><td>90 / min</td><td>67 s</td><td>1</td><td>450</td><td><span class="tag tag-ok">ok</span></td></tr>
+          <tr><td>142 / min</td><td>169 s</td><td>1</td><td>710</td><td><span class="tag tag-ok">ok</span></td></tr>
+          <tr><td>1,033 / min</td><td>0.9 s</td><td>8</td><td>burst</td><td><span class="tag tag-ok">ok</span></td></tr>
+          <tr><td>2,021 / min</td><td>0.5 s</td><td>16</td><td>burst</td><td><span class="tag tag-ok">ok</span></td></tr>
+          <tr class="bind"><td>541 / min</td><td>40 s</td><td>8</td><td>2,705</td><td><span class="tag tag-bind">403, retry-after 60</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Two details matter for the implementation. The service applies <strong>backpressure before refusal</strong>: sustained eight-way ran at 628 ms p50 against 386 ms for the same concurrency in short bursts, so rising latency is an early warning worth acting on. And recovery is fast, <code>retry-after: 60</code>, which is itself proof this is a per-minute limit rather than an exhausted hourly budget.</p>
+
+    <h3>The real cost model</h3>
+    <p>Concurrency scales almost linearly, from 134 writes per minute at one-way to 2,021 at sixteen-way, with per-request latency flat at roughly 400 ms throughout. That removes request latency as a constraint and replaces it with bandwidth:</p>
+
+    <p class="mono" style="background:var(--code-bg);padding:14px 16px;border-radius:4px;font-size:12.5px">sync time = max( ceil(N / C) &times; 400 ms , bytes &divide; 1.5 MB/s )</p>
+
+    <p>Setting the two terms equal gives a crossover that depends on concurrency: <code>chunk = bandwidth &times; roundtrip &divide; C</code>, so about 600 KB serially, 75 KB at eight-way, 37 KB at sixteen-way. Below the crossover you are request bound and concurrency helps. Above it you are bandwidth bound and concurrency buys nothing, because it is the same uplink either way.</p>
+
+    <p><strong>Concurrency does not raise the bandwidth ceiling, only reaches it.</strong> Sixteen 256 KB chunks at eight-way ran at 1.21 MB/s writing and 1.12 MB/s reading, against 1.56 MB/s for a single 4 MB blob with no concurrency at all. Eight-way turned a 20 second serial transfer into 3.3 seconds, a sixfold gain, and then stopped at the same ceiling a single large request already reaches. The model predicted 256 KB at eight-way would be bandwidth bound, and it was.</p>
+
+    <div class="note">
+      <p><strong>For the real workload none of this binds.</strong> A 76-chunk sync every five minutes averages 15 writes per minute, an order of magnitude under the 180 ceiling, and the burst itself completes in about two seconds at 16-way. The rate limit only appears in a benchmark. <strong>The forge is not rate-limited for this workload. It is storage-limited.</strong> That makes compaction the central problem of the design rather than a maintenance detail.</p>
+    </div>
+
+    <div class="calc">
+      <div class="calc-grid">
+        <div class="ctrl">
+          <div class="field">
+            <span class="fieldset-label">Commit shape</span>
+            <div class="radios">
+              <label><input type="radio" name="shape" value="exploded" checked><span>chunk-exploded</span></label>
+              <label><input type="radio" name="shape" value="pack"><span>delta pack</span></label>
+            </div>
+          </div>
+          <div class="field">
+            <label for="chunk">Chunk size</label>
+            <select id="chunk">
+              <option value="0.0625">64 KB</option>
+              <option value="0.25">256 KB</option>
+              <option value="1" selected>1 MB</option>
+              <option value="4">4 MB</option>
+            </select>
+          </div>
+          <div class="field">
+            <div class="rangerow">
+              <label for="dirty">Dirty data per sync</label>
+              <span class="rangeval" id="dirtyval">40 MB</span>
+            </div>
+            <input type="range" id="dirty" min="1" max="400" step="1" value="40">
+          </div>
+          <div class="field">
+            <label for="conc">Upload concurrency</label>
+            <select id="conc">
+              <option value="1">1, serial</option>
+              <option value="4">4</option>
+              <option value="8" selected>8</option>
+              <option value="16">16</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="interval">Sync interval</label>
+            <select id="interval">
+              <option value="1">every minute</option>
+              <option value="5" selected>every 5 minutes</option>
+              <option value="15">every 15 minutes</option>
+              <option value="60">hourly</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="readout">
+          <dl class="stats">
+            <div class="stat"><dt>Sync wall time</dt><dd id="o-time">0<span>s</span></dd></div>
+            <div class="stat"><dt>Bound by</dt><dd id="o-bound" style="font-size:15px">&ndash;</dd></div>
+            <div class="stat"><dt>Sustained rate</dt><dd id="o-rate">0<span>/min</span></dd></div>
+            <div class="stat"><dt>To 1 GB</dt><dd id="o-days">0<span>days</span></dd></div>
+          </dl>
+
+          <div class="meter">
+            <div class="meter-head">
+              <span>against the 180 per minute points ceiling</span>
+              <span id="o-pct">0%</span>
+            </div>
+            <div class="bar"><div class="bar-fill" id="o-bar"></div></div>
+          </div>
+
+          <p class="verdict" id="o-verdict"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-label">Failure modes</div>
+  <div class="sec-body">
+    <h2>What breaks, and the required response</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Signal</th><th>Cause</th><th>Response</th></tr></thead>
+        <tbody>
+          <tr><td>401</td><td>token expired or revoked</td><td>keep the epoch sealed, never drop writes, prompt re-auth, resume from P5</td></tr>
+          <tr><td>403 secondary</td><td>points ceiling exceeded</td><td>honour retry-after, measured at 60 s; halve concurrency; treat rising p50 as the early warning and back off before the refusal</td></tr>
+          <tr><td>422 on ref</td><td>non fast forward, CAS lost</td><td>compare dirty sets, rebase once if disjoint, otherwise fork to a branch</td></tr>
+          <tr><td>413 on blob</td><td>pack over 100 MB</td><td>split the pack, or drop to a smaller chunk size for this sync</td></tr>
+          <tr><td>404 from CDN</td><td>propagation lag, or CDN unreachable</td><td>fall back to the blobs API for that chunk; never fail a boot on it</td></tr>
+          <tr><td>repo near 1 GB</td><td>history growth</td><td>compaction is due, re-baseline before the next checkpoint</td></tr>
+          <tr><td>IndexedDB evicted</td><td>browser storage pressure</td><td>treat uncommitted epochs as lost, request persistent storage at first boot, always show last synced time</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The consistent rule across all seven: an unsynced epoch is the only irreplaceable state in the system, so every failure path either preserves it or tells the user plainly that it is gone.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-label">Compaction</div>
+  <div class="sec-body">
+    <h2>The binding constraint, and the only operation that relieves it</h2>
+    <p>Every blob pushed stays reachable through history, so an autosaving machine grows without bound. Neither commit shape avoids this; chunk-exploded merely slows it down through dedup. With rate limits shown not to bind for realistic workloads, this is the constraint that actually decides whether a machine can live in a repository indefinitely.</p>
+    <p>Re-baselining is the fix. Snapshot the whole disk into a parentless commit and move the ref to it, which makes every earlier object unreachable. This is the one place <code>force</code> belongs, because discarding history is the entire point of the operation.</p>
+
+    <h3>What a re-baseline actually costs</h3>
+
+    <p>Hashing every chunk of the 256 MB machine measured above:</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>measure</th><th>value</th></tr></thead>
+        <tbody>
+          <tr><td>chunks on disk</td><td>1,024</td></tr>
+          <tr><td>chunks that are entirely zero</td><td>990</td></tr>
+          <tr class="bind"><td>distinct blobs for the whole disk</td><td>7</td></tr>
+          <tr><td>naive snapshot</td><td>256 MB</td></tr>
+          <tr class="bind"><td>deduplicated snapshot</td><td>1.75 MB</td></tr>
+          <tr><td>read and hash the entire disk</td><td>9.8 s</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note rev">
+      <p><strong>Those figures only hold for a nearly empty disk.</strong> With 7.4 MB of real content written, the same snapshot grew to 39 blobs and 9.75 MB, and content deduplicated at 1.00x. Snapshot cost is approximately the size of the machine's actual content, so a populated 500 MB rootfs snapshots to roughly 540 MB.</p>
+    </div>
+
+    <p>That changes the scheduling answer materially. On a sparse machine a re-baseline costs about three or four incremental syncs and can run routinely. On a populated one, at roughly 512 KB per incremental sync against a snapshot of several hundred megabytes, compaction only pays for itself after something like a thousand edits. <strong>Compaction should be scheduled on the ratio of accumulated history to current content, not on a fixed interval and not on repository size alone.</strong></p>
+
+    <p>What survives unchanged is the bound compaction delivers. After it the repository holds one commit and the distinct blobs of the current disk, regardless of how many syncs preceded it, so restore cost becomes independent of machine age. That property is what makes the operation worth having even when it is expensive.</p>
+
+    <p><strong>The cost is reading, not writing.</strong> Uploading a snapshot is small because it deduplicates; reading the disk back to compute those hashes took 9.8 seconds at 256 MB and would take proportionally longer at 1 GB, since untouched chunks must be fetched from the streamed base. Compaction is a read-bound operation, which is the opposite of every other phase in this design.</p>
+
+    <div class="note open">
+      <p><strong>Same caveat as the scale section.</strong> 990 of 1,024 chunks were zero because the disk is blank apart from a fresh filesystem. A populated rootfs would have far more distinct content, the snapshot would be much larger, and the crossover against incremental history would move. The shape of the argument survives; these particular numbers do not.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-label">Private repos</div>
+  <div class="sec-body">
+    <h2>The write path is identical, the read path is not</h2>
+
+    <p>Measured against a private repository, the entire write half behaves exactly as it does on a public one: 149 writes per minute sustained with no refusal, a commit cycle at 10.7 seconds against 10.7 on public, compare and swap rejecting a stale parent with 422, and every locally computed object id matching the server. Nothing in the sync protocol needs to know whether the repository is private.</p>
+
+    <p>The read path does change, and for a specific reason. <code>Authorization</code> is not a CORS-safelisted header, so a browser must preflight before sending it, and <code>raw.githubusercontent.com</code> answers that preflight with <strong>403 and no <code>Access-Control-Allow-Headers</code></strong>. The request never leaves the browser. Without the header the same host returns 404, because the content is private. The old <code>?token=</code> query parameter, which would have avoided the preflight entirely, no longer exists. jsDelivr serves public repositories only.</p>
+
+    <div class="note rev">
+      <p><strong>On a private repository there is no CDN read path from a browser.</strong> Every read goes through <code>GET /git/blobs/:sha</code> against the 5,000 per hour primary budget. Measured at 1.12 MB/s at eight-way concurrency, which is the same ceiling the CDN path would hit, since both share the uplink.</p>
+    </div>
+
+    <p><strong>Always request chunks with <code>Accept: application/vnd.github.raw</code>.</strong> The default media type returns base64 inside JSON: a 65,536 byte blob comes back as 90,615 bytes on the wire, an inflation of 1.383. The raw media type returns exactly 65,536 bytes, matching the declared blob size. Measured head to head in one run at eight-way concurrency: 1.47 MB/s with the default media type against <strong>1.72 MB/s raw</strong>, a 17 percent gain, with writes in the same run at 1.36 MB/s. The gain is smaller than the 38 percent payload reduction because per-request latency, roughly 1,000 ms for a 256 KB read, dominates transfer time at this chunk size. It is still one header for 17 percent, and it restores the expected asymmetry: with the raw type reads are faster than writes, where with the default type they were slower.</p>
+
+    <p>Three consequences follow. Ranged reads disappear, because the blobs API returns whole objects, so chunk size becomes the read granularity and a 4 KB guest read pulls an entire chunk. The base image cannot be a CDN-streamed release asset, so split it into blobs under 100 MB held in git and read them through the same path as everything else, which removes a special case rather than adding one. And GitHub Pages cannot publish from a private repository on a free plan, so host the application from a public repository and keep machine state in a private one, which is the right separation in any case.</p>
+
+    <p><strong>Chunk size is squeezed from both sides here.</strong> Large chunks amplify reads, since a small random read pulls the whole chunk with no way to fetch a fragment. Small chunks multiply requests against the hourly primary budget: fully materialising 1 GB costs 256 requests at 4 MB, 1,024 at 1 MB, and 4,096 at 256 KB, the last being 82 percent of the hourly allowance. Somewhere around 512 KB to 1 MB balances the two, against 4 MB for a public repository where ranged reads make amplification a non-issue.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-label">Portability</div>
+  <div class="sec-body">
+    <h2>One operation, not five</h2>
+
+    <div class="note rev">
+      <p><strong>Corrected.</strong> This section previously claimed that GitHub, GitLab and Forgejo all provide <code>putBlob</code>, <code>putTree</code>, <code>putCommit</code> and <code>casRef</code> with different spellings. They do not. The low-level git object write API is GitHub-specific.</p>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>host</th><th>git object writes</th><th>commit API</th><th>requests per sync</th></tr></thead>
+        <tbody>
+          <tr><td>GitHub</td><td>blobs, trees, commits, refs</td><td>none</td><td>N + 3</td></tr>
+          <tr class="bind"><td>Forgejo</td><td>read only</td><td><code>POST /contents</code> with <code>files[]</code></td><td>1</td></tr>
+          <tr class="bind"><td>GitLab</td><td>read only</td><td><code>POST /repository/commits</code> with <code>actions[]</code></td><td>1</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The portable abstraction is therefore a single operation, <code>commit(files) &rarr; ref</code>, which GitHub implements the long way round and the other two implement directly. Both Forgejo's <code>files[]</code> and GitLab's <code>actions[]</code> accept base64 content and produce one commit, so a sync that costs eleven requests on GitHub costs one on either of them. <strong>The host this design was built on has the most expensive API for this workload.</strong></p>
+
+    <p>Two caveats sit behind that. The batch endpoints carry every chunk inline, so a sync that moves 1.8 MB of content becomes a single request body of roughly 2.4 MB once base64 encoded, and each host will have a limit that GitHub's spread-out approach never meets. And the compare-and-swap in P7 does not obviously port: GitHub's <code>force: false</code> gives fast-forward-only semantics on the ref, while Forgejo offers per-file <code>sha</code> checks and GitLab offers <code>start_sha</code>, neither of which is the same guarantee. Concurrency safety needs re-establishing per host rather than assumed.</p>
+
+    <p>All three answer cross-origin requests with <code>Access-Control-Allow-Origin: *</code>, so the browser side ports without change. Rate limiting does not: GitLab advertises its limits in response headers even unauthenticated, at 500 per minute for anonymous API traffic, which is a different shape entirely from GitHub's points system.</p>
+    <p>Two reasons this is not premature abstraction. First, GitHub's acceptable use policy states plainly that it is not a content delivery network or a general purpose file host, so a design that leans hard on the free tier is one policy enforcement away from breaking. Second, running the same protocol against a self-hosted instance converts a vendor specific trick into a property of git hosts, which is the difference between a blog post and a paper. The measured envelope above is one account on one network, and the points ceiling in particular deserves replication elsewhere.</p>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-label">Open</div>
+  <div class="sec-body">
+    <h2>What is still unmeasured</h2>
+    <div class="note open">
+      <p><strong>CDN propagation window.</strong> The gap between committing through the API and the content becoming readable through <code>raw.githubusercontent.com</code> is unknown, because the test machine had a local block on cross-origin CDN requests. The read-your-writes fallback in P7 covers it either way, but the window's size decides how often that fallback fires.</p>
+    </div>
+    <div class="note open">
+      <p><strong>Replication.</strong> Every number here comes from one account, one network, one afternoon. The points ceiling especially may vary with account age or reputation.</p>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="sec-label">Gate</div>
+  <div class="sec-body">
+    <h2>Where this stands</h2>
+
+    <p>The storage half is measured. Blobs, trees, commits, and compare-and-swap ref updates all work from a plain page with no server, at known cost, with locally computed object ids matching the server on every one of 141 blobs. The read path is confirmed at the protocol level, with cross-origin ranged reads on public repositories and an API-only path on private ones.</p>
+
+    <p><strong>The dirty set is reachable, and capture is lossless.</strong> This was the assumption every phase of the protocol rested on, and it is now tested rather than assumed. In a v86 guest with a blank 16 MB disk on the IDE primary master, wrapping <code>buffer.set</code> on the constructed device captured exactly one write for one <code>dd</code> of one sector, and zero writes during boot. Replaying that captured set onto a blank buffer reproduced the live disk with <strong>zero differing bytes across all 16 MB</strong>. Not merely the marker in the right place: the entire device reconstructed identically.</p>
+
+    <p>Two details make the result worth trusting. Boot captured nothing, so the wrapper is not counting unrelated traffic. And one guest write produced exactly one intercepted call, so the IDE path funnels through a single choke point with no amplification at the capture layer.</p>
+
+    <p><strong>It also survives a real workload and a real reboot.</strong> Formatting the disk with <code>mke2fs</code>, mounting it, writing a file and unmounting produced seven intercepted calls across stages that repeatedly rewrite the same structures, since ext2 lays down a superblock, a backup at block 8193, and rewrites both on unmount. Replay in capture order still reproduced the disk with zero differing bytes, so last-writer-wins is correct rather than merely plausible.</p>
+
+    <p>Then the strong form: a <strong>second machine was booted from nothing but the replayed write set</strong>, mounted the filesystem, and read back the file the first machine had written. That rules out the remaining worry that capture might be quietly incomplete, because a filesystem missing metadata does not mount at all. Byte equality could in principle be luck; a successful mount cannot.</p>
+
+    <p><strong>It holds on the production device stack too.</strong> Repeating the whole sequence with the disk streamed over HTTP, so that v86 constructs an async chunked buffer rather than an in-memory one, needed no separate hook: the same interception point captured the same seven calls. Verification there cannot compare buffers, since that buffer's <code>get_buffer</code> returns nothing, so it cross-checks against the device's own record instead. Of the <strong>2,164 blocks the device itself flagged as written, zero failed to reproduce</strong> from the replayed set, and a second machine again booted from it and read the file back. The reference for that check comes from the device rather than from the interceptor, which makes it the stronger of the two.</p>
+
+    <p>One detail the tests share by construction and the implementation must not: replay here starts from zeros because the base image is blank. In the real system replay is <strong>base plus captured writes</strong>, never blank plus captured writes.</p>
+
+    <h3>The full loop</h3>
+
+    <p><strong>The whole thing runs.</strong> A guest booted with its base disk streamed over HTTP, formatted it, wrote a file and unmounted. The captured set was coalesced, hashed locally, uploaded as git blobs, committed with a manifest, and published on a machine ref. A second machine was then rebuilt from that commit alone, resolving the ref, reading the manifest, fetching the chunks, reconstructing the disk, booting, and reading the file back.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>stage</th><th>result</th></tr></thead>
+        <tbody>
+          <tr><td>captured</td><td>7 writes, 550 KB, zero during boot</td></tr>
+          <tr><td>coalesced</td><td>5 dirty chunks of 256 KB, at indices 0 to 2 and 32 to 33</td></tr>
+          <tr><td>uploaded</td><td>5 blobs, 1.25 MB</td></tr>
+          <tr class="bind"><td>sync cost</td><td><strong>9 requests, 5.1 seconds</strong></td></tr>
+          <tr><td>restore</td><td>manifest plus 5 chunks, rebuilt, booted, marker read back</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Those chunk indices are ext2's own layout showing through: 0 to 2 covers the superblock, group descriptors, bitmaps and first inode table, and 32 to 33 covers the backup superblock at block 8193. The coalescing step is tracking real filesystem structure rather than smearing across the disk.</p>
+
+    <p><strong>A sync costs nine requests and five seconds.</strong> Against a ceiling of 180 writes per minute, a machine could sync roughly every four seconds indefinitely before the rate limit noticed. The design is not close to any limit it was originally written to respect.</p>
+
+    <h3>Incremental syncs</h3>
+
+    <p>Six successive syncs of one machine, appending a line to a file between each:</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>sync</th><th>dirty chunks</th><th>uploaded</th><th>content reused</th><th>tree references</th><th>requests</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>5</td><td>5</td><td>0</td><td>6</td><td>9</td></tr>
+          <tr class="bind"><td>2 to 6</td><td>2</td><td>2</td><td>0</td><td>6</td><td>6</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>Tree references stay flat while uploads fall.</strong> Every commit after the first references all five chunks and uploads only the two that changed, so three chunks ride along for free. The consequence matters more than the saving: <strong>restore cost is constant in the number of syncs</strong>. Sync 6 references six objects, exactly as sync 1 did, so rebuilding after a hundred syncs would still fetch five chunks, where a delta-pack design would have a hundred packs to replay. This, rather than request economy, is the real argument for chunk-exploded commits.</p>
+
+    <div class="note rev">
+      <p><strong>Content-level dedup contributed nothing.</strong> The reused column was zero in all six syncs. Every dirty chunk had genuinely changed, because appending a line rewrites inode timestamps as well as the data block. The saving above is incremental sync, not deduplication, and reporting them as one number would overstate the result.</p>
+    </div>
+
+    <p><strong>The cost is storage, and it is severe.</strong> Each 17 byte append produced 512 KB of new git objects, and six edits left roughly 3.75 MB of blobs behind for about 100 bytes of user content. That adds a third axis to chunk sizing: alongside transfer efficiency and write amplification there is now repo growth per edit, which pushes toward smaller chunks than either of the other two would choose alone.</p>
+
+    <h3>Scale</h3>
+
+    <p>The same sequence on a 256 MB streamed disk, sixteen times larger:</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>measure</th><th>16 MB disk</th><th>256 MB disk</th></tr></thead>
+        <tbody>
+          <tr><td>chunks on disk</td><td>64</td><td>1,024</td></tr>
+          <tr><td>writes captured</td><td>7</td><td>36</td></tr>
+          <tr><td>dirty bytes</td><td>550 KB</td><td>8.2 MB</td></tr>
+          <tr><td>dirty chunks</td><td>5</td><td>65</td></tr>
+          <tr class="bind"><td>distinct blobs</td><td>5</td><td>7</td></tr>
+          <tr class="bind"><td>uploaded</td><td>1.25 MB</td><td>1.8 MB</td></tr>
+          <tr><td>requests</td><td>9</td><td>11</td></tr>
+          <tr><td>manifest</td><td>tiny</td><td>3.3 KB</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>Sixteen times the disk costs 1.4 times the upload.</strong> Of the 65 dirty chunks, 31 are entirely zeros and the remainder collapse into repeated patterns, so they reduce to seven distinct blobs. A naive upload would move 16.3 MB; the actual figure is 1.8 MB. The cost of putting a freshly formatted machine into a repository tracks the volume of distinct content, not the size of the disk.</p>
+
+    <div class="note rev">
+      <p><strong>This corrects the previous section.</strong> Content dedup contributed nothing at 16 MB and contributes roughly ninefold at 256 MB. Its value scales with disk size, because a larger filesystem carries proportionally more empty and repeated metadata. The negative result above is real but local, and generalising it would have been wrong.</p>
+    </div>
+
+    <p>Two supporting figures. Hashing all 65 chunks took 0.1 seconds, about 2 ms each, so the client side of a sync is free at this scale. The manifest costs roughly 51 bytes per chunk, so a 1 GB disk would carry about a 200 KB manifest, still comfortably a single blob. Boot took 5.7 seconds and <code>mke2fs</code> 2.3 seconds, the latter only because <code>fixed_chunk_size</code> enables read caching on the streamed buffer; without it every unloaded block read becomes a network round trip.</p>
+
+    <h3>The same disk with real content on it</h3>
+
+    <p>Writing 7.4 MB of genuine file content onto that disk, by copying the CD-ROM image into the filesystem:</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>measure</th><th>blank disk</th><th>with 7.4 MB of content</th></tr></thead>
+        <tbody>
+          <tr><td>dirty chunks</td><td>65</td><td>36</td></tr>
+          <tr class="bind"><td>distinct blobs</td><td>7</td><td>36</td></tr>
+          <tr class="bind"><td>dedup ratio</td><td>9.3x</td><td>1.00x</td></tr>
+          <tr><td>full snapshot</td><td>7 blobs, 1.75 MB</td><td>39 blobs, 9.75 MB</td></tr>
+          <tr><td>disk occupied</td><td>3.3 percent</td><td>6.3 percent</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="note rev">
+      <p><strong>This retracts the two paragraphs above, and part of the compaction section.</strong> Real content deduplicates at 1.00x, which is to say not at all: every chunk of genuine file data hashed uniquely. The ninefold incremental dedup and the hundredfold snapshot dedup measured on the blank disk were artifacts of empty space, not properties of the design.</p>
+    </div>
+
+    <p><strong>Snapshot cost tracks content, not disk size.</strong> Adding 7.4 MB of content grew the full snapshot by 8 MB, a ratio of 1.08. A populated 500 MB rootfs would therefore snapshot to roughly 540 MB rather than the 1.75 MB a blank disk of that size would suggest. Sparse machines are cheap to store because they are mostly nothing; full machines cost what they contain.</p>
+
+    <p>One finding runs the other way. <strong>Alignment amplification depends on the write pattern.</strong> Scattered filesystem metadata writes cost 2.3 times their payload, but this sequential bulk write cost 1.22 times, because sequential writes fill whole chunks instead of touching the edges of many. Bulk data is cheaper per byte than small scattered edits, which is the opposite of the intuition the earlier scattered-write measurement encouraged.</p>
+
+    <h3>A full disk</h3>
+
+    <p>Filling the same 256 MB disk to 94 percent with distinct data completes the curve:</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>occupancy</th><th>distinct blobs</th><th>dedup</th><th>snapshot</th></tr></thead>
+        <tbody>
+          <tr><td>3.3 percent</td><td>7</td><td>146x</td><td>1.75 MB</td></tr>
+          <tr><td>6.3 percent</td><td>39</td><td>26x</td><td>9.75 MB</td></tr>
+          <tr class="bind"><td>94 percent</td><td>941</td><td>1.09x</td><td>235 MB</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>Deduplication is exactly the reciprocal of occupancy.</strong> At 94 percent full there were 84 zero chunks out of 1,024, which is 8.2 percent, and one divided by 0.918 is 1.089 against a measured 1.09. Every duplicate chunk was free space. Content deduplication is not weak, it is absent, and the earlier ratios were a precise measurement of emptiness. Snapshot cost is content multiplied by 1.07, the surplus being chunk alignment.</p>
+
+    <div class="note">
+      <p><strong>Compaction gets faster as the machine fills.</strong> Reading and hashing all 1,024 chunks took 1.1 seconds at 94 percent occupancy against 9.8 seconds when the disk was nearly empty, because written chunks are already in the local block cache while unwritten ones must be fetched from the streamed base. The read cost of compaction falls as the machine gets fuller, which is the opposite of the upload cost.</p>
+    </div>
+
+    <div class="note rev">
+      <p><strong>And here a rate limit finally binds.</strong> Compacting this machine means uploading 941 blobs plus a manifest, tree, commit and ref: 945 content-generating requests. At the enforced ceiling of 180 writes per minute that is 5.3 minutes, against 2.8 minutes of pure bandwidth, so the operation is rate-limit bound rather than bandwidth bound. Projected to 1 GB it is roughly 20 minutes. This is the only workload measured here where the limit matters, and it contradicts the claim elsewhere in this note that the forge is storage limited rather than rate limited. That claim holds for ordinary syncing and fails for compaction of a populated machine.</p>
+    </div>
+
+    <p>That also promotes the portability result from a curiosity to something structural. The same compaction is a single batch commit on Forgejo or GitLab, where GitHub needs 945 separate requests. For machines of realistic size, GitHub's per-object API is not merely more expensive, it is the difference between an operation that takes seconds and one that takes tens of minutes.</p>
+  </div>
+</section>
+
+<footer class="foot">
+  <h2>References</h2>
+  <ul class="srcs">
+    <li><a href="https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api">REST API rate limits</a></li>
+    <li><a href="https://cheerpx.io/docs/guides/File-System-support">CheerpX devices and filesystems</a></li>
+    <li><a href="https://github.com/leaningtech/webvm">leaningtech/webvm</a></li>
+    <li><a href="https://github.com/copy/v86">copy/v86</a></li>
+    <li><a href="https://docs.github.com/en/rest/git/blobs">Git blobs endpoint</a></li>
+    <li><a href="https://docs.github.com/en/repositories/creating-and-managing-repositories/repository-limits">Repository limits</a></li>
+    <li><a href="https://docs.github.com/en/site-policy/acceptable-use-policies/github-acceptable-use-policies">Acceptable use policies</a></li>
+    <li><a href="https://github.com/phiresky/sql.js-httpvfs">phiresky/sql.js-httpvfs, range request VFS</a></li>
+    <li><a href="https://bup.github.io/">bup, git packfiles as a backup store</a></li>
+  </ul>
+</footer>
+
+</div>
+
+<script>
+(function () {
+  var CEILING = 180;      // writes per minute, from 900 points at 5 points per write
+  var ROUNDTRIP = 0.4;    // seconds, measured p50 for a small write
+  var BANDWIDTH = 1.5;    // MB per second, measured single stream
+
+  var chunkEl = document.getElementById('chunk');
+  var dirtyEl = document.getElementById('dirty');
+  var concEl = document.getElementById('conc');
+  var intervalEl = document.getElementById('interval');
+  var shapeEls = document.querySelectorAll('input[name="shape"]');
+  var out = {
+    time: document.getElementById('o-time'),
+    bound: document.getElementById('o-bound'),
+    rate: document.getElementById('o-rate'),
+    days: document.getElementById('o-days'),
+    pct: document.getElementById('o-pct'),
+    bar: document.getElementById('o-bar'),
+    verdict: document.getElementById('o-verdict'),
+    dirtyval: document.getElementById('dirtyval')
+  };
+
+  function shape() {
+    for (var i = 0; i < shapeEls.length; i++) if (shapeEls[i].checked) return shapeEls[i].value;
+    return 'exploded';
+  }
+
+  function update() {
+    var chunkMB = parseFloat(chunkEl.value);
+    var dirtyMB = parseFloat(dirtyEl.value);
+    var C = parseFloat(concEl.value);
+    var intMin = parseFloat(intervalEl.value);
+    var sh = shape();
+
+    var blobs = sh === 'exploded' ? Math.max(1, Math.ceil(dirtyMB / chunkMB)) : 1;
+    var requests = blobs + 3;
+
+    var latencyTime = Math.ceil(blobs / C) * ROUNDTRIP + 3 * ROUNDTRIP;
+    var bandwidthTime = dirtyMB / BANDWIDTH;
+    var syncTime = Math.max(latencyTime, bandwidthTime);
+    var bound = bandwidthTime >= latencyTime ? 'bandwidth' : 'round trips';
+
+    var ratePerMin = requests / intMin;
+    var pct = ratePerMin / CEILING * 100;
+    var growthPerDay = dirtyMB * (60 / intMin) * 24;
+    var days = growthPerDay > 0 ? 1024 / growthPerDay : Infinity;
+
+    out.dirtyval.textContent = dirtyMB + ' MB';
+    out.time.innerHTML = (syncTime < 10 ? syncTime.toFixed(1) : Math.round(syncTime)) + '<span>s</span>';
+    out.bound.textContent = bound;
+    out.rate.innerHTML = (ratePerMin < 10 ? ratePerMin.toFixed(1) : Math.round(ratePerMin)) + '<span>/min</span>';
+    out.days.innerHTML = (days >= 1000 ? '999+' : days < 1 ? days.toFixed(1) : Math.round(days)) + '<span>days</span>';
+    out.pct.textContent = (pct < 1 ? pct.toFixed(1) : Math.round(pct)) + '% of ' + CEILING;
+
+    var cls = pct > 100 ? 'over' : pct > 60 ? 'tight' : '';
+    out.bar.className = 'bar-fill ' + cls;
+    out.bar.style.width = Math.min(100, pct) + '%';
+
+    var msgs = [];
+    if (pct > 100) {
+      msgs.push('Above the points ceiling. Expect a 403 with retry-after 60 once the rolling window fills.');
+    } else if (pct > 60) {
+      msgs.push('Approaching the points ceiling, with little room for a burst of activity.');
+    } else {
+      msgs.push('Comfortably under the points ceiling.');
+    }
+    msgs.push('A sync takes about ' + (syncTime < 10 ? syncTime.toFixed(1) : Math.round(syncTime)) +
+      's, bound by ' + bound + '.');
+    if (bound === 'bandwidth' && C > 1) {
+      msgs.push('Raising concurrency will not help here: the uplink is the limit, not the round trip.');
+    }
+    if (sh === 'pack' && dirtyMB > 70) {
+      msgs.push('A ' + dirtyMB + ' MB pack is close to the 100 MB blob ceiling once base64 inflation is counted. Split it.');
+    }
+    if (days < 30) {
+      msgs.push('Worst case with no dedup hits, this fills the 1 GB soft limit in about ' +
+        (days < 1 ? days.toFixed(1) : Math.round(days)) + ' days, so compaction is the real constraint.');
+    }
+
+    out.verdict.className = 'verdict ' + cls;
+    out.verdict.textContent = msgs.join(' ');
+  }
+
+  chunkEl.addEventListener('input', update);
+  dirtyEl.addEventListener('input', update);
+  concEl.addEventListener('input', update);
+  intervalEl.addEventListener('input', update);
+  for (var i = 0; i < shapeEls.length; i++) shapeEls[i].addEventListener('change', update);
+  update();
+})();
+</script>
+</body>
+</html>

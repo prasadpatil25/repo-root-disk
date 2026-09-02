@@ -1,0 +1,128 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Repo as Root Disk</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="A browser-native Linux VM whose disk is committed into a git repository.">
+<style>
+  :root {
+    --ink: #16181d;
+    --muted: #5a6072;
+    --rule: #dfe2ea;
+    --bg: #fbfbfd;
+    --card: #ffffff;
+    --accent: #2f5d8a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #e7e9ee; --muted: #99a0b2; --rule: #2b2f3a;
+      --bg: #14161b; --card: #1a1d24; --accent: #7fb2e0;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 4rem 1.5rem 5rem;
+    background: var(--bg); color: var(--ink);
+    font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 46rem; margin: 0 auto; }
+  h1 { font-size: 2rem; line-height: 1.15; margin: 0 0 .4rem; letter-spacing: -.02em; }
+  .sub { color: var(--muted); margin: 0 0 2.5rem; font-size: 1.05rem; }
+  p { margin: 0 0 1.1rem; }
+  a { color: var(--accent); }
+  .links { display: flex; flex-wrap: wrap; gap: .75rem; margin: 2rem 0 2.5rem; }
+  .links a {
+    display: inline-block; padding: .6rem 1.1rem; border: 1px solid var(--rule);
+    border-radius: 7px; background: var(--card); text-decoration: none;
+    color: var(--ink); font-weight: 500;
+  }
+  .links a.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .links a:hover { border-color: var(--accent); }
+  h2 { font-size: 1.05rem; margin: 2.2rem 0 .6rem; letter-spacing: .01em; }
+  ul { margin: 0 0 1.1rem; padding-left: 1.2rem; }
+  li { margin-bottom: .35rem; }
+  code {
+    font: .89em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--card); border: 1px solid var(--rule);
+    border-radius: 4px; padding: .08em .35em;
+  }
+  .note {
+    border-left: 3px solid var(--rule); padding: .1rem 0 .1rem 1rem;
+    color: var(--muted); font-size: .95rem; margin: 1.5rem 0;
+  }
+  footer {
+    margin-top: 3rem; padding-top: 1.2rem; border-top: 1px solid var(--rule);
+    color: var(--muted); font-size: .9rem;
+  }
+</style>
+
+<main>
+  <h1>Repo as Root Disk</h1>
+  <p class="sub">A browser-native Linux VM whose disk is committed into a git repository.</p>
+
+  <p>
+    Browser-native virtual machines all treat remote storage as read only: a disk
+    image is streamed in, writes land in browser-local storage, and nothing is ever
+    written back. Machine state is therefore trapped in one browser profile on one
+    device, and clearing site data destroys it.
+  </p>
+  <p>
+    This closes that loop. The guest's dirty block set is committed into an
+    ordinary code hosting service as git objects, so a machine's state becomes a
+    commit and its history becomes a git history. A machine can be rebuilt on any
+    device from a reference alone. There is no server: a static page, your
+    repository, and your browser.
+  </p>
+
+  <div class="links">
+    <a class="primary" href="app/">Boot a machine</a>
+<<<<<<< HEAD
+    <a href="https://github.com/prasadpatil25/repo-root-disk">Source on GitHub</a>
+  </div>
+
+  <p>
+    The paper describing this work is under review and is not published here yet.
+    What this repository holds is the system it describes, the measurement
+    harnesses behind its numbers, and the captured trace they run against.
+  </p>
+
+=======
+    <a href="paper/repo-as-root-disk.pdf">Read the paper (PDF)</a>
+    <a href="https://github.com/prasadpatil25/repo-root-disk">Source on GitHub</a>
+  </div>
+
+>>>>>>> 9eaf8bd8debe9e775ff2430d2d36c185b6683e2d
+  <h2>What you will need</h2>
+  <p>
+    A fine-grained access token scoped to a single repository you do not mind
+    filling with machine state. The token stays in your browser and is sent only
+    to the host's API; nothing else receives it, because there is nothing else.
+  </p>
+
+  <div class="note">
+    This page is the artifact for a research paper. The measurement harnesses in
+    the repository write real commits and consume real rate limit, so read the
+    README before running them.
+  </div>
+
+  <h2>What is measured</h2>
+  <ul>
+    <li>Restore cost is the live set plus three requests, and does not grow with a machine's age.</li>
+    <li>Deduplication is exactly the reciprocal of disk occupancy, so it is worth nothing on a full disk.</li>
+    <li>The published rate limits are not the enforced ones.</li>
+    <li>The low-level object API this is built on exists on one of three hosts surveyed; against a batch-commit host the same sync costs twenty times fewer requests and thirteen times less time.</li>
+  </ul>
+
+  <h2>Reproducing it</h2>
+  <p>
+    Three of the paper's central claims need no credentials at all:
+    <code>node src/analysis/restore-scaling.mjs</code>,
+    <code>node src/analysis/report.mjs traces/mke2fs-256mb.json</code>,
+    and the 618 tests. The README maps each claim to the command that produces it.
+  </p>
+
+  <footer>
+    MIT licensed. The emulator is <a href="https://github.com/copy/v86">v86</a>
+    (BSD-2-Clause), unmodified; redistributed third-party material is listed in
+    NOTICE.
+  </footer>
+</main>

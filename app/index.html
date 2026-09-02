@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Repo as Root Disk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root {
+  --bg: #EFF2F1; --surface: #FBFCFC; --surface-2: #E6EBE9;
+  --ink: #131C1A; --ink-2: #4A5754; --ink-3: #6E7C78;
+  --rule: #D1D9D6; --rule-soft: #E1E7E5;
+  --accent: #14685A; --accent-soft: #DBEAE5;
+  --warn: #8A6318; --warn-soft: #F0E6CE;
+  --crit: #8E4230; --crit-soft: #F2DDD7;
+  --code-bg: #E8EDEB;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D1412; --surface: #141D1A; --surface-2: #1A2521;
+    --ink: #E1E9E6; --ink-2: #A2B0AC; --ink-3: #7E8C88;
+    --rule: #263330; --rule-soft: #1E2A27;
+    --accent: #55C4A6; --accent-soft: #16322B;
+    --warn: #D6A751; --warn-soft: #2C2617;
+    --crit: #DD8A72; --crit-soft: #32201B;
+    --code-bg: #18231F;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D1412; --surface: #141D1A; --surface-2: #1A2521;
+  --ink: #E1E9E6; --ink-2: #A2B0AC; --ink-3: #7E8C88;
+  --rule: #263330; --rule-soft: #1E2A27;
+  --accent: #55C4A6; --accent-soft: #16322B;
+  --warn: #D6A751; --warn-soft: #2C2617;
+  --crit: #DD8A72; --crit-soft: #32201B;
+  --code-bg: #18231F;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 0 22px 80px; background: var(--bg); color: var(--ink);
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px; line-height: 1.55; -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1160px; margin: 0 auto; }
+h1 {
+  font-family: Archivo, "Helvetica Neue", Arial, sans-serif; font-weight: 700;
+  font-size: clamp(28px, 4vw, 40px); letter-spacing: -.026em; margin: 0 0 10px; line-height: 1.04;
+}
+h2 { font-family: Archivo, Arial, sans-serif; font-weight: 600; font-size: 15px; margin: 0 0 4px; }
+.eyebrow {
+  font-size: 10.5px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--accent); margin: 0 0 16px;
+}
+header.top { padding: 46px 0 22px; border-bottom: 1px solid var(--rule); }
+.lede { color: var(--ink-2); max-width: 84ch; margin: 0 0 14px; }
+.danger {
+  background: var(--crit-soft); color: var(--crit); border-left: 2px solid var(--crit);
+  padding: 11px 15px; border-radius: 0 4px 4px 0; max-width: 86ch;
+}
+section.panel {
+  background: var(--surface); border: 1px solid var(--rule); border-radius: 5px;
+  padding: 19px; margin: 18px 0;
+}
+.panel > header { margin-bottom: 13px; }
+.panel > header p { margin: 0; color: var(--ink-3); font-size: 12px; max-width: 88ch; }
+.row { display: flex; flex-wrap: wrap; gap: 11px; align-items: flex-end; }
+.f { display: flex; flex-direction: column; gap: 6px; }
+.f label {
+  font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-3); font-weight: 500;
+}
+button {
+  font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer;
+  background: var(--accent); color: var(--bg); border: 1px solid var(--accent);
+  border-radius: 4px; padding: 8px 15px;
+}
+button.ghost { background: transparent; color: var(--accent); }
+button:disabled { opacity: .38; cursor: not-allowed; }
+button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+input, select {
+  font-family: inherit; font-size: 12.5px; color: var(--ink); background: var(--bg);
+  border: 1px solid var(--rule); border-radius: 4px; padding: 8px 10px;
+}
+input[type="text"], input[type="password"] { min-width: 210px; }
+.status { margin-top: 12px; font-size: 12px; padding: 10px 13px; border-radius: 4px; line-height: 1.5; }
+.status.idle { background: var(--surface-2); color: var(--ink-3); }
+.status.ok { background: var(--accent-soft); color: var(--accent); }
+.status.bad { background: var(--crit-soft); color: var(--crit); }
+
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 11px; }
+.step { border: 1px solid var(--rule); border-radius: 4px; padding: 11px 13px; background: var(--bg); }
+.step .n { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+.step .s { font-family: Archivo, Arial, sans-serif; font-size: 14px; font-weight: 600; margin-top: 3px; }
+.step.on { border-color: var(--accent); background: var(--accent-soft); }
+.step.on .s { color: var(--accent); }
+.step.bad { border-color: var(--crit); background: var(--crit-soft); }
+.step.bad .s { color: var(--crit); }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 15px; margin-top: 15px; }
+.stat dt { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 4px; }
+.stat dd {
+  margin: 0; font-family: Archivo, Arial, sans-serif; font-size: 21px; font-weight: 600;
+  letter-spacing: -.02em; font-variant-numeric: tabular-nums;
+}
+.stat dd span { font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 400; color: var(--ink-3); }
+.stat .note { font-size: 10.5px; color: var(--ink-3); margin-top: 2px; }
+
+.tablewrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 5px; margin-top: 13px; }
+table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+thead th {
+  background: var(--surface); text-align: right; font-weight: 500; font-size: 9.5px;
+  letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3);
+  padding: 9px 12px; border-bottom: 1px solid var(--rule);
+}
+thead th:first-child, tbody td:first-child { text-align: left; }
+tbody td { padding: 7px 12px; border-bottom: 1px solid var(--rule-soft); color: var(--ink-2); text-align: right; }
+tbody tr:last-child td { border-bottom: none; }
+tbody td.hi { color: var(--accent); font-weight: 500; }
+.empty { padding: 20px; text-align: center; color: var(--ink-3); }
+
+pre.term, div.log {
+  background: var(--code-bg); border: 1px solid var(--rule); border-radius: 4px;
+  padding: 11px 13px; margin: 0; overflow-y: auto; font-size: 12px; line-height: 1.45;
+  color: var(--ink-2); white-space: pre-wrap;
+}
+pre.term { height: 210px; word-break: break-all; }
+/* One node per line, so a busy boot re-renders only the line being written.
+   An empty line still has to occupy one, which a collapsed div would not. */
+pre.term .ln { min-height: 1.45em; }
+pre.term { outline: none; cursor: text; }
+pre.term:focus { border-color: var(--accent); }
+/* A block cursor, the shape a tty cursor has. It only shows while focused,
+   because a terminal that is not taking input should not claim to be. */
+.cur { background: var(--ink-3); color: var(--code-bg); }
+pre.term:focus .cur { background: var(--accent); color: var(--bg); }
+@media (prefers-reduced-motion: no-preference) {
+  pre.term:focus .cur { animation: blink 1.1s step-end infinite; }
+}
+@keyframes blink { 50% { background: transparent; color: inherit; } }
+.hint { font-size: 11.5px; color: var(--ink-3); margin: 11px 0 0; max-width: 88ch; }
+.hint code {
+  background: var(--code-bg); padding: 1px 5px; border-radius: 3px; font-size: 11px;
+}
+.mountstate {
+  font-size: 11px; color: var(--ink-3); align-self: center;
+  padding: 5px 10px; border-radius: 3px; background: var(--surface-2);
+}
+.mountstate.on { background: var(--accent-soft); color: var(--accent); }
+/* Terminal colours, chosen to stay legible on both grounds rather than being
+   the raw ANSI palette, which is unreadable on a light background. */
+.t.bold { font-weight: 600; }
+.t.k { color: var(--ink-3); }
+.t.r { color: #B0442E; }
+.t.g { color: #1C7A55; }
+.t.y { color: #8A6318; }
+.t.b { color: #2A5FA8; }
+.t.m { color: #8B4A9C; }
+.t.c { color: #1A6F80; }
+.t.w { color: var(--ink); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .t.r { color: #E08A72; }
+  :root:not([data-theme="light"]) .t.g { color: #62C79F; }
+  :root:not([data-theme="light"]) .t.y { color: #D9AE5C; }
+  :root:not([data-theme="light"]) .t.b { color: #7FA9E8; }
+  :root:not([data-theme="light"]) .t.m { color: #C596D6; }
+  :root:not([data-theme="light"]) .t.c { color: #6BC2D1; }
+}
+:root[data-theme="dark"] .t.r { color: #E08A72; }
+:root[data-theme="dark"] .t.g { color: #62C79F; }
+:root[data-theme="dark"] .t.y { color: #D9AE5C; }
+:root[data-theme="dark"] .t.b { color: #7FA9E8; }
+:root[data-theme="dark"] .t.m { color: #C596D6; }
+:root[data-theme="dark"] .t.c { color: #6BC2D1; }
+div.log { max-height: 260px; }
+div.log .ok { color: var(--accent); }
+div.log .warn { color: var(--warn); }
+div.log .bad { color: var(--crit); }
+code { background: var(--code-bg); padding: .1em .35em; border-radius: 3px; }
+#screen { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <p class="eyebrow">Reference implementation</p>
+  <h1>Repo as Root Disk</h1>
+  <p class="lede">A Linux machine running in this tab, whose disk is stored as ordinary git objects in your own repository. Sync commits the blocks the guest has written; restore rebuilds the machine from a commit alone. Nothing runs on a server.</p>
+  <div class="danger">
+    <b>Use a throwaway repository.</b> This writes real git objects and spends your account's write budget. Compaction rewrites the branch and discards its history.
+  </div>
+</header>
+
+<section class="panel">
+  <header>
+    <h2>Repository</h2>
+    <p>A fine-grained token scoped to one repository with contents read and write. It is held in memory only. Only GitHub supports the parentless commit that compaction needs.</p>
+  </header>
+  <div class="row">
+    <div class="f"><label for="hostKind">Host</label>
+      <select id="hostKind">
+        <option value="github" selected>GitHub</option>
+        <option value="forgejo">Forgejo / Codeberg</option>
+        <option value="gitlab">GitLab</option>
+      </select>
+    </div>
+    <div class="f"><label for="token">Token</label><input type="password" id="token" autocomplete="off" spellcheck="false" placeholder="github_pat_..."></div>
+    <div class="f"><label for="repo">Owner / repo</label><input type="text" id="repo" spellcheck="false" placeholder="you/scratch"></div>
+    <button id="connect">Connect</button>
+  </div>
+  <p class="status idle" id="status">Not connected.</p>
+</section>
+
+<section class="panel">
+  <header>
+    <h2>Machine</h2>
+    <p>The base image streams over HTTP and is never written to. Only the blocks the guest changes are committed.</p>
+  </header>
+  <div class="steps">
+    <div class="step" id="s1"><div class="n">step 1</div><div class="s">Boot</div></div>
+    <div class="step" id="s2"><div class="n">step 2</div><div class="s">Capture</div></div>
+    <div class="step" id="s3"><div class="n">step 3</div><div class="s">Attach to branch</div></div>
+    <div class="step" id="s4"><div class="n">step 4</div><div class="s">Sync</div></div>
+  </div>
+  <div class="row" style="margin-top:15px">
+    <div class="f"><label for="diskSize">Disk</label>
+      <select id="diskSize"><option value="16" selected>16 MB</option><option value="256">256 MB</option></select>
+    </div>
+    <div class="f"><label for="chunkSize">Chunk</label>
+      <select id="chunkSize">
+        <option value="65536">64 KB</option>
+        <option value="262144" selected>256 KB</option>
+        <option value="1048576">1 MB</option>
+      </select>
+    </div>
+    <div class="f"><label for="branch">Branch</label><input type="text" id="branch" spellcheck="false" placeholder="machine-..."></div>
+    <div class="f"><label for="passphrase">Passphrase, optional</label><input type="password" id="passphrase" autocomplete="off" placeholder="encrypt chunks"></div>
+    <button id="boot" disabled>Boot</button>
+  </div>
+  <div class="row" style="margin-top:11px">
+    <div class="f" style="flex:1"><label for="message">Commit message</label><input type="text" id="message" spellcheck="false" placeholder="optional" style="width:100%"></div>
+    <button class="ghost" id="sync" disabled>Sync</button>
+    <button class="ghost" id="compact" disabled>Compact</button>
+    <button class="ghost" id="restoreBtn" disabled>Restore from git</button>
+    <button class="ghost" id="reset">Reset</button>
+  </div>
+  <dl class="stats">
+    <div class="stat"><dt>Chunks written</dt><dd id="m-chunks">0<span> / 0</span></dd></div>
+    <div class="stat"><dt>Distinct objects</dt><dd id="m-objects">0</dd></div>
+    <div class="stat"><dt>Stored</dt><dd id="m-stored">0<span> MB</span></dd></div>
+    <div class="stat"><dt>Occupancy</dt><dd id="m-occupancy">0<span> %</span></dd></div>
+    <div class="stat"><dt>Dedup</dt><dd id="m-dedup">0<span> x</span></dd><div class="note">this is occupancy, not compression</div></div>
+    <div class="stat"><dt>Syncs</dt><dd id="m-sync">0</dd></div>
+  </dl>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>sync</th><th>dirty</th><th>uploaded</th><th>reused</th><th>MB</th><th>requests</th><th>seconds</th></tr></thead>
+      <tbody id="rows" data-empty="1"><tr><td colspan="7" class="empty">No syncs yet.</td></tr></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel">
+  <header>
+    <h2>Guest</h2>
+    <p>Linux from a CD-ROM, with the disk as the primary master. The guest root is
+    read only, so the mountpoint is gone on every boot and the disk has to be
+    mounted again. This mounts a block device, not the repository: writes reach
+    the repository at the next sync, not before.</p>
+  </header>
+  <pre class="term" id="term" tabindex="0" role="textbox" aria-multiline="true"
+       aria-label="Guest terminal. Click to focus, then type as you would in any terminal."></pre>
+  <p class="hint" id="termhint">Click the terminal and type. Keystrokes go straight
+  to the guest, so history, tab completion, <code>Ctrl+C</code> and multi-line
+  constructs all work because the shell is doing them, not this page.</p>
+  <div class="row" style="margin-top:11px">
+    <button id="mount" disabled>Mount disk</button>
+    <button class="ghost" id="unmount" disabled>Unmount</button>
+    <span class="mountstate" id="mountstate">not mounted</span>
+  </div>
+  <div class="row" style="margin-top:16px">
+    <button id="alpine" disabled>Put Alpine on the disk</button>
+    <span class="mountstate" id="alpinestate">no distribution</span>
+  </div>
+  <p class="hint">
+    The CD guest is Buildroot with uClibc and cannot use a package manager:
+    nothing in any repository is built against that libc. So a real distribution
+    goes on the disk instead. Alpine is musl based and ships
+    <code>apk</code>, and a chroot into it is a real Alpine userland whose every
+    write lands on the disk and syncs to the repository. The rootfs comes from
+    this page's own origin through the emulator's 9p share, so no server and no
+    network are involved.
+  </p>
+
+  <div class="row" style="margin-top:14px">
+    <div class="f" style="flex:1;min-width:260px">
+      <label for="packages">Install packages (.apk)</label>
+      <input type="file" id="packages" accept=".apk" multiple disabled>
+    </div>
+    <button class="ghost" id="packagesBtn" disabled>Install</button>
+  </div>
+  <p class="hint">
+    Pick every package and its dependencies together. Offline, <code>apk</code>
+    resolves only the set it is handed, so a package selected on its own fails
+    when something it needs is missing. Installing offline also means nothing is
+    checked against a signed index, which is a real reduction in assurance.
+    <code>vim</code> and its four dependencies are in
+    <code>vendor/alpine/packages</code>.
+  </p>
+
+  <div class="row" style="margin-top:14px">
+    <div class="f" style="flex:1;min-width:260px">
+      <label for="install">Install a single binary onto the disk</label>
+      <input type="file" id="install" disabled>
+    </div>
+    <button class="ghost" id="installBtn" disabled>Install</button>
+  </div>
+  <p class="hint">
+    For a static i686 binary with no package around it. Copied to
+    <code>/disk/usr/local/bin</code>, which is on PATH and persists.
+  </p>
+</section>
+
+<section class="panel">
+  <header><h2>Log</h2></header>
+  <div class="log" id="log" data-empty="1">waiting.</div>
+</section>
+
+<div id="screen"><div style="white-space: pre; font: 14px monospace; line-height: 14px"></div><canvas style="display:none"></canvas></div>
+
+</div>
+
+<script src="../vendor/v86/libv86.js"></script>
+<script type="module" src="./app.js"></script>
+</body>
+</html>

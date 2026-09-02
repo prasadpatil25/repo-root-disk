@@ -1,0 +1,6 @@
+# Vendored from npm, reinstall with: npm install
+node_modules/
+
+# images/ and bios/ are deliberately NOT ignored: they are the archivable
+# half of the artifact, and a reproducibility claim that depends on a CDN
+# staying up is not a reproducibility claim.
