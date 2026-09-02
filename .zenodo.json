@@ -1,0 +1,20 @@
+{
+  "title": "Repo as Root Disk: a browser-native Linux VM whose disk is a git repository",
+  "description": "Implementation, measurement harnesses and captured traces for the paper of the same name. A write-back block device for browser-native virtual machines: the guest's dirty block set is committed into an ordinary code hosting service as git objects, so a machine's state becomes a commit and can be rebuilt on any device from a reference alone.",
+  "upload_type": "software",
+  "license": "MIT",
+  "creators": [
+    {
+      "name": "Patil, Prasad Prakash"
+    }
+  ],
+  "keywords": [
+    "block storage",
+    "content-addressable storage",
+    "browser virtualization",
+    "rate limiting",
+    "service measurement",
+    "reproducible environments"
+  ],
+  "access_right": "open"
+}
