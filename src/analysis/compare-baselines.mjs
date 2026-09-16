@@ -28,6 +28,17 @@ const plan = workload({ syncs: SYNCS, diskSize: DISK, chunkSize: CHUNK });
 console.log(`\ncommit shapes compared, ${SYNCS} syncs on a ${DISK / K / K} MB disk ` +
             `with ${CHUNK / K} KB chunks\n`);
 
+// Checkpoints scale with the run: the paper's six for 120 syncs, and a spread
+// that still straddles the two halves for longer runs. Restore is measured only
+// at these, because delta-pack restore replays every pack so far and measuring
+// it after every sync is quadratic in the run length.
+const mid = Math.floor(SYNCS / 2);
+const checkpoints = [...new Set(
+  SYNCS <= 120
+    ? [1, 10, 30, 60, 90, SYNCS]
+    : [1, 10, Math.floor(mid / 5), mid, Math.floor(mid * 1.5), SYNCS]
+)].filter((n) => n >= 1 && n <= SYNCS).sort((a, b) => a - b);
+
 const shapes = [
   ["whole image", WholeImage],
   ["delta pack", DeltaPack],
@@ -38,7 +49,9 @@ const results = {};
 for (const [name, Shape] of shapes) {
   process.stdout.write(`  running ${name.padEnd(16)}`);
   const t0 = Date.now();
-  results[name] = await run(Shape, { plan, diskSize: DISK, chunkSize: CHUNK });
+  results[name] = await run(Shape, {
+    plan, diskSize: DISK, chunkSize: CHUNK, measureAt: checkpoints
+  });
   console.log(`${((Date.now() - t0) / 1000).toFixed(1)}s`);
 }
 
@@ -46,7 +59,6 @@ for (const [name, Shape] of shapes) {
 
 const mb = (b) => (b / K / K).toFixed(1);
 const at = (name, n) => results[name][n - 1];
-const checkpoints = [1, 10, 30, 60, 90, SYNCS].filter((n, i, a) => n <= SYNCS && a.indexOf(n) === i);
 
 console.log("\n  restore cost against history (requests / MB fetched)\n");
 console.log("  sync   " + shapes.map(([n]) => n.padStart(18)).join(""));
@@ -75,7 +87,6 @@ for (const n of checkpoints) {
 
 // ---------------------------------------------------------------- verdict
 
-const mid = Math.floor(SYNCS / 2);
 const last = SYNCS;
 const growth = (name) =>
   at(name, last).restoreRequests - at(name, mid).restoreRequests;

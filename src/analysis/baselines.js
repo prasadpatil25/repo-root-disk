@@ -328,7 +328,12 @@ export class ChunkExploded extends Shape {
  * Each shape gets its own host, so its counts are its own. The plan is shared,
  * so the writes are byte-identical across shapes.
  */
-export async function run(ShapeClass, { plan, diskSize, chunkSize, onSync = () => {} }) {
+export async function run(ShapeClass, {
+  plan, diskSize, chunkSize, onSync = () => {}, measureAt = null
+}) {
+  // Restore is measured after every sync unless told which syncs matter.
+  // Storage and upload are always recorded: the host tracks them for free.
+  const measure = measureAt ? new Set(measureAt) : null;
   const host = new CountingHost();
   const shape = new ShapeClass({ host, diskSize, chunkSize, branch: "m" });
   if (shape.init) await shape.init();
@@ -341,7 +346,9 @@ export async function run(ShapeClass, { plan, diskSize, chunkSize, onSync = () =
     const uploadRequests = host.requestCount - r0;
     const uploadBytes = host.uploadedBytes - b0;
 
-    const restored = await shape.measureRestore();
+    const restored = (!measure || measure.has(step.sync))
+      ? await shape.measureRestore()
+      : { requests: null, bytes: null };
     const storage = host.storage();
 
     const row = {
