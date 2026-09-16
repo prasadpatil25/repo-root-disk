@@ -29,8 +29,9 @@ claims.
 | Claim in the paper | Command | Needs a token |
 |---|---|---|
 | Restore cost is the live set plus three requests, constant in history | `node src/analysis/restore-scaling.mjs` | no |
+| Three commit shapes compared on one workload: restore, storage, upload against history | `node src/analysis/compare-baselines.mjs` | no |
 | Write amplification and the chunk-size trade-off | `node src/analysis/report.mjs traces/mke2fs-256mb.json` | no |
-| Every invariant the design rests on (618 tests, 12 suites) | see below | no |
+| Every invariant the design rests on (651 tests, 13 suites) | see below | no |
 | GitHub costs 20x the requests and 13x the time of a batch-commit host | `node src/analysis/batch-commit.mjs github <owner/repo>` then `gitlab` | **yes** |
 | Whether a batch-commit host offers a compare-and-swap | `node src/analysis/cas-probe.mjs gitlab <owner/repo>` | **yes** |
 
@@ -38,6 +39,11 @@ claims.
 counts every request. The second half of its table is the result: the live set
 stops growing while the history and the repository keep growing, and the restore
 column stays flat. It emits LaTeX, which is what the paper's table is made of.
+
+`compare-baselines.mjs` runs whole-image, delta-pack and chunk-exploded commit
+shapes as working systems on byte-identical workloads, with every cost read off
+one counting host so no shape reports its own. It emits the comparison table
+and a CSV for plotting.
 
 `report.mjs` reads a captured write trace and reports what each chunk size would
 have cost. `traces/mke2fs-256mb.json` is a real capture of `mke2fs` on a 256 MB
@@ -47,12 +53,13 @@ disk, not a synthetic workload.
 
 ```
 for t in test test-engine test-device test-fs test-runner test-terminal \
-         test-keyboard test-alpine test-sweep test-bisect test-nbd test-batch; do
+         test-keyboard test-alpine test-sweep test-bisect test-nbd test-batch \
+         test-baselines; do
   node src/$t.mjs
 done
 ```
 
-618 assertions. They need no network and no credentials. `test-nbd.mjs` speaks
+651 assertions. They need no network and no credentials. `test-nbd.mjs` speaks
 the client half of the NBD protocol over a real socket, so the wire format and
 the server loop are exercised rather than mocked; the one hop that needs Linux
 is `nbd-client` binding the export to `/dev/nbd0`.
