@@ -20,6 +20,7 @@
 
 import { createHost } from "../host/index.js";
 import { Governor } from "../core/governor.js";
+import { blobId } from "../core/objectid.js";
 
 const kind = process.argv[2];
 const slug = process.argv[3];
@@ -50,10 +51,18 @@ const host = createHost(kind, {
   governor: new Governor({ ratePerMin: 60, concurrency: 2 })
 });
 
-const file = (name, text) => ({
+/**
+ * A file for the commit. `replacing` is the text this write overwrites, if any:
+ * the batch-commit hosts distinguish creating a file from updating one, and
+ * the adapter decides which from whether `replaces` is set. Forgejo wants the
+ * replaced blob's sha for its per-file lock, so the id is computed rather than
+ * faked.
+ */
+const file = async (name, text, replacing = null) => ({
   path: name,
   bytes: encoder.encode(text),
-  id: null
+  id: null,
+  ...(replacing !== null ? { replaces: await blobId(encoder.encode(replacing)) } : {})
 });
 
 function say(label, value) {
@@ -77,7 +86,7 @@ try {
   // --- establish the machine ------------------------------------------------
   const first = await host.commit({
     branch, message: "cas probe: base",
-    files: [file(PROBE, "base")],
+    files: [await file(PROBE, "base")],
     parent: null, branchExists: false
   });
   say("base commit", String(first.commit).slice(0, 12));
@@ -85,7 +94,7 @@ try {
   // --- writer A advances the branch ----------------------------------------
   const writerA = await host.commit({
     branch, message: "cas probe: writer A",
-    files: [file(PROBE, "written by A")],
+    files: [await file(PROBE, "written by A", "base")],
     parent: first.commit, branchExists: true
   });
   say("writer A committed", String(writerA.commit).slice(0, 12));
@@ -100,7 +109,8 @@ try {
   try {
     writerB = await host.commit({
       branch, message: "cas probe: writer B from a stale parent",
-      files: [file(PROBE, "written by B")],
+      // B also believes it is replacing "base": that is the whole experiment.
+      files: [await file(PROBE, "written by B", "base")],
       parent: first.commit, branchExists: true
     });
     accepted = true;
