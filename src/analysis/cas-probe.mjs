@@ -58,11 +58,12 @@ const host = createHost(kind, {
  * replaced blob's sha for its per-file lock, so the id is computed rather than
  * faked.
  */
-const file = async (name, text, replacing = null) => ({
+const file = async (name, text, replacing = null, lastCommit = null) => ({
   path: name,
   bytes: encoder.encode(text),
   id: null,
-  ...(replacing !== null ? { replaces: await blobId(encoder.encode(replacing)) } : {})
+  ...(replacing !== null ? { replaces: await blobId(encoder.encode(replacing)) } : {}),
+  ...(lastCommit ? { lastCommit } : {})
 });
 
 function say(label, value) {
@@ -140,6 +141,32 @@ try {
   say("probe file now reads", JSON.stringify(contents.trim()));
 
   const lostA = accepted && contents.trim() === "written by B";
+
+  // --- the one substitute the API offers ------------------------------------
+  // last_commit_id on an update action: "last known file commit id", with its
+  // enforcement undocumented. Writer C is as stale as B was, but says so. If
+  // the host refuses, this field is a per-file optimistic lock and the design
+  // can use it; if it accepts, nothing on this host refuses a stale writer.
+  let lockAccepted = false;
+  let lockRefusal = "";
+  try {
+    await host.commit({
+      branch, message: "cas probe: writer C, stale, declaring last_commit_id",
+      files: [await file(PROBE, "written by C", "base", first.commit)],
+      parent: first.commit, branchExists: true
+    });
+    lockAccepted = true;
+  } catch (err) {
+    lockRefusal = `${err.status || ""} ${err.message}`.trim();
+  }
+  console.log();
+  if (lockAccepted) {
+    say("stale write with last_commit_id was", "ACCEPTED");
+  } else {
+    say("stale write with last_commit_id was", "REFUSED");
+    say("refusal", lockRefusal.slice(0, 90));
+  }
+
   console.log();
   console.log(lostA
     ? "  VERDICT: no compare-and-swap. A stale write was accepted and writer A's\n" +
@@ -151,6 +178,13 @@ try {
         "  needs reading carefully before it is relied on."
       : "  VERDICT: compare-and-swap holds. A stale parent is refused, which is the\n" +
         "  guarantee phase P7 depends on.");
+
+  console.log(lockAccepted
+    ? "\n  last_commit_id: ACCEPTED a stale writer. The field is not an optimistic\n" +
+      "  lock in practice, and nothing on this host refuses a stale write."
+    : "\n  last_commit_id: REFUSED the stale writer. This field is a per-file\n" +
+      "  optimistic lock, and the sync can carry it on the manifest to recover a\n" +
+      "  compare-and-swap on this host.");
 
   // --- clean up -------------------------------------------------------------
   if (typeof host.deleteBranch === "function") {

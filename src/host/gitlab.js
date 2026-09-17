@@ -167,7 +167,12 @@ export class GitLabHost extends Host {
         action: file.replaces ? "update" : "create",
         file_path: file.path,
         content: toBase64(file.bytes),
-        encoding: "base64"
+        encoding: "base64",
+        // The one field this API offers that might refuse a stale writer:
+        // "last known file commit id", enforcement undocumented. Sent only when
+        // a caller supplies it, so an ordinary sync is unchanged until the
+        // probe has established what it does.
+        ...(file.lastCommit ? { last_commit_id: file.lastCommit } : {})
       }))
     };
 

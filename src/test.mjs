@@ -480,6 +480,28 @@ console.log("\nstarting a new branch on the batch-commit hosts");
   eq("and only the small file was sent", seen[seen.length - 1].body.actions.length, 1);
 }
 
+{
+  // The one field GitLab's API offers that might refuse a stale writer is only
+  // sent when a caller supplies it, so an ordinary sync's payload is unchanged.
+  const seen = mockFetch([
+    [/\/projects\/[^/]+$/, () => ({ json: { default_branch: "main", empty: false } })],
+    [/repository\/commits$/, () => ({ json: { id: "c2" } })]
+  ]);
+  const host = createHost("gitlab", { token: "t", owner: "o", repo: "r" });
+  await host.commit({
+    branch: "machine", message: "with a lock", parent: "c1", branchExists: true,
+    files: [
+      { path: "manifest.json", bytes: enc.encode("{}"), replaces: "b1", lastCommit: "c1" },
+      { path: "objects/aa/new", bytes: enc.encode("x") }
+    ]
+  });
+  const actions = seen[seen.length - 1].body.actions;
+  eq("a file that names its last commit sends last_commit_id",
+     actions.find((a) => a.file_path === "manifest.json").last_commit_id, "c1");
+  check("and one that does not, does not",
+        !("last_commit_id" in actions.find((a) => a.file_path === "objects/aa/new")));
+}
+
 // Capabilities are declared honestly rather than emulated badly
 console.log("\ncapabilities");
 check("only github offers parentless commits",
