@@ -261,11 +261,11 @@ function mockResponse(status, json) {
   eq("gitlab commits in one request", result.requests, 1);
   eq("gitlab returns the commit id", result.commit, "glcommit");
   eq("gitlab uses base64 encoding", seen[0].body.actions[0].encoding, "base64");
-  // It cannot pin the parent, and we had this backwards. start_sha means
-  // "create this branch from that commit", so sending it for a branch that
-  // already exists is refused with "A branch called X already exists". An
-  // ordinary sync therefore carries no statement about the parent it expected,
-  // which is why casRef is declared false for this host.
+  // It cannot pin the parent on the reference, and we had this backwards.
+  // start_sha means "create this branch from that commit", so sending it for a
+  // branch that already exists is refused with "A branch called X already
+  // exists". The compare-and-swap on this host comes from last_commit_id on
+  // the manifest instead, tested below.
   check("gitlab sends no parent pin, because the API has no way to accept one",
         seen[0].body.start_sha === undefined && seen[0].body.start_branch === undefined,
         JSON.stringify(Object.keys(seen[0].body)));
@@ -508,10 +508,14 @@ check("only github offers parentless commits",
       GitHubHost.capabilities.orphanCommit &&
       !ForgejoHost.capabilities.orphanCommit &&
       !GitLabHost.capabilities.orphanCommit);
-check("only github offers a real compare-and-swap",
+// GitHub's is on the reference; GitLab's is a per-file lock on the manifest,
+// which every sync updates, so it amounts to the same guarantee. Both measured.
+// Forgejo's contents API takes the blob sha it expects to replace, which is the
+// same kind of lock, but it has not been probed and stays false until it is.
+check("github and gitlab offer a compare-and-swap, forgejo is unprobed",
       GitHubHost.capabilities.casRef &&
-      !ForgejoHost.capabilities.casRef &&
-      !GitLabHost.capabilities.casRef);
+      GitLabHost.capabilities.casRef &&
+      !ForgejoHost.capabilities.casRef);
 {
   let refused = false;
   const host = createHost("gitlab", { token: "t", owner: "o", repo: "r" });

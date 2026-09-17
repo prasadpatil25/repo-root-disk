@@ -481,6 +481,126 @@ console.log("\nconcurrent writers");
   eq("and it names the chunk that overlapped", conflict.overlappingChunks, [0]);
 }
 
+// ------------------------------------ the same races, on a GitLab-shaped host
+
+/**
+ * A host with no compare-and-swap on the reference and a per-file lock on
+ * update actions, which is what src/analysis/cas-probe.mjs measured GitLab to
+ * be. A stale parent is accepted. An update whose declared last commit is not
+ * the one that last touched the file is refused with GitLab's own message.
+ */
+class LockingHost extends FakeHost {
+  static get capabilities() {
+    return { orphanCommit: false, casRef: true, batchCommit: true, maxBodyBytes: 1e9 };
+  }
+  constructor() {
+    super();
+    this.lastTouched = new Map();     // path -> commit that last wrote it
+  }
+  async commit({ branch, message, files, parent = null }) {
+    for (const file of files) {
+      if (file.skipUpload || !file.replaces) continue;
+      const last = this.lastTouched.get(file.path);
+      if (file.lastCommit && last && file.lastCommit !== last) {
+        const err = new Error("POST /repository/commits -> 400 The file has changed");
+        err.status = 400;
+        throw err;
+      }
+    }
+    // No parent check: this host accepts a stale parent, as measured.
+    const current = this.branches.get(branch) || null;
+    const result = await super.commit({ branch, message, files, parent: current });
+    for (const file of files) if (!file.skipUpload) this.lastTouched.set(file.path, result.commit);
+    return result;
+  }
+}
+
+console.log("\nconcurrent writers on a host with a per-file lock, not a reference lock");
+{
+  // Disjoint chunks: the loser must still be told it lost, and rebase.
+  const host = new LockingHost();
+  const deviceA = new MemoryDevice({ diskSize: DISK });
+  const machineA = newMachine(host, deviceA);
+  await machineA.load({ diskSize: DISK, chunkSize: CHUNK, base: "base.img", baseIsBlank: true });
+  deviceA.write(0, enc.encode("from A"));
+  await machineA.sync({});
+
+  const deviceB = new MemoryDevice({ diskSize: DISK });
+  const machineB = newMachine(host, deviceB);
+  await machineB.load();
+  await machineB.hydrate();
+  deviceB.write(1 * 256 * K, enc.encode("from B"));
+  await machineB.sync({});
+
+  deviceA.write(2 * 256 * K, enc.encode("from A again"));
+  const events = [];
+  machineA.onEvent = (e) => events.push(e.type);
+  const result = await machineA.sync({});
+  check("the manifest lock told A it lost, and A rebased", events.includes("conflict-rebased"),
+        events.join(","));
+  check("A's sync still succeeded", !!result.commit);
+  const merged = await restore({ host, branch: "machine" });
+  eq("nothing was lost: all three chunks are in the merged manifest",
+     manifestModule.indices(merged.manifest).length, 3);
+}
+{
+  // Overlapping chunks: refused, not silently clobbered.
+  const host = new LockingHost();
+  const deviceA = new MemoryDevice({ diskSize: DISK });
+  const machineA = newMachine(host, deviceA);
+  await machineA.load({ diskSize: DISK, chunkSize: CHUNK, base: "base.img", baseIsBlank: true });
+  deviceA.write(0, enc.encode("initial"));
+  await machineA.sync({});
+
+  const deviceB = new MemoryDevice({ diskSize: DISK });
+  const machineB = newMachine(host, deviceB);
+  await machineB.load();
+  await machineB.hydrate();
+  deviceB.write(0, enc.encode("B changed chunk zero"));
+  await machineB.sync({});
+
+  deviceA.write(0, enc.encode("A also changed chunk zero"));
+  let conflict = null;
+  try { await machineA.sync({}); } catch (err) { conflict = err; }
+  check("an overlapping write is refused on this host too", conflict instanceof ConflictError,
+        conflict && conflict.message);
+  const head = await restore({ host, branch: "machine" });
+  eq("and B's write, which won, is what the machine holds",
+     new TextDecoder().decode(head.disk.subarray(0, 20)), "B changed chunk zero");
+}
+{
+  // The failure the probe demonstrated, reproduced: without the lock, the
+  // stale writer wins and the first writer's chunk vanishes. This pins that
+  // the lock is what prevents it, not something else in the engine.
+  class NoLockHost extends LockingHost {
+    async commit(opts) {
+      return super.commit({ ...opts, files: opts.files.map((f) => ({ ...f, lastCommit: undefined })) });
+    }
+  }
+  const host = new NoLockHost();
+  const deviceA = new MemoryDevice({ diskSize: DISK });
+  const machineA = newMachine(host, deviceA);
+  await machineA.load({ diskSize: DISK, chunkSize: CHUNK, base: "base.img", baseIsBlank: true });
+  deviceA.write(0, enc.encode("from A"));
+  await machineA.sync({});
+  const deviceB = new MemoryDevice({ diskSize: DISK });
+  const machineB = newMachine(host, deviceB);
+  await machineB.load();
+  await machineB.hydrate();
+  deviceB.write(1 * 256 * K, enc.encode("from B"));
+  await machineB.sync({});
+  deviceA.write(2 * 256 * K, enc.encode("from A again"));
+  const events = [];
+  machineA.onEvent = (e) => events.push(e.type);
+  await machineA.sync({});
+  check("without the lock, the stale writer is not told it lost",
+        !events.includes("conflict-rebased"));
+  const merged = await restore({ host, branch: "machine" });
+  check("and B's chunk is silently gone, which is what the probe showed",
+        manifestModule.indices(merged.manifest).length === 2,
+        `${manifestModule.indices(merged.manifest).length} chunks survive`);
+}
+
 // ------------------------------------------------------------------ compaction
 
 console.log("\ncompaction");

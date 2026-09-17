@@ -24,7 +24,13 @@ export class GitLabHost extends Host {
   static get capabilities() {
     return {
       orphanCommit: false,
-      casRef: false,
+      // Not on the reference: the commits API has no expected-parent for an
+      // existing branch, and a stale commit is accepted. On the manifest: an
+      // update action carrying last_commit_id is refused with "The file has
+      // changed" when the file moved since, and every sync updates the
+      // manifest, so that one lock is a compare-and-swap on the machine. Both
+      // halves measured by src/analysis/cas-probe.mjs.
+      casRef: true,
       batchCommit: true,
       maxBodyBytes: 32 * 1024 * 1024
     };

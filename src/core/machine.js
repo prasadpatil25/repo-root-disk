@@ -304,7 +304,13 @@ export class Machine {
       path: manifestModule.MANIFEST_PATH,
       bytes: manifestBytes,
       id: await blobId(manifestBytes),
-      replaces: this._manifestObjectId
+      replaces: this._manifestObjectId,
+      // The commit this machine attached at, which is the last one that touched
+      // the manifest, since every sync does. A host with a per-file lock refuses
+      // the update if the manifest has moved since, which makes the lock on this
+      // one file a compare-and-swap on the whole machine. Measured on GitLab:
+      // the ordinary commit accepts a stale writer, this field refuses one.
+      lastCommit: this.head
     });
 
     try {
@@ -326,7 +332,12 @@ export class Machine {
       this.known.add(this._manifestObjectId);
       return committed;
     } catch (err) {
-      const lost = err.status === 422 || /not a fast forward/i.test(err.message || "");
+      // GitHub says 422 or "not a fast forward"; GitLab's per-file lock says
+      // 400 "The file has changed". Both mean another writer moved first, and
+      // both take the same conflict path.
+      const lost = err.status === 422
+        || /not a fast forward/i.test(err.message || "")
+        || /file has changed/i.test(err.message || "");
       if (!lost || !retryOnConflict) throw err;
       return this._resolveConflict({ fresh, prepared, message });
     }
