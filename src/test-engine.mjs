@@ -601,6 +601,84 @@ console.log("\nconcurrent writers on a host with a per-file lock, not a referenc
         `${manifestModule.indices(merged.manifest).length} chunks survive`);
 }
 
+// ------------------------------------ the same races, on a Forgejo-shaped host
+
+/**
+ * A host whose contents API requires the blob sha a writer expects to replace,
+ * and refuses a mismatch with 409 "sha does not match". No parent check on the
+ * reference, and no way to omit the lock: what cas-probe measured on Forgejo.
+ */
+class ShaLockHost extends FakeHost {
+  static get capabilities() {
+    return { orphanCommit: false, casRef: true, batchCommit: true, maxBodyBytes: 1e9 };
+  }
+  constructor() {
+    super();
+    this.currentBlob = new Map();     // path -> blob id now at that path
+  }
+  async commit({ branch, message, files, parent = null }) {
+    for (const file of files) {
+      if (file.skipUpload || !file.replaces) continue;
+      const now = this.currentBlob.get(file.path);
+      if (now && file.replaces !== now) {
+        const err = new Error("POST /contents -> 409 sha does not match");
+        err.status = 409;
+        throw err;
+      }
+    }
+    const current = this.branches.get(branch) || null;
+    const result = await super.commit({ branch, message, files, parent: current });
+    for (const file of files) if (!file.skipUpload) this.currentBlob.set(file.path, file.id);
+    return result;
+  }
+}
+
+console.log("\nconcurrent writers on a host whose lock is the replaced blob's sha");
+{
+  const host = new ShaLockHost();
+  const deviceA = new MemoryDevice({ diskSize: DISK });
+  const machineA = newMachine(host, deviceA);
+  await machineA.load({ diskSize: DISK, chunkSize: CHUNK, base: "base.img", baseIsBlank: true });
+  deviceA.write(0, enc.encode("from A"));
+  await machineA.sync({});
+
+  const deviceB = new MemoryDevice({ diskSize: DISK });
+  const machineB = newMachine(host, deviceB);
+  await machineB.load();
+  await machineB.hydrate();
+  deviceB.write(1 * 256 * K, enc.encode("from B"));
+  await machineB.sync({});
+
+  deviceA.write(2 * 256 * K, enc.encode("from A again"));
+  const events = [];
+  machineA.onEvent = (e) => events.push(e.type);
+  const result = await machineA.sync({});
+  check("the sha lock told A it lost, and A rebased", events.includes("conflict-rebased"),
+        events.join(","));
+  check("A's sync still succeeded", !!result.commit);
+  const merged = await restore({ host, branch: "machine" });
+  eq("nothing was lost", manifestModule.indices(merged.manifest).length, 3);
+}
+{
+  const host = new ShaLockHost();
+  const deviceA = new MemoryDevice({ diskSize: DISK });
+  const machineA = newMachine(host, deviceA);
+  await machineA.load({ diskSize: DISK, chunkSize: CHUNK, base: "base.img", baseIsBlank: true });
+  deviceA.write(0, enc.encode("initial"));
+  await machineA.sync({});
+  const deviceB = new MemoryDevice({ diskSize: DISK });
+  const machineB = newMachine(host, deviceB);
+  await machineB.load();
+  await machineB.hydrate();
+  deviceB.write(0, enc.encode("B changed chunk zero"));
+  await machineB.sync({});
+  deviceA.write(0, enc.encode("A also changed chunk zero"));
+  let conflict = null;
+  try { await machineA.sync({}); } catch (err) { conflict = err; }
+  check("an overlapping write is refused, not clobbered", conflict instanceof ConflictError,
+        conflict && conflict.message);
+}
+
 // ------------------------------------------------------------------ compaction
 
 console.log("\ncompaction");

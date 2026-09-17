@@ -25,7 +25,13 @@ export class ForgejoHost extends Host {
   static get capabilities() {
     return {
       orphanCommit: false,
-      casRef: false,
+      // The contents API requires the blob sha on every update and refuses a
+      // mismatch with 409 "sha does not match". The adapter sends the manifest's
+      // previous blob id, every sync updates the manifest, so the lock on that
+      // one file is a compare-and-swap on the machine, and unlike GitLab's it
+      // cannot be omitted. Measured by src/analysis/cas-probe.mjs: both a plain
+      // stale writer and one declaring the lock were refused.
+      casRef: true,
       batchCommit: true,
       maxBodyBytes: 32 * 1024 * 1024
     };

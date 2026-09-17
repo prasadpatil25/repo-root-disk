@@ -333,11 +333,13 @@ export class Machine {
       return committed;
     } catch (err) {
       // GitHub says 422 or "not a fast forward"; GitLab's per-file lock says
-      // 400 "The file has changed". Both mean another writer moved first, and
-      // both take the same conflict path.
+      // 400 "The file has changed"; Forgejo's says 409 "sha does not match".
+      // All mean another writer moved first, and all take the same conflict
+      // path. Each was measured, not read off documentation.
       const lost = err.status === 422
         || /not a fast forward/i.test(err.message || "")
-        || /file has changed/i.test(err.message || "");
+        || /file has changed/i.test(err.message || "")
+        || /sha does not match/i.test(err.message || "");
       if (!lost || !retryOnConflict) throw err;
       return this._resolveConflict({ fresh, prepared, message });
     }

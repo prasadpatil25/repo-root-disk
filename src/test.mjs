@@ -526,14 +526,14 @@ check("only github offers parentless commits",
       GitHubHost.capabilities.orphanCommit &&
       !ForgejoHost.capabilities.orphanCommit &&
       !GitLabHost.capabilities.orphanCommit);
-// GitHub's is on the reference; GitLab's is a per-file lock on the manifest,
-// which every sync updates, so it amounts to the same guarantee. Both measured.
-// Forgejo's contents API takes the blob sha it expects to replace, which is the
-// same kind of lock, but it has not been probed and stays false until it is.
-check("github and gitlab offer a compare-and-swap, forgejo is unprobed",
+// GitHub's is on the reference. GitLab's and Forgejo's are per-file locks on
+// the manifest, which every sync updates, so each amounts to the same
+// guarantee. All three measured by cas-probe; Forgejo's is the strongest, since
+// its API requires the lock on every update and no unlocked path exists.
+check("all three hosts offer a compare-and-swap, each by a measured mechanism",
       GitHubHost.capabilities.casRef &&
       GitLabHost.capabilities.casRef &&
-      !ForgejoHost.capabilities.casRef);
+      ForgejoHost.capabilities.casRef);
 {
   let refused = false;
   const host = createHost("gitlab", { token: "t", owner: "o", repo: "r" });
