@@ -1,0 +1,70 @@
+{
+ "label": "v86 native persistence on the captured history's machine",
+ "guest": "buildroot 4.16.13 i686, alpine 3.20.10 on the disk",
+ "memory": 268435456,
+ "diskSize": 268435456,
+ "chunkSize": 262144,
+ "capturedAt": "2026-09-17T17:39:25.020Z",
+ "bootMs": 3531,
+ "overhead": {
+  "attached": [
+   5100.0999999996275,
+   6527.399999999441,
+   5769.5999999996275,
+   3743,
+   3867.5,
+   4955.5,
+   4833.299999999814
+  ],
+  "detached": [
+   6060.600000000559,
+   5810.299999999814,
+   5941.800000000745,
+   4109.9000000003725,
+   5694.5,
+   5574,
+   4588.700000000186
+  ],
+  "mb": 96,
+  "medianAttachedMs": 4955.5,
+  "medianDetachedMs": 5694.5
+ },
+ "session": {
+  "steps": 40,
+  "deviceWrites": 719,
+  "deviceBytes": 53104640
+ },
+ "snapshot": {
+  "rounds": [
+   {
+    "bytes": 464572308,
+    "saveMs": 939.4000000003725,
+    "putMs": null,
+    "getMs": null,
+    "restoreMs": 1406.7000000001863,
+    "alive": true
+   },
+   {
+    "bytes": 464572308,
+    "saveMs": 939.5,
+    "putMs": null,
+    "getMs": null,
+    "restoreMs": 1622.2000000001863,
+    "alive": true
+   },
+   {
+    "bytes": 464572308,
+    "saveMs": 928.1000000005588,
+    "putMs": null,
+    "getMs": null,
+    "restoreMs": 1666.5,
+    "alive": true
+   }
+  ],
+  "persisted": false,
+  "bytes": 464572308,
+  "medianSaveMs": 939.4000000003725,
+  "medianRestoreMs": 1622.2000000001863
+ },
+ "finishedAt": "2026-09-17T17:41:29.295Z"
+}

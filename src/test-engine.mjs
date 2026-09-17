@@ -127,6 +127,17 @@ console.log("\nthe full loop");
   check("the restored disk matches the live one byte for byte",
         bytesEqual(restored.disk, device.snapshot()));
   eq("restore applied both chunks", restored.chunksApplied, 2);
+
+  // Width changes the wall clock, never the bytes or the request count.
+  const b1 = host.requestCount;
+  await restore({ host, branch: "machine" });
+  const serialRequests = host.requestCount - b1;
+  const b2 = host.requestCount;
+  const wide = await restore({ host, branch: "machine", concurrency: 8 });
+  check("an eight-wide restore reproduces the same disk",
+        bytesEqual(wide.disk, device.snapshot()));
+  eq("and makes the same number of requests as a serial one",
+     host.requestCount - b2, serialRequests);
 }
 
 // ------------------------------------------------------------- flush contract

@@ -15,29 +15,26 @@
 
 import { writeFileSync } from "node:fs";
 import {
-  WholeImage, DeltaPack, ChunkExploded, workload, run, cumulative
+  WholeImage, DeltaPack, ChunkExploded, workload, run, cumulative,
+  checkpoints as checkpointsFor
 } from "./baselines.js";
 
 const K = 1024;
 const SYNCS = Number(process.argv[2] || 120);
 const DISK = Number(process.argv[3] || 64) * K * K;
 const CHUNK = 256 * K;
+// FULL_CHUNKS=1 gives every write a chunk of random bytes, the payload the
+// restic harness uses. The shapes count chunks, so the table must not move.
+const FULL = process.env.FULL_CHUNKS === "1";
 
-const plan = workload({ syncs: SYNCS, diskSize: DISK, chunkSize: CHUNK });
+const plan = workload({ syncs: SYNCS, diskSize: DISK, chunkSize: CHUNK, fullChunks: FULL });
 
 console.log(`\ncommit shapes compared, ${SYNCS} syncs on a ${DISK / K / K} MB disk ` +
-            `with ${CHUNK / K} KB chunks\n`);
+            `with ${CHUNK / K} KB chunks${FULL ? ", full-chunk payloads" : ""}\n`);
 
-// Checkpoints scale with the run: the paper's six for 120 syncs, and a spread
-// that still straddles the two halves for longer runs. Restore is measured only
-// at these, because delta-pack restore replays every pack so far and measuring
-// it after every sync is quadratic in the run length.
-const mid = Math.floor(SYNCS / 2);
-const checkpoints = [...new Set(
-  SYNCS <= 120
-    ? [1, 10, 30, 60, 90, SYNCS]
-    : [1, 10, Math.floor(mid / 5), mid, Math.floor(mid * 1.5), SYNCS]
-)].filter((n) => n >= 1 && n <= SYNCS).sort((a, b) => a - b);
+// Restore is measured only at checkpoints, because delta-pack restore replays
+// every pack so far and measuring it after every sync is quadratic in the run.
+const checkpoints = checkpointsFor(SYNCS);
 
 const shapes = [
   ["whole image", WholeImage],

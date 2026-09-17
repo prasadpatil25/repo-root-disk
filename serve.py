@@ -83,6 +83,28 @@ class RangeHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         return io.BytesIO(data)
 
+    # A capture running in the browser hands each phase's dirty chunks back
+    # here, so the trace reaches disk without a download dialog per phase. Only
+    # traces/history/ is writable, and only plain file names within it.
+    CAPTURE_DIR = "traces/history"
+    CAPTURE_NAME = re.compile(r"^[A-Za-z0-9._-]+$")
+
+    def do_PUT(self):
+        prefix = "/" + self.CAPTURE_DIR + "/"
+        name = self.path[len(prefix):] if self.path.startswith(prefix) else ""
+        if not name or not self.CAPTURE_NAME.match(name):
+            self.send_error(403, "PUT is accepted only under /%s/" % self.CAPTURE_DIR)
+            return
+        length = int(self.headers.get("Content-Length") or 0)
+        body = self.rfile.read(length)
+        os.makedirs(self.CAPTURE_DIR, exist_ok=True)
+        with open(os.path.join(self.CAPTURE_DIR, name), "wb") as f:
+            f.write(body)
+        self.send_response(204)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+        self.log_message("captured %s (%d bytes)", name, length)
+
     def log_message(self, fmt, *args):
         if "Range" in str(self.headers.get("Range") or ""):
             return  # range chatter is noisy once a disk starts streaming

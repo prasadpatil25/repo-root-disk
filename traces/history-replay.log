@@ -1,0 +1,61 @@
+
+four stores on a captured history: alpine, vim, and a forty-step working session
+  buildroot 4.16.13 i686, alpine 3.20.10 on the disk; 256 MB disk, 256 KB chunks
+  43 syncs with writes (1 empty phase(s) skipped), with chunk contents
+
+  running whole image     0.1s
+  running delta pack      1.4s
+  running chunk exploded  4.8s
+  running restic          2.4 min  (restic 0.19.1 compiled with go1.26.4 on windows/amd64)
+
+  what each sync wrote
+  sync  chunks  live   phase
+     1      64    64   format and mount
+     2      67    95   unpack alpine
+     3     236   294   install vim
+     8      10   298   grow 5: new 128k file
+    13      11   303   grow 10: new 256k file
+    18      12   309   grow 15: new 512k file
+    23      10   314   grow 20: new 64k file
+    28      11   316   work 25: package churn
+    33      11   317   work 30: package churn
+    38      11   317   work 35: package churn
+    43      12   318   work 40: package churn
+
+  restore cost against history (requests / MB fetched)
+  sync       whole image      delta pack  chunk exploded          restic
+     1         3 / 256.0        3 / 16.0       67 / 16.0        22 / 2.5
+     2         3 / 256.0        4 / 32.8       98 / 23.8       25 / 28.0
+     3         3 / 256.0        5 / 91.8      297 / 73.5       31 / 79.6
+     8         3 / 256.0      10 / 107.3      301 / 74.5       43 / 83.0
+    13         3 / 256.0      15 / 122.0      306 / 75.8       50 / 87.0
+    18         3 / 256.0      20 / 136.5      312 / 77.3       58 / 88.5
+    23         3 / 256.0      25 / 150.8      317 / 78.5       67 / 89.0
+    28         3 / 256.0      30 / 161.3      319 / 79.0       75 / 88.5
+    33         3 / 256.0      35 / 170.3      320 / 79.3       79 / 89.0
+    38         3 / 256.0      40 / 179.5      320 / 79.3       86 / 88.5
+    43         3 / 256.0      45 / 189.0      321 / 79.5       92 / 88.5
+  compacted                                                         50 / 88.5   (repair index: 54 requests)
+
+  at the last sync
+  store            storage MB   upload requests
+  whole image         11008.0               172
+  delta pack            189.0               172
+  chunk exploded        172.7               857
+  restic                347.4               566
+
+  LaTeX rows (requests / MB) for a table with the same columns:
+    1 & 3 / 256.0 & 3 / 16.0 & 67 / 16.0 & 22 / 2.5 \\
+    2 & 3 / 256.0 & 4 / 32.8 & 98 / 23.8 & 25 / 28.0 \\
+    3 & 3 / 256.0 & 5 / 91.8 & 297 / 73.5 & 31 / 79.6 \\
+    8 & 3 / 256.0 & 10 / 107.3 & 301 / 74.5 & 43 / 83.0 \\
+    13 & 3 / 256.0 & 15 / 122.0 & 306 / 75.8 & 50 / 87.0 \\
+    18 & 3 / 256.0 & 20 / 136.5 & 312 / 77.3 & 58 / 88.5 \\
+    23 & 3 / 256.0 & 25 / 150.8 & 317 / 78.5 & 67 / 89.0 \\
+    28 & 3 / 256.0 & 30 / 161.3 & 319 / 79.0 & 75 / 88.5 \\
+    33 & 3 / 256.0 & 35 / 170.3 & 320 / 79.3 & 79 / 89.0 \\
+    38 & 3 / 256.0 & 40 / 179.5 & 320 / 79.3 & 86 / 88.5 \\
+    43 & 3 / 256.0 & 45 / 189.0 & 321 / 79.5 & 92 / 88.5 \\
+
+  wrote traces/history-replay.csv and traces/history-restic.csv
+exit 0

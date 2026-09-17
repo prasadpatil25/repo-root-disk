@@ -63,7 +63,7 @@ export function rng(seed) {
  */
 export function workload({
   syncs, diskSize, chunkSize, seed = 20260830,
-  hotChunks = 12, writesPerSync = 4, newChunkChance = 0.25
+  hotChunks = 12, writesPerSync = 4, newChunkChance = 0.25, fullChunks = false
 }) {
   const random = rng(seed);
   const encoder = new TextEncoder();
@@ -83,11 +83,46 @@ export function workload({
         index = allocated[Math.floor(random() * allocated.length)];
       }
       // Content differs on every write, so nothing deduplicates by accident.
-      writes.push({ index, bytes: encoder.encode(`sync ${n} write ${w} ${random()}`) });
+      const tag = `sync ${n} write ${w} ${random()}`;
+      writes.push(fullChunks
+        ? lazyChunk(index, tag, chunkSize)
+        : { index, bytes: encoder.encode(tag) });
     }
     plan.push({ sync: n, writes });
   }
   return plan;
+}
+
+/**
+ * A write that fills its whole chunk with seeded random bytes.
+ *
+ * The default payload is a short string, which is all the in-process shapes
+ * need: they commit whole chunks and count them, so content never enters a
+ * number. A content-defined chunker sees content, and to it a 30-byte string
+ * inside 256 KB of zeros is a zero-filled file; restic would split and
+ * deduplicate it like one. `fullChunks` gives every write a chunk's worth of
+ * entropy instead, which is what an occupied block looks like on a real disk.
+ *
+ * The bytes are regenerated on each access from the write's tag, so a plan of
+ * a thousand syncs costs kilobytes to hold rather than a gigabyte.
+ */
+function lazyChunk(index, tag, chunkSize) {
+  let seed = 2166136261;
+  for (let i = 0; i < tag.length; i++) seed = Math.imul(seed ^ tag.charCodeAt(i), 16777619);
+  return {
+    index,
+    tag,
+    get bytes() {
+      const out = new Uint8Array(chunkSize);
+      const words = new Uint32Array(out.buffer, 0, chunkSize >>> 2);
+      let s = seed >>> 0;
+      for (let i = 0; i < words.length; i++) {
+        s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0;
+        words[i] = s;
+      }
+      return out;
+    }
+  };
 }
 
 // -------------------------------------------------------------------- host
@@ -362,6 +397,19 @@ export async function run(ShapeClass, {
     onSync(row);
   }
   return rows;
+}
+
+/**
+ * Where restore is measured. The paper's six for a 120-sync run, and a spread
+ * that still straddles the two halves for longer ones. Shared by every harness
+ * so their tables line up sync for sync.
+ */
+export function checkpoints(syncs) {
+  const mid = Math.floor(syncs / 2);
+  const at = syncs <= 120
+    ? [1, 10, 30, 60, 90, syncs]
+    : [1, 10, Math.floor(mid / 5), mid, Math.floor(mid * 1.5), syncs];
+  return [...new Set(at)].filter((n) => n >= 1 && n <= syncs).sort((a, b) => a - b);
 }
 
 /** Cumulative upload requests, which is what the rate limit meters. */

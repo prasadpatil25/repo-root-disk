@@ -472,7 +472,7 @@ export class Machine {
  */
 export async function restore({
   host, branch, commit, tree, cipher = plaintextCipher, fetchBase, cdn,
-  manifestDigest = null, onEvent = () => {}
+  manifestDigest = null, concurrency = 1, onEvent = () => {}
 }) {
   // A branch names the newest state; a commit names any of them. Bisect needs
   // the second, and it is the same work once the tree is known.
@@ -506,23 +506,34 @@ export async function restore({
 
   const disk = await loadBase(manifest, fetchBase, onEvent);
 
+  // Chunks are independent, so up to `concurrency` of them are in flight at
+  // once. The count of requests is the same at any width; only the wall clock
+  // changes, which is what a machine waiting to boot cares about.
   let fromCdn = 0, fromApi = 0;
   const indices = manifestModule.indices(manifest);
-  for (const index of indices) {
-    const id = manifest.chunks[String(index)];
-    let stored = null;
-    if (cdn) {
-      // Read-your-writes: the CDN can lag a commit it has not seen, so a miss
-      // falls back to the object API rather than failing the boot.
-      try { stored = await cdn(id); } catch { stored = null; }
-      if (stored) fromCdn++;
+  let next = 0;
+  const worker = async () => {
+    for (;;) {
+      const at = next++;
+      if (at >= indices.length) return;
+      const index = indices[at];
+      const id = manifest.chunks[String(index)];
+      let stored = null;
+      if (cdn) {
+        // Read-your-writes: the CDN can lag a commit it has not seen, so a miss
+        // falls back to the object API rather than failing the boot.
+        try { stored = await cdn(id); } catch { stored = null; }
+        if (stored) fromCdn++;
+      }
+      if (!stored) { stored = await host.readObject(id); fromApi++; }
+      await verifyChunk(stored, manifest, index, id);
+      const plaintext = await cipher.decrypt(stored);
+      const { offset } = chunkExtent(index, manifest.chunkSize, manifest.diskSize);
+      disk.set(plaintext, offset);
     }
-    if (!stored) { stored = await host.readObject(id); fromApi++; }
-    await verifyChunk(stored, manifest, index, id);
-    const plaintext = await cipher.decrypt(stored);
-    const { offset } = chunkExtent(index, manifest.chunkSize, manifest.diskSize);
-    disk.set(plaintext, offset);
-  }
+  };
+  const width = Math.max(1, Math.min(Math.floor(concurrency) || 1, indices.length || 1));
+  await Promise.all(Array.from({ length: width }, worker));
 
   return {
     manifest,

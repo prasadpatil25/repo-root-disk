@@ -30,8 +30,12 @@ claims.
 |---|---|---|
 | Restore cost is the live set plus three requests, constant in history | `node src/analysis/restore-scaling.mjs` | no |
 | Three commit shapes compared on one workload: restore, storage, upload against history | `node src/analysis/compare-baselines.mjs` | no |
+| restic, a real chunked store, on that same workload | `node src/analysis/restic-baseline.mjs` (needs `restic` and `rest-server` on PATH) | no |
+| All four on a captured 43-sync history of a real machine | `node src/analysis/replay-history.mjs` | no |
+| v86's native snapshot of that machine, and the wrapper's cost to the guest | `app/demo-native.js` from the browser console | no |
+| Restore wall clock from GitHub, serial and eight-wide | `node src/analysis/restore-wallclock.mjs <owner/repo>` | **yes** |
 | Write amplification and the chunk-size trade-off | `node src/analysis/report.mjs traces/mke2fs-256mb.json` | no |
-| Every invariant the design rests on (651 tests, 13 suites) | see below | no |
+| Every invariant the design rests on (742 tests, 14 suites) | see below | no |
 | GitHub costs 20x the requests and 13x the time of a batch-commit host | `node src/analysis/batch-commit.mjs github <owner/repo>` then `gitlab` | **yes** |
 | Whether a batch-commit host offers a compare-and-swap | `node src/analysis/cas-probe.mjs gitlab <owner/repo>` | **yes** |
 
@@ -45,6 +49,36 @@ shapes as working systems on byte-identical workloads, with every cost read off
 one counting host so no shape reports its own. It emits the comparison table
 and a CSV for plotting.
 
+`restic-baseline.mjs` runs restic itself on the same write plan, against
+`rest-server` on the loopback, with every request read off the server's access
+log and storage off its directory. It needs both binaries installed (`winget
+install restic.restic restic.server`, or the release archives); nothing leaves
+the machine. At 1,000 syncs on 256 MB the result is in
+`traces/restic-1000x256mb.csv`: restore grows one request per sync until
+`repair index`, then 171 requests to ours at 404, for twice the bytes and 3.9
+times the storage. `traces/restic-120x64mb-run{1,2,3}.csv` are three repeats of
+the default run; restic's chunker is seeded per repository, and they agree
+within one request and four percent of bytes.
+
+`replay-history.mjs` runs the same four stores on a history a real guest wrote:
+`traces/history/history.json` records 44 phases (format, Alpine, vim, then a
+forty-step working session) with the chunks each one dirtied, which is enough
+for the three in-process shapes. The chunk contents, 190 MB, are not in git;
+restic needs them, and `app/demo-history.js` records them again in about two
+minutes: serve the project with `python serve.py`, open `/app/`, and run the
+snippet at the top of that file from the browser console. The results are in
+`traces/history-replay.csv`.
+
+`app/demo-native.js`, run the same way, measures the emulator's own
+persistence on that machine: v86's `save_state` blob (443 MB, since it carries
+the 256 MB of memory), how long it takes to save and to restore without a
+reboot, and what the interception wrapper costs the guest (96 MB written
+through the device, attached against detached, interleaved). Results go to
+`traces/history/native.json`. `restore-wallclock.mjs` commits the same machine
+to a throwaway branch and times its restore from the object API, serially and
+eight-wide, three rounds each; it needs a token in `GITHUB_TOKEN` and deletes
+the branch afterwards.
+
 `report.mjs` reads a captured write trace and reports what each chunk size would
 have cost. `traces/mke2fs-256mb.json` is a real capture of `mke2fs` on a 256 MB
 disk, not a synthetic workload.
@@ -54,12 +88,12 @@ disk, not a synthetic workload.
 ```
 for t in test test-engine test-device test-fs test-runner test-terminal \
          test-keyboard test-alpine test-sweep test-bisect test-nbd test-batch \
-         test-baselines; do
+         test-baselines test-restic; do
   node src/$t.mjs
 done
 ```
 
-651 assertions. They need no network and no credentials. `test-nbd.mjs` speaks
+742 assertions. They need no network and no credentials. `test-nbd.mjs` speaks
 the client half of the NBD protocol over a real socket, so the wire format and
 the server loop are exercised rather than mocked; the one hop that needs Linux
 is `nbd-client` binding the export to `/dev/nbd0`.

@@ -1,0 +1,57 @@
+
+restic on the shape workload, 1000 syncs on a 256 MB disk with 256 KB chunks
+
+  restic 0.19.1 compiled with go1.26.4 on windows/amd64
+  rest-server version rest-server 0.14.0 compiled with go1.24.3 on windows/amd64
+  repository: F:\repo-root-disk-restic\repo
+
+  sync     1       3.5 MB stored      13 upload requests  restore 17 req / 3.5 MB  (0.5 min)
+  sync    10      26.2 MB stored     130 upload requests  restore 36 req / 12.5 MB  (1.3 min)
+  sync    50     164.2 MB stored     650 upload requests  (2.1 min)
+  sync   100     346.3 MB stored    1300 upload requests  restore 161 req / 59.6 MB  (3.5 min)
+  sync   150     521.2 MB stored    1950 upload requests  (4.4 min)
+  sync   200     720.6 MB stored    2600 upload requests  (5.4 min)
+  sync   250     906.9 MB stored    3250 upload requests  (6.4 min)
+  sync   300    1107.8 MB stored    3900 upload requests  (7.4 min)
+  sync   350    1331.6 MB stored    4550 upload requests  (8.4 min)
+  sync   400    1546.1 MB stored    5200 upload requests  (9.4 min)
+  sync   450    1744.7 MB stored    5850 upload requests  (10.5 min)
+  sync   500    1946.8 MB stored    6500 upload requests  restore 662 req / 198.0 MB  (12.2 min)
+  sync   550    2150.6 MB stored    7150 upload requests  (13.2 min)
+  sync   600    2355.0 MB stored    7800 upload requests  (14.3 min)
+  sync   650    2558.4 MB stored    8450 upload requests  (15.4 min)
+  sync   700    2757.1 MB stored    9100 upload requests  (16.9 min)
+  sync   750    2959.6 MB stored    9750 upload requests  restore 918 req / 192.0 MB  (18.7 min)
+  sync   800    3162.0 MB stored   10400 upload requests  (19.9 min)
+  sync   850    3363.3 MB stored   11050 upload requests  (21.0 min)
+  sync   900    3563.5 MB stored   11700 upload requests  (22.1 min)
+  sync   950    3765.0 MB stored   12350 upload requests  (23.2 min)
+  sync  1000    3980.3 MB stored   13000 upload requests  restore 1170 req / 197.2 MB  (25.4 min)
+
+  restore cost against history (requests / MB fetched), by part of the repository
+  sync           total       index   data  other   seconds
+       1      17 /     3.5       2      6      9      20.9
+      10      36 /    12.5      11     16      9      24.4
+     100     161 /    59.6     101     51      9      28.2
+     500     662 /   198.0     501    152      9      34.9
+     750     918 /   192.0     751    158      9      37.2
+    1000    1170 /   197.2    1001    160      9      46.4
+   1000*     171 /   197.0       2    160      9      40.4
+  * after `repair index`, restic's index compaction, every snapshot kept
+
+  storage at sync 1000: 3980.3 MB, 3980.1 MB after repair
+  cumulative upload requests: 13000 (13.0 per sync)
+  index repair: 1011 requests, 17.6 s
+  backup wall time: 19.7 min over 1000 syncs
+
+  LaTeX column for tab:scaling (requests / MB):
+    1 & 17 / 3.5 \\
+    10 & 36 / 12.5 \\
+    100 & 161 / 59.6 \\
+    500 & 662 / 198.0 \\
+    750 & 918 / 192.0 \\
+    1000 & 1170 / 197.2 \\
+    after repair & 171 / 197.0 \\
+
+  wrote traces/restic-1000x256mb.csv
+exit 0

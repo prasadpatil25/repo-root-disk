@@ -1,0 +1,174 @@
+sync,label,dirtyChunks,liveChunks,shape,restoreRequests,restoreBytes,storageBytes,uploadRequestsCumulative
+1,"format and mount",64,64,whole-image,3,268435456,268435456,4
+2,"unpack alpine",67,95,whole-image,3,268435456,536870912,8
+3,"install vim",236,294,whole-image,3,268435456,805306368,12
+4,"grow 1: new 128k file",16,295,whole-image,3,268435456,1073741824,16
+5,"grow 2: new 256k file",12,295,whole-image,3,268435456,1342177280,20
+6,"grow 3: new 512k file",14,298,whole-image,3,268435456,1610612736,24
+7,"grow 4: new 64k file",10,298,whole-image,3,268435456,1879048192,28
+8,"grow 5: new 128k file",10,298,whole-image,3,268435456,2147483648,32
+9,"grow 6: new 256k file",12,299,whole-image,3,268435456,2415919104,36
+10,"grow 7: new 512k file",15,301,whole-image,3,268435456,2684354560,40
+11,"grow 8: new 64k file",10,301,whole-image,3,268435456,2952790016,44
+12,"grow 9: new 128k file",11,302,whole-image,3,268435456,3221225472,48
+13,"grow 10: new 256k file",11,303,whole-image,3,268435456,3489660928,52
+14,"grow 11: new 512k file",13,306,whole-image,3,268435456,3758096384,56
+15,"grow 12: new 64k file",10,306,whole-image,3,268435456,4026531840,60
+16,"grow 13: new 128k file",11,306,whole-image,3,268435456,4294967296,64
+17,"grow 14: new 256k file",12,307,whole-image,3,268435456,4563402752,68
+18,"grow 15: new 512k file",12,309,whole-image,3,268435456,4831838208,72
+19,"grow 16: new 64k file",10,310,whole-image,3,268435456,5100273664,76
+20,"grow 17: new 128k file",11,310,whole-image,3,268435456,5368709120,80
+21,"grow 18: new 256k file",12,312,whole-image,3,268435456,5637144576,84
+22,"grow 19: new 512k file",14,314,whole-image,3,268435456,5905580032,88
+23,"grow 20: new 64k file",10,314,whole-image,3,268435456,6174015488,92
+24,"work 21: append to log",7,314,whole-image,3,268435456,6442450944,96
+25,"work 22: rewrite part of f15",3,314,whole-image,3,268435456,6710886400,100
+26,"work 23: edit with vim",9,314,whole-image,3,268435456,6979321856,104
+27,"work 24: delete f9, create g24",12,315,whole-image,3,268435456,7247757312,108
+28,"work 25: package churn",11,316,whole-image,3,268435456,7516192768,112
+29,"work 26: append to log",4,316,whole-image,3,268435456,7784628224,116
+30,"work 27: rewrite part of f10",4,316,whole-image,3,268435456,8053063680,120
+31,"work 28: edit with vim",6,316,whole-image,3,268435456,8321499136,124
+32,"work 29: delete f4, create g29",11,316,whole-image,3,268435456,8589934592,128
+33,"work 30: package churn",11,317,whole-image,3,268435456,8858370048,132
+34,"work 31: append to log",5,317,whole-image,3,268435456,9126805504,136
+35,"work 32: rewrite part of f5",4,317,whole-image,3,268435456,9395240960,140
+36,"work 33: edit with vim",6,317,whole-image,3,268435456,9663676416,144
+37,"work 34: delete f19, create g34",11,317,whole-image,3,268435456,9932111872,148
+38,"work 35: package churn",11,317,whole-image,3,268435456,10200547328,152
+39,"work 36: append to log",4,317,whole-image,3,268435456,10468982784,156
+40,"work 37: rewrite part of f20",4,317,whole-image,3,268435456,10737418240,160
+41,"work 38: edit with vim",6,317,whole-image,3,268435456,11005853696,164
+42,"work 39: delete f14, create g39",12,317,whole-image,3,268435456,11274289152,168
+43,"work 40: package churn",12,318,whole-image,3,268435456,11542724608,172
+1,"format and mount",64,64,delta-pack,3,16777472,16777472,4
+2,"unpack alpine",67,95,delta-pack,4,34341388,34341388,8
+3,"install vim",236,294,delta-pack,5,96208316,96208316,12
+4,"grow 1: new 128k file",16,295,delta-pack,6,100402684,100402684,16
+5,"grow 2: new 256k file",12,295,delta-pack,7,103548460,103548460,20
+6,"grow 3: new 512k file",14,298,delta-pack,8,107218532,107218532,24
+7,"grow 4: new 64k file",10,298,delta-pack,9,109840012,109840012,28
+8,"grow 5: new 128k file",10,298,delta-pack,10,112461492,112461492,32
+9,"grow 6: new 256k file",12,299,delta-pack,11,115607268,115607268,36
+10,"grow 7: new 512k file",15,301,delta-pack,12,119539488,119539488,40
+11,"grow 8: new 64k file",10,301,delta-pack,13,122160968,122160968,44
+12,"grow 9: new 128k file",11,302,delta-pack,14,125044596,125044596,48
+13,"grow 10: new 256k file",11,303,delta-pack,15,127928224,127928224,52
+14,"grow 11: new 512k file",13,306,delta-pack,16,131336148,131336148,56
+15,"grow 12: new 64k file",10,306,delta-pack,17,133957628,133957628,60
+16,"grow 13: new 128k file",11,306,delta-pack,18,136841256,136841256,64
+17,"grow 14: new 256k file",12,307,delta-pack,19,139987032,139987032,68
+18,"grow 15: new 512k file",12,309,delta-pack,20,143132808,143132808,72
+19,"grow 16: new 64k file",10,310,delta-pack,21,145754288,145754288,76
+20,"grow 17: new 128k file",11,310,delta-pack,22,148637916,148637916,80
+21,"grow 18: new 256k file",12,312,delta-pack,23,151783692,151783692,84
+22,"grow 19: new 512k file",14,314,delta-pack,24,155453764,155453764,88
+23,"grow 20: new 64k file",10,314,delta-pack,25,158075244,158075244,92
+24,"work 21: append to log",7,314,delta-pack,26,159910280,159910280,96
+25,"work 22: rewrite part of f15",3,314,delta-pack,27,160696724,160696724,100
+26,"work 23: edit with vim",9,314,delta-pack,28,163056056,163056056,104
+27,"work 24: delete f9, create g24",12,315,delta-pack,29,166201832,166201832,108
+28,"work 25: package churn",11,316,delta-pack,30,169085460,169085460,112
+29,"work 26: append to log",4,316,delta-pack,31,170134052,170134052,116
+30,"work 27: rewrite part of f10",4,316,delta-pack,32,171182644,171182644,120
+31,"work 28: edit with vim",6,316,delta-pack,33,172755532,172755532,124
+32,"work 29: delete f4, create g29",11,316,delta-pack,34,175639160,175639160,128
+33,"work 30: package churn",11,317,delta-pack,35,178522788,178522788,132
+34,"work 31: append to log",5,317,delta-pack,36,179833528,179833528,136
+35,"work 32: rewrite part of f5",4,317,delta-pack,37,180882120,180882120,140
+36,"work 33: edit with vim",6,317,delta-pack,38,182455008,182455008,144
+37,"work 34: delete f19, create g34",11,317,delta-pack,39,185338636,185338636,148
+38,"work 35: package churn",11,317,delta-pack,40,188222264,188222264,152
+39,"work 36: append to log",4,317,delta-pack,41,189270856,189270856,156
+40,"work 37: rewrite part of f20",4,317,delta-pack,42,190319448,190319448,160
+41,"work 38: edit with vim",6,317,delta-pack,43,191892336,191892336,164
+42,"work 39: delete f14, create g39",12,317,delta-pack,44,195038112,195038112,168
+43,"work 40: package churn",12,318,delta-pack,45,198183888,198183888,172
+1,"format and mount",64,64,chunk-exploded,67,16785159,1580807,10
+2,"unpack alpine",67,95,chunk-exploded,98,24915331,19156106,81
+3,"install vim",236,294,chunk-exploded,297,77106257,81058011,321
+4,"grow 1: new 128k file",16,295,chunk-exploded,298,77368523,85288358,341
+5,"grow 2: new 256k file",12,295,chunk-exploded,298,77368523,88470129,357
+6,"grow 3: new 512k file",14,298,chunk-exploded,301,78155321,92176554,375
+7,"grow 4: new 64k file",10,298,chunk-exploded,301,78155321,94834403,389
+8,"grow 5: new 128k file",10,298,chunk-exploded,301,78155321,97492252,403
+9,"grow 6: new 256k file",12,299,chunk-exploded,302,78417587,100674511,419
+10,"grow 7: new 512k file",15,301,chunk-exploded,304,78942120,104643447,438
+11,"grow 8: new 64k file",10,301,chunk-exploded,304,78942120,107301663,452
+12,"grow 9: new 128k file",11,302,chunk-exploded,305,79204386,110222145,467
+13,"grow 10: new 256k file",11,303,chunk-exploded,306,79466652,113142749,482
+14,"grow 11: new 512k file",13,306,chunk-exploded,309,80253450,116588007,499
+15,"grow 12: new 64k file",10,306,chunk-exploded,309,80253450,119246833,513
+16,"grow 13: new 128k file",11,306,chunk-exploded,309,80253450,122167803,528
+17,"grow 14: new 256k file",12,307,chunk-exploded,310,80515716,125351039,544
+18,"grow 15: new 512k file",12,309,chunk-exploded,312,81040248,128534519,560
+19,"grow 16: new 64k file",10,310,chunk-exploded,313,81302514,131193833,574
+20,"grow 17: new 128k file",11,310,chunk-exploded,313,81302514,134115291,589
+21,"grow 18: new 256k file",12,312,chunk-exploded,315,81827046,137299137,605
+22,"grow 19: new 512k file",14,314,chunk-exploded,317,82351578,141007515,623
+23,"grow 20: new 64k file",10,314,chunk-exploded,317,82351578,143667317,637
+24,"work 21: append to log",7,314,chunk-exploded,317,82351578,145540687,648
+25,"work 22: rewrite part of f15",3,314,chunk-exploded,317,82351578,146365481,655
+26,"work 23: edit with vim",9,314,chunk-exploded,317,82351578,148763139,668
+27,"work 24: delete f9, create g24",12,315,chunk-exploded,318,82613844,151947351,684
+28,"work 25: package churn",11,316,chunk-exploded,319,82876110,154607397,698
+29,"work 26: append to log",4,316,chunk-exploded,319,82876110,155694579,706
+30,"work 27: rewrite part of f10",4,316,chunk-exploded,319,82876110,156781761,714
+31,"work 28: edit with vim",6,316,chunk-exploded,319,82876110,158131087,723
+32,"work 29: delete f4, create g29",11,316,chunk-exploded,319,82876110,161053277,738
+33,"work 30: package churn",11,317,chunk-exploded,320,83138376,162927013,749
+34,"work 31: append to log",5,317,chunk-exploded,320,83138376,164276461,758
+35,"work 32: rewrite part of f5",4,317,chunk-exploded,320,83138376,165363765,766
+36,"work 33: edit with vim",6,317,chunk-exploded,320,83138376,166975357,776
+37,"work 34: delete f19, create g34",11,317,chunk-exploded,320,83138376,169897669,791
+38,"work 35: package churn",11,317,chunk-exploded,320,83138376,172557837,805
+39,"work 36: append to log",4,317,chunk-exploded,320,83138376,173645141,813
+40,"work 37: rewrite part of f20",4,317,chunk-exploded,320,83138376,174732445,821
+41,"work 38: edit with vim",6,317,chunk-exploded,320,83138376,176081893,830
+42,"work 39: delete f14, create g39",12,317,chunk-exploded,320,83138376,179266349,846
+43,"work 40: package churn",12,318,chunk-exploded,321,83400642,181140207,857
+1,"format and mount",64,64,restic,22,2628629,2628318,13
+2,"unpack alpine",67,95,restic,25,29375617,31477669,27
+3,"install vim",236,294,restic,31,83454747,106419713,44
+4,"grow 1: new 128k file",16,295,restic,35,86100465,112345286,57
+5,"grow 2: new 256k file",12,295,restic,39,87251385,118999309,70
+6,"grow 3: new 512k file",14,298,restic,41,86981786,126971296,83
+7,"grow 4: new 64k file",10,298,restic,43,86983035,133747609,96
+8,"grow 5: new 128k file",10,298,restic,43,86984382,141689060,109
+9,"grow 6: new 256k file",12,299,restic,47,86985799,150467995,122
+10,"grow 7: new 512k file",15,301,restic,45,90659219,174515784,136
+11,"grow 8: new 64k file",10,301,restic,48,91184820,180791755,149
+12,"grow 9: new 128k file",11,302,restic,49,91186092,187749386,162
+13,"grow 10: new 256k file",11,303,restic,50,91187360,194707023,175
+14,"grow 11: new 512k file",13,306,restic,51,91714159,215688288,189
+15,"grow 12: new 64k file",10,306,restic,53,92239692,222773934,202
+16,"grow 13: new 128k file",11,306,restic,54,91716705,230384004,215
+17,"grow 14: new 256k file",12,307,restic,56,92242397,237994096,228
+18,"grow 15: new 512k file",12,309,restic,58,92768120,245476233,241
+19,"grow 16: new 64k file",10,310,restic,60,92769218,252433803,254
+20,"grow 17: new 128k file",11,310,restic,61,92770437,259391383,267
+21,"grow 18: new 256k file",12,312,restic,62,93296077,266873386,280
+22,"grow 19: new 512k file",14,314,restic,64,93297380,274355421,293
+23,"grow 20: new 64k file",10,314,restic,67,93298476,279588578,306
+24,"work 21: append to log",7,314,restic,69,94895330,283611350,319
+25,"work 22: rewrite part of f15",3,314,restic,70,95729922,285504904,332
+26,"work 23: edit with vim",9,314,restic,72,95398862,289898230,345
+27,"work 24: delete f9, create g24",12,315,restic,72,91729852,301339248,358
+28,"work 25: package churn",11,316,restic,75,92779958,305684721,371
+29,"work 26: append to log",4,316,restic,76,93305275,309182976,384
+30,"work 27: rewrite part of f10",4,316,restic,77,93830431,311076894,397
+31,"work 28: edit with vim",6,316,restic,80,93307014,313372433,410
+32,"work 29: delete f4, create g29",11,316,restic,77,92259896,329051528,423
+33,"work 30: package churn",11,317,restic,79,93332665,331823735,436
+34,"work 31: append to log",5,317,restic,81,94382208,333954991,449
+35,"work 32: rewrite part of f5",4,317,restic,83,93858789,336488557,462
+36,"work 33: edit with vim",6,317,restic,84,93335426,339308459,475
+37,"work 34: delete f19, create g34",11,317,restic,84,92789398,345009404,488
+38,"work 35: package churn",11,317,restic,86,92790478,349420333,501
+39,"work 36: append to log",4,317,restic,89,92791431,351551600,514
+40,"work 37: rewrite part of f20",4,317,restic,91,93382168,353511058,527
+41,"work 38: edit with vim",6,317,restic,92,93383048,355806577,540
+42,"work 39: delete f14, create g39",12,317,restic,91,92794361,361507539,553
+43,"work 40: package churn",12,318,restic,92,92795301,364279745,566
+43,"after repair index",12,318,restic-compacted,50,92783666,364271789,620

@@ -32,3 +32,13 @@ Thumbs.db
 *.bak
 *.orig
 *~
+
+# Third-party binaries unpacked beside the repo for the restic harness.
+rest-server_*/
+
+# Chunk payloads of a captured history: 190 MB, regenerable with app/demo-history.js.
+# history.json stays, and alone reproduces the in-process shapes.
+traces/history/*.bin
+
+# Editor and tool configuration local to this checkout.
+.claude/launch.json
