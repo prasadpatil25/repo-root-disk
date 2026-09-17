@@ -39,6 +39,10 @@ if (!token) {
 const [owner, repo] = slug.split("/");
 const endpoint = process.env[`${kind.toUpperCase()}_ENDPOINT`] || undefined;
 const branch = `cas-probe-${Date.now().toString(36)}`;
+// Unique per run. The branch starts from the repository's default branch and
+// inherits its files, and a default branch that carries an earlier probe's
+// file would make a "create" of the same name fail before the probe begins.
+const PROBE = `${branch}.txt`;
 const encoder = new TextEncoder();
 
 const host = createHost(kind, {
@@ -73,7 +77,7 @@ try {
   // --- establish the machine ------------------------------------------------
   const first = await host.commit({
     branch, message: "cas probe: base",
-    files: [file("probe.txt", "base")],
+    files: [file(PROBE, "base")],
     parent: null, branchExists: false
   });
   say("base commit", String(first.commit).slice(0, 12));
@@ -81,7 +85,7 @@ try {
   // --- writer A advances the branch ----------------------------------------
   const writerA = await host.commit({
     branch, message: "cas probe: writer A",
-    files: [file("probe.txt", "written by A")],
+    files: [file(PROBE, "written by A")],
     parent: first.commit, branchExists: true
   });
   say("writer A committed", String(writerA.commit).slice(0, 12));
@@ -96,7 +100,7 @@ try {
   try {
     writerB = await host.commit({
       branch, message: "cas probe: writer B from a stale parent",
-      files: [file("probe.txt", "written by B")],
+      files: [file(PROBE, "written by B")],
       parent: first.commit, branchExists: true
     });
     accepted = true;
@@ -116,14 +120,14 @@ try {
   // --- what does the branch actually hold now? -----------------------------
   const head = await host.resolveRef(branch);
   const entries = await host.readTree(head.tree);
-  const probe = entries.find((e) => e.path === "probe.txt");
+  const probe = entries.find((e) => e.path === PROBE);
   const contents = probe
     ? new TextDecoder().decode(await host.readObject(probe.id))
-    : "(probe.txt not found)";
+    : "(probe file not found)";
 
   console.log();
   say("branch head", String(head.commit).slice(0, 12));
-  say("probe.txt now reads", JSON.stringify(contents.trim()));
+  say("probe file now reads", JSON.stringify(contents.trim()));
 
   const lostA = accepted && contents.trim() === "written by B";
   console.log();
