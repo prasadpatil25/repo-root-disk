@@ -112,6 +112,12 @@ export class Host {
    */
   async createRef() { throw new Error("not implemented"); }
 
+  /**
+   * Remove a branch. Exists so a tool that creates a branch can remove it;
+   * callers are expected to delete only what they made.
+   */
+  async deleteBranch() { throw new Error("not implemented"); }
+
   // --- shared plumbing -------------------------------------------------------
 
   async request(method, path, { body, headers = {}, binary = false, raw = false } = {}) {

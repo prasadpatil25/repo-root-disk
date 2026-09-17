@@ -108,6 +108,11 @@ export class ForgejoHost extends Host {
     return created.name || name;
   }
 
+  async deleteBranch(branch) {
+    await this.request("DELETE", this.base(`/branches/${encodeURIComponent(branch)}`));
+    return branch;
+  }
+
   async readTree(treeIsh) {
     const tree = await this.request("GET", this.base(`/git/trees/${treeIsh}?recursive=true`));
     return (tree.tree || [])

@@ -40,6 +40,12 @@ if (!token) {
 const [owner, repo] = slug.split("/");
 const endpoint = process.env[`${kind.toUpperCase()}_ENDPOINT`] || undefined;
 const branch = `cas-probe-${Date.now().toString(36)}`;
+
+// The per-file lock has a different name on each batch-commit host, and on
+// Forgejo it is not optional: the contents API requires the blob sha on every
+// update, so the adapter always sends it and phase one already carries the lock.
+const LOCK = kind === "forgejo" ? "sha" : "last_commit_id";
+const LOCK_IS_MANDATORY = kind === "forgejo";
 // Unique per run. The branch starts from the repository's default branch and
 // inherits its files, and a default branch that carries an earlier probe's
 // file would make a "create" of the same name fail before the probe begins.
@@ -120,6 +126,9 @@ try {
   }
 
   console.log();
+  if (LOCK_IS_MANDATORY) {
+    say("note", `on ${kind} every update carries ${LOCK}, so this write was locked too`);
+  }
   if (accepted) {
     say("stale write was", "ACCEPTED");
     say("writer B commit", String(writerB.commit).slice(0, 12));
@@ -161,9 +170,9 @@ try {
   }
   console.log();
   if (lockAccepted) {
-    say("stale write with last_commit_id was", "ACCEPTED");
+    say(`stale write with ${LOCK} was`, "ACCEPTED");
   } else {
-    say("stale write with last_commit_id was", "REFUSED");
+    say(`stale write with ${LOCK} was`, "REFUSED");
     say("refusal", lockRefusal.slice(0, 90));
   }
 
@@ -180,11 +189,15 @@ try {
         "  guarantee phase P7 depends on.");
 
   console.log(lockAccepted
-    ? "\n  last_commit_id: ACCEPTED a stale writer. The field is not an optimistic\n" +
+    ? `\n  ${LOCK}: ACCEPTED a stale writer. The field is not an optimistic\n` +
       "  lock in practice, and nothing on this host refuses a stale write."
-    : "\n  last_commit_id: REFUSED the stale writer. This field is a per-file\n" +
+    : `\n  ${LOCK}: REFUSED the stale writer. This field is a per-file\n` +
       "  optimistic lock, and the sync can carry it on the manifest to recover a\n" +
-      "  compare-and-swap on this host.");
+      "  compare-and-swap on this host." +
+      (LOCK_IS_MANDATORY
+        ? `\n  On ${kind} the field is required on every update, so the lock is not\n` +
+          "  optional and there is no unlocked path for a sync to take."
+        : ""));
 
   // --- clean up -------------------------------------------------------------
   if (typeof host.deleteBranch === "function") {

@@ -133,6 +133,13 @@ export class GitLabHost extends Host {
     return created.name || name;
   }
 
+  async deleteBranch(branch) {
+    await this.request(
+      "DELETE", this.base(`/repository/branches/${encodeURIComponent(branch)}`)
+    );
+    return branch;
+  }
+
   async readTree(ref) {
     const entries = await this.request(
       "GET", this.base(`/repository/tree?ref=${encodeURIComponent(ref)}&recursive=true&per_page=100`)

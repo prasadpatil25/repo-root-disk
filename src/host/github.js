@@ -87,6 +87,11 @@ export class GitHubHost extends Host {
     return created.ref || ref;
   }
 
+  async deleteBranch(branch) {
+    await this.request("DELETE", this.base(`/git/refs/heads/${encodeURIComponent(branch)}`));
+    return branch;
+  }
+
   async readTree(treeSha) {
     const tree = await this.request("GET", this.base(`/git/trees/${treeSha}?recursive=1`));
     return tree.tree

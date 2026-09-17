@@ -502,6 +502,24 @@ console.log("\nstarting a new branch on the batch-commit hosts");
         !("last_commit_id" in actions.find((a) => a.file_path === "objects/aa/new")));
 }
 
+// Branch deletion, which exists so a tool can remove the branch it created.
+{
+  const cases = [
+    ["github",  /\/git\/refs\/heads\/cas-probe-x$/,        "DELETE /git/refs/heads/{branch}"],
+    ["gitlab",  /\/repository\/branches\/cas-probe-x$/,     "DELETE /repository/branches/{branch}"],
+    ["forgejo", /\/branches\/cas-probe-x$/,                 "DELETE /branches/{branch}"]
+  ];
+  for (const [kind, pattern, label] of cases) {
+    const seen = mockFetch([[pattern, () => ({ status: 204, json: null })]]);
+    const host = createHost(kind, { token: "t", owner: "o", repo: "r" });
+    const got = await host.deleteBranch("cas-probe-x");
+    const call = seen[seen.length - 1];
+    eq(`${kind} deletes with ${label}`, call.method, "DELETE");
+    check(`${kind} names the branch in the path`, pattern.test(call.url), call.url);
+    eq(`${kind} returns the branch it removed`, got, "cas-probe-x");
+  }
+}
+
 // Capabilities are declared honestly rather than emulated badly
 console.log("\ncapabilities");
 check("only github offers parentless commits",
