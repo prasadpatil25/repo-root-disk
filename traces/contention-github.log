@@ -1,0 +1,32 @@
+
+contention on github: prasadpatil25/telbot, branch contention-mu866si9
+
+  connected as                       prasadpatil25
+  machine created                    16 MB, 256 KB chunks
+  2 writers, budget 1, round 1       fr  22 requests, 9 s
+  2 writers, budget 1, round 2       rf  22 requests, 9 s
+  2 writers, budget 1, round 3       rf  22 requests, 9 s
+  4 writers, budget 1, round 1       afar  54 requests, 11 s
+  4 writers, budget 1, round 2       arfa  57 requests, 12 s
+  4 writers, budget 1, round 3       afra  60 requests, 17 s
+  4 writers, budget 3, round 1       frrr  84 requests, 23 s
+  4 writers, budget 3, round 2       frrr  84 requests, 24 s
+  4 writers, budget 3, round 3       rrrf  84 requests, 24 s
+  8 writers, budget 1, round 1       aarafaaa  118 requests, 30 s
+  8 writers, budget 1, round 2       aaraafaa  136 requests, 38 s
+  8 writers, budget 1, round 3       aafaaraa  148 requests, 42 s
+  8 writers, budget 7, round 1       rrrrfrrr  328 requests, 86 s
+  8 writers, budget 7, round 2       frrrrrrr  328 requests, 85 s
+  8 writers, budget 7, round 3       frrrrrrr  328 requests, 86 s
+  deleted branch                     contention-mu866si9
+
+  writers  budget   first  rebased  refused  aborted   req/landed   wasted   s/round
+        2       1     50%     50%      0%      0%         11.0        0         8
+        4       1     25%     25%      0%     50%         28.5      104        12
+        4       3     25%     75%      0%      0%         21.0        0        22
+        8       1     13%     13%      0%     75%         67.0      336        35
+        8       7     13%     88%      0%      0%         41.0        0        84
+  lost updates                       none
+
+  wrote traces/contention-github.json
+exit 0

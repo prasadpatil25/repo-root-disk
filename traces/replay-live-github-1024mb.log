@@ -1,0 +1,17 @@
+
+live replay on github: alpine, vim, and a forty-step corpus workload on a 1024 MB disk
+
+  connected as                   prasadpatil25
+  sync  1                          72 chunks      8 requests      3.4 s  format and mount
+  sync  2                          47 chunks     51 requests     14.6 s  unpack alpine
+  sync  3                         213 chunks    217 requests     90.3 s  install vim
+  sync  4                         157 chunks    161 requests    178.0 s  corpus 1: eight files, 36 MB
+  sync  5                         156 chunks    162 requests    169.1 s  corpus 2: eight files, 36 MB
+  sync  6                         160 chunks    167 requests    198.7 s  corpus 3: eight files, 36 MB
+  sync  7                         155 chunks    164 requests    229.9 s  corpus 4: eight files, 36 MB
+  sync  8                         155 chunks    164 requests    221.0 s  corpus 5: eight files, 36 MB
+  sync  9                         158 chunks    168 requests    244.9 s  corpus 6: eight files, 36 MB
+  sync 10                         156 chunks    167 requests    250.1 s  corpus 7: eight files, 36 MB
+  sync 11                         155 chunks    165 requests    240.8 s  corpus 8: eight files, 36 MB
+  sync 12                         153 chunks    166 requests    253.5 s  archive 1: tar a directory
+  sync 13                         154 chunks    165 requests    260.8 s  archive 2: tar a directory

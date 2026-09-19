@@ -1,0 +1,55 @@
+
+live replay on gitlab: alpine, vim, and a forty-step corpus workload on a 1024 MB disk
+
+  connected as                   prasadpatil252
+  sync  1                          72 chunks      1 requests      2.8 s  format and mount
+  sync  2                          47 chunks      1 requests      6.6 s  unpack alpine
+  sync  3                         213 chunks      3 requests     29.0 s  install vim
+  sync  4                         157 chunks      2 requests     19.3 s  corpus 1: eight files, 36 MB
+  sync  5                         156 chunks      2 requests     21.1 s  corpus 2: eight files, 36 MB
+  sync  6                         160 chunks      2 requests     21.4 s  corpus 3: eight files, 36 MB
+  sync  7                         155 chunks      3 requests     53.0 s  corpus 4: eight files, 36 MB
+  sync  8                         155 chunks      2 requests     23.6 s  corpus 5: eight files, 36 MB
+  sync  9                         158 chunks      2 requests     18.9 s  corpus 6: eight files, 36 MB
+  sync 10                         156 chunks      3 requests     53.7 s  corpus 7: eight files, 36 MB
+  sync 11                         155 chunks      2 requests     19.0 s  corpus 8: eight files, 36 MB
+  sync 12                         153 chunks      2 requests     21.3 s  archive 1: tar a directory
+  sync 13                         154 chunks      2 requests     19.7 s  archive 2: tar a directory
+  sync 14                         155 chunks      2 requests     22.3 s  archive 3: tar a directory
+  sync 15                         155 chunks      2 requests     20.3 s  archive 4: tar a directory
+  sync 16                         161 chunks      1 requests      6.2 s  extract 1: untar a copy
+  sync 17                         159 chunks      1 requests      5.3 s  extract 2: untar a copy
+  sync 18                          25 chunks      1 requests      5.0 s  grow 1: 4 MB file
+  sync 19                          26 chunks      1 requests      4.6 s  grow 2: 4 MB file
+  sync 20                          25 chunks      1 requests      5.2 s  grow 3: 4 MB file
+  sync 21                          25 chunks      1 requests      4.5 s  grow 4: 4 MB file
+  sync 22                          25 chunks      1 requests      4.9 s  grow 5: 4 MB file
+  sync 23                          26 chunks      1 requests      5.0 s  grow 6: 4 MB file
+  sync 24                           9 chunks      1 requests      2.8 s  work 21: rewrite 2 MB inside d4/f8
+  sync 25                          46 chunks      1 requests      6.9 s  work 22: delete a directory, recreate it smaller
+  sync 26                           9 chunks      1 requests      3.0 s  work 23: append to a log and edit with vim
+  sync 27                         159 chunks      1 requests      3.9 s  work 24: delete an archive, tar another
+  sync 28                           9 chunks      1 requests      2.7 s  work 25: package churn
+  sync 29                           9 chunks      1 requests      3.0 s  work 26: rewrite 2 MB inside d7/f7
+  sync 30                          48 chunks      1 requests      6.7 s  work 27: delete a directory, recreate it smaller
+  sync 31                           7 chunks      1 requests      2.8 s  work 28: append to a log and edit with vim
+  sync 32                         157 chunks      1 requests      5.9 s  work 29: delete an archive, tar another
+  sync 33                          10 chunks      1 requests      3.3 s  work 30: package churn
+  sync 34                           9 chunks      1 requests      3.0 s  work 31: rewrite 2 MB inside d2/f6
+  sync 35                          45 chunks      1 requests      7.1 s  work 32: delete a directory, recreate it smaller
+  sync 36                           7 chunks      1 requests      2.7 s  work 33: append to a log and edit with vim
+  sync 37                         157 chunks      2 requests     21.3 s  work 34: delete an archive, tar another
+  sync 38                          11 chunks      1 requests      2.7 s  work 35: package churn
+  sync 39                           9 chunks      1 requests      2.7 s  work 36: rewrite 2 MB inside d5/f5
+  sync 40                          44 chunks      1 requests      6.0 s  work 37: delete a directory, recreate it smaller
+  sync 41                           7 chunks      1 requests      2.5 s  work 38: append to a log and edit with vim
+  sync 42                         156 chunks      1 requests      4.0 s  work 39: delete an archive, tar another
+  sync 43                          10 chunks      1 requests      2.7 s  work 40: package churn
+
+  43 syncs: 60 requests, 2851 objects uploaded (712.8 MB), 8.2 min at 150/min
+  restore, eight-wide            2494 requests, 3110 chunks, 198.8 s, byte-identical
+  read refusals                  0
+
+  wrote traces/replay-live-gitlab-1024mb.json
+  deleted branch                 history-mu82c65y
+exit 0

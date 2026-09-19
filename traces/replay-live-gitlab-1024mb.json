@@ -1,0 +1,407 @@
+{
+ "kind": "gitlab",
+ "slug": "prasadpatil252/myrepo",
+ "branch": "history-mu82c65y",
+ "rate": 150,
+ "rows": [
+  {
+   "sync": 1,
+   "label": "format and mount",
+   "chunks": 72,
+   "uploaded": 4,
+   "requests": 1,
+   "seconds": 2.837,
+   "bytesUploaded": 1048576
+  },
+  {
+   "sync": 2,
+   "label": "unpack alpine",
+   "chunks": 47,
+   "uploaded": 47,
+   "requests": 1,
+   "seconds": 6.597,
+   "bytesUploaded": 12320768
+  },
+  {
+   "sync": 3,
+   "label": "install vim",
+   "chunks": 213,
+   "uploaded": 213,
+   "requests": 3,
+   "seconds": 28.972,
+   "bytesUploaded": 55836672
+  },
+  {
+   "sync": 4,
+   "label": "corpus 1: eight files, 36 MB",
+   "chunks": 157,
+   "uploaded": 157,
+   "requests": 2,
+   "seconds": 19.32,
+   "bytesUploaded": 41156608
+  },
+  {
+   "sync": 5,
+   "label": "corpus 2: eight files, 36 MB",
+   "chunks": 156,
+   "uploaded": 156,
+   "requests": 2,
+   "seconds": 21.06,
+   "bytesUploaded": 40894464
+  },
+  {
+   "sync": 6,
+   "label": "corpus 3: eight files, 36 MB",
+   "chunks": 160,
+   "uploaded": 160,
+   "requests": 2,
+   "seconds": 21.397,
+   "bytesUploaded": 41943040
+  },
+  {
+   "sync": 7,
+   "label": "corpus 4: eight files, 36 MB",
+   "chunks": 155,
+   "uploaded": 155,
+   "requests": 3,
+   "seconds": 52.978,
+   "bytesUploaded": 40632320
+  },
+  {
+   "sync": 8,
+   "label": "corpus 5: eight files, 36 MB",
+   "chunks": 155,
+   "uploaded": 155,
+   "requests": 2,
+   "seconds": 23.558,
+   "bytesUploaded": 40632320
+  },
+  {
+   "sync": 9,
+   "label": "corpus 6: eight files, 36 MB",
+   "chunks": 158,
+   "uploaded": 158,
+   "requests": 2,
+   "seconds": 18.94,
+   "bytesUploaded": 41418752
+  },
+  {
+   "sync": 10,
+   "label": "corpus 7: eight files, 36 MB",
+   "chunks": 156,
+   "uploaded": 156,
+   "requests": 3,
+   "seconds": 53.698,
+   "bytesUploaded": 40894464
+  },
+  {
+   "sync": 11,
+   "label": "corpus 8: eight files, 36 MB",
+   "chunks": 155,
+   "uploaded": 155,
+   "requests": 2,
+   "seconds": 18.976,
+   "bytesUploaded": 40632320
+  },
+  {
+   "sync": 12,
+   "label": "archive 1: tar a directory",
+   "chunks": 153,
+   "uploaded": 153,
+   "requests": 2,
+   "seconds": 21.274,
+   "bytesUploaded": 40108032
+  },
+  {
+   "sync": 13,
+   "label": "archive 2: tar a directory",
+   "chunks": 154,
+   "uploaded": 154,
+   "requests": 2,
+   "seconds": 19.66,
+   "bytesUploaded": 40370176
+  },
+  {
+   "sync": 14,
+   "label": "archive 3: tar a directory",
+   "chunks": 155,
+   "uploaded": 155,
+   "requests": 2,
+   "seconds": 22.337,
+   "bytesUploaded": 40632320
+  },
+  {
+   "sync": 15,
+   "label": "archive 4: tar a directory",
+   "chunks": 155,
+   "uploaded": 155,
+   "requests": 2,
+   "seconds": 20.27,
+   "bytesUploaded": 40632320
+  },
+  {
+   "sync": 16,
+   "label": "extract 1: untar a copy",
+   "chunks": 161,
+   "uploaded": 36,
+   "requests": 1,
+   "seconds": 6.17,
+   "bytesUploaded": 9437184
+  },
+  {
+   "sync": 17,
+   "label": "extract 2: untar a copy",
+   "chunks": 159,
+   "uploaded": 31,
+   "requests": 1,
+   "seconds": 5.346,
+   "bytesUploaded": 8126464
+  },
+  {
+   "sync": 18,
+   "label": "grow 1: 4 MB file",
+   "chunks": 25,
+   "uploaded": 25,
+   "requests": 1,
+   "seconds": 5.001,
+   "bytesUploaded": 6553600
+  },
+  {
+   "sync": 19,
+   "label": "grow 2: 4 MB file",
+   "chunks": 26,
+   "uploaded": 26,
+   "requests": 1,
+   "seconds": 4.583,
+   "bytesUploaded": 6815744
+  },
+  {
+   "sync": 20,
+   "label": "grow 3: 4 MB file",
+   "chunks": 25,
+   "uploaded": 25,
+   "requests": 1,
+   "seconds": 5.236,
+   "bytesUploaded": 6553600
+  },
+  {
+   "sync": 21,
+   "label": "grow 4: 4 MB file",
+   "chunks": 25,
+   "uploaded": 25,
+   "requests": 1,
+   "seconds": 4.538,
+   "bytesUploaded": 6553600
+  },
+  {
+   "sync": 22,
+   "label": "grow 5: 4 MB file",
+   "chunks": 25,
+   "uploaded": 25,
+   "requests": 1,
+   "seconds": 4.939,
+   "bytesUploaded": 6553600
+  },
+  {
+   "sync": 23,
+   "label": "grow 6: 4 MB file",
+   "chunks": 26,
+   "uploaded": 26,
+   "requests": 1,
+   "seconds": 5.04,
+   "bytesUploaded": 6815744
+  },
+  {
+   "sync": 24,
+   "label": "work 21: rewrite 2 MB inside d4/f8",
+   "chunks": 9,
+   "uploaded": 9,
+   "requests": 1,
+   "seconds": 2.768,
+   "bytesUploaded": 2359296
+  },
+  {
+   "sync": 25,
+   "label": "work 22: delete a directory, recreate it smaller",
+   "chunks": 46,
+   "uploaded": 46,
+   "requests": 1,
+   "seconds": 6.893,
+   "bytesUploaded": 12058624
+  },
+  {
+   "sync": 26,
+   "label": "work 23: append to a log and edit with vim",
+   "chunks": 9,
+   "uploaded": 9,
+   "requests": 1,
+   "seconds": 3.027,
+   "bytesUploaded": 2359296
+  },
+  {
+   "sync": 27,
+   "label": "work 24: delete an archive, tar another",
+   "chunks": 159,
+   "uploaded": 15,
+   "requests": 1,
+   "seconds": 3.916,
+   "bytesUploaded": 3932160
+  },
+  {
+   "sync": 28,
+   "label": "work 25: package churn",
+   "chunks": 9,
+   "uploaded": 9,
+   "requests": 1,
+   "seconds": 2.713,
+   "bytesUploaded": 2359296
+  },
+  {
+   "sync": 29,
+   "label": "work 26: rewrite 2 MB inside d7/f7",
+   "chunks": 9,
+   "uploaded": 9,
+   "requests": 1,
+   "seconds": 3.048,
+   "bytesUploaded": 2359296
+  },
+  {
+   "sync": 30,
+   "label": "work 27: delete a directory, recreate it smaller",
+   "chunks": 48,
+   "uploaded": 48,
+   "requests": 1,
+   "seconds": 6.717,
+   "bytesUploaded": 12582912
+  },
+  {
+   "sync": 31,
+   "label": "work 28: append to a log and edit with vim",
+   "chunks": 7,
+   "uploaded": 7,
+   "requests": 1,
+   "seconds": 2.803,
+   "bytesUploaded": 1835008
+  },
+  {
+   "sync": 32,
+   "label": "work 29: delete an archive, tar another",
+   "chunks": 157,
+   "uploaded": 24,
+   "requests": 1,
+   "seconds": 5.942,
+   "bytesUploaded": 6291456
+  },
+  {
+   "sync": 33,
+   "label": "work 30: package churn",
+   "chunks": 10,
+   "uploaded": 9,
+   "requests": 1,
+   "seconds": 3.29,
+   "bytesUploaded": 2359296
+  },
+  {
+   "sync": 34,
+   "label": "work 31: rewrite 2 MB inside d2/f6",
+   "chunks": 9,
+   "uploaded": 9,
+   "requests": 1,
+   "seconds": 3.004,
+   "bytesUploaded": 2359296
+  },
+  {
+   "sync": 35,
+   "label": "work 32: delete a directory, recreate it smaller",
+   "chunks": 45,
+   "uploaded": 45,
+   "requests": 1,
+   "seconds": 7.068,
+   "bytesUploaded": 11796480
+  },
+  {
+   "sync": 36,
+   "label": "work 33: append to a log and edit with vim",
+   "chunks": 7,
+   "uploaded": 7,
+   "requests": 1,
+   "seconds": 2.741,
+   "bytesUploaded": 1835008
+  },
+  {
+   "sync": 37,
+   "label": "work 34: delete an archive, tar another",
+   "chunks": 157,
+   "uploaded": 157,
+   "requests": 2,
+   "seconds": 21.259,
+   "bytesUploaded": 41156608
+  },
+  {
+   "sync": 38,
+   "label": "work 35: package churn",
+   "chunks": 11,
+   "uploaded": 7,
+   "requests": 1,
+   "seconds": 2.656,
+   "bytesUploaded": 1835008
+  },
+  {
+   "sync": 39,
+   "label": "work 36: rewrite 2 MB inside d5/f5",
+   "chunks": 9,
+   "uploaded": 9,
+   "requests": 1,
+   "seconds": 2.739,
+   "bytesUploaded": 2359296
+  },
+  {
+   "sync": 40,
+   "label": "work 37: delete a directory, recreate it smaller",
+   "chunks": 44,
+   "uploaded": 44,
+   "requests": 1,
+   "seconds": 6.042,
+   "bytesUploaded": 11534336
+  },
+  {
+   "sync": 41,
+   "label": "work 38: append to a log and edit with vim",
+   "chunks": 7,
+   "uploaded": 6,
+   "requests": 1,
+   "seconds": 2.502,
+   "bytesUploaded": 1572864
+  },
+  {
+   "sync": 42,
+   "label": "work 39: delete an archive, tar another",
+   "chunks": 156,
+   "uploaded": 21,
+   "requests": 1,
+   "seconds": 3.999,
+   "bytesUploaded": 5505024
+  },
+  {
+   "sync": 43,
+   "label": "work 40: package churn",
+   "chunks": 10,
+   "uploaded": 9,
+   "requests": 1,
+   "seconds": 2.742,
+   "bytesUploaded": 2359296
+  }
+ ],
+ "totals": {
+  "requests": 60,
+  "chunks": 3591,
+  "uploaded": 2851,
+  "bytes": 747372544
+ },
+ "uploadSeconds": 489.189,
+ "restore": {
+  "requests": 2494,
+  "chunks": 3110,
+  "seconds": 198.766
+ }
+}

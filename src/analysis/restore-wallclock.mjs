@@ -71,7 +71,7 @@ const branch = REUSE || `wallclock-${Date.now().toString(36)}`;
 // met halfway through is worth waiting out rather than starting over.
 const governor = new Governor({ ratePerMin: RATE, concurrency: 8, retries: num("RETRIES", 30) });
 const host = createHost(kind, { token, owner, repo, endpoint, governor });
-const reads = new Governor({ ratePerMin: READ_RATE, concurrency: 8, minConcurrency: 1 });
+const reads = new Governor({ ratePerMin: READ_RATE, concurrency: 8, minConcurrency: 1, retries: num("RETRIES", 30) });
 const rawRead = host.readObject.bind(host);
 host.readObject = (id) => reads.write(() => rawRead(id));
 

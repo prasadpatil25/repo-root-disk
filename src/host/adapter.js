@@ -136,7 +136,15 @@ export class Host {
     let response;
     for (let attempt = 1; ; attempt++) {
       this.requestCount++;
-      response = await fetch(url, init);
+      try {
+        response = await fetch(url, init);
+      } catch (err) {
+        // A connection dropped mid-request is not an answer at all. On a
+        // content-addressed write it is safe to ask again.
+        if (!retryOn5xx || attempt >= 4) throw err;
+        await new Promise((r) => setTimeout(r, 2000 * attempt));
+        continue;
+      }
       if (response.status < 500 || !retryOn5xx || attempt >= 4) break;
       await new Promise((r) => setTimeout(r, 2000 * attempt));
     }

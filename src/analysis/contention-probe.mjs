@@ -47,7 +47,7 @@ const CHUNK = 256 * K;
 const [owner, repo] = slug.split("/");
 const endpoint = process.env[`${kind.toUpperCase()}_ENDPOINT`] || undefined;
 const branch = `contention-${Date.now().toString(36)}`;
-const governor = new Governor({ ratePerMin: RATE, concurrency: 8 });
+const governor = new Governor({ ratePerMin: RATE, concurrency: 8, retries: num("RETRIES", 10) });
 const encoder = new TextEncoder();
 const say = (label, value) => console.log(`  ${label.padEnd(34)} ${value}`);
 

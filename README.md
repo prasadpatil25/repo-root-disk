@@ -34,6 +34,7 @@ claims.
 | All four on a captured 43-sync history of a real machine | `node src/analysis/replay-history.mjs` | no |
 | v86's native snapshot of that machine, and the wrapper's cost to the guest | `app/demo-native.js` from the browser console | no |
 | Restore wall clock from a real service, serial and eight-wide | `node src/analysis/restore-wallclock.mjs <github\|gitlab> <owner/repo>` | **yes** |
+| The 1 GB history synced live, one commit per phase, then restored | `node src/analysis/replay-live.mjs <github\|gitlab> <owner/repo> <dir>` | **yes** |
 | More than two writers: what a single rebase aborts, what a budget of N-1 costs | `node src/analysis/contention.mjs` | no |
 | The same race on a real service | `node src/analysis/contention-probe.mjs <github\|gitlab> <owner/repo>` | **yes** |
 | Write amplification and the chunk-size trade-off | `node src/analysis/report.mjs traces/mke2fs-256mb.json` | no |
@@ -100,7 +101,8 @@ that a refused or aborted sync dropped its sealed epoch (the engine now carries
 it into the next sync), and that GitLab's `last_commit_id` is validated before
 the commit is made: two syncs arriving together both pass and the second
 overwrites the first, a lost update in 3 of 15 live rounds
-(`traces/contention-gitlab.json`).
+(`traces/contention-gitlab.json`); the same probe on GitHub, whose reference
+update is atomic, lost none (`traces/contention-github.json`).
 
 A 1 GB machine is captured the same way as the 256 MB one, with a corpus
 workload that fills about half the disk:

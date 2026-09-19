@@ -19,7 +19,15 @@ const DEFAULTS = {
   minConcurrency: 1,
   backpressureRatio: 1.6,   // sustained median this much above baseline means slow down
   sampleWindow: 12,         // requests per latency sample
-  retries: 3                // refusals honoured before a write gives up
+  retries: 3,               // refusals honoured before a write gives up
+  // The bucket's capacity, which is the largest burst the governor lets
+  // through at concurrency. A bucket as deep as a minute's rate let each sync
+  // of a long history open at several hundred writes a minute, which the
+  // service's points system refuses, and each refusal costs its retry-after:
+  // measured on the 1 GB history, sustained throughput fell to a third of the
+  // configured rate. Twenty is under a tenth of a minute at the enforced
+  // ceiling, so a burst never looks like a sustained rate.
+  burst: 20
 };
 
 export class RateLimited extends Error {
@@ -38,10 +46,11 @@ export class Governor {
     this.minConcurrency = config.minConcurrency;
     this.backpressureRatio = config.backpressureRatio;
     this.retries = config.retries;
+    this.burst = Math.min(config.burst, this.ratePerMin);
     this.sampleWindow = config.sampleWindow;
     this.onEvent = options.onEvent || (() => {});
 
-    this._tokens = this.ratePerMin;
+    this._tokens = this.burst;
     this._lastRefill = Date.now();
     this._latencies = [];
     this._baseline = null;
@@ -52,7 +61,7 @@ export class Governor {
     const now = Date.now();
     const elapsed = (now - this._lastRefill) / 60000;
     if (elapsed <= 0) return;
-    this._tokens = Math.min(this.ratePerMin, this._tokens + elapsed * this.ratePerMin);
+    this._tokens = Math.min(this.burst, this._tokens + elapsed * this.ratePerMin);
     this._lastRefill = now;
   }
 
