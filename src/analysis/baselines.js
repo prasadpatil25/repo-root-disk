@@ -168,6 +168,12 @@ export class CountingHost {
     this.downloadedBytes += obj.length;
     return obj;
   }
+  async createBranch(branch, commit) {
+    this.requestCount++;
+    if (this.branches.has(branch)) throw new Error(`${branch} already exists`);
+    this.branches.set(branch, commit);
+    return branch;
+  }
   async commit({ branch, files, parent = null, orphan = false }) {
     let requests = 0;
     for (const f of files) {

@@ -69,6 +69,17 @@ export class Machine {
     this._hydrated = false;
     /** Object ids the repository is known to hold, so P4 costs nothing. */
     this.known = new Set();
+    /**
+     * Chunks another writer changed that this device has not seen, left by a
+     * rebase. A write to one of them would be committed over theirs with
+     * nothing left to detect it, so sync() refuses until they are hydrated.
+     */
+    this._stale = new Set();
+    /**
+     * An epoch this branch refused for overlapping another writer's. It stays
+     * refused here, without a request, until fork() or abandonEpoch().
+     */
+    this._conflict = null;
   }
 
   get chunkSize() { return this.manifest.chunkSize; }
@@ -94,6 +105,10 @@ export class Machine {
       return { existing: false };
     }
 
+    // Re-attaching after the head moved makes whatever the device holds an
+    // older state of the machine; it has to be put back before it can be
+    // committed from, exactly as on a first attach.
+    if (this.head !== null && ref.commit !== this.head) this._hydrated = false;
     this.head = ref.commit;
     const entries = await this.host.readTree(ref.tree);
     const manifestEntry = entries.find((e) => e.path === manifestModule.MANIFEST_PATH);
@@ -136,8 +151,14 @@ export class Machine {
    *
    * Must run before capture is armed. It writes through writeRaw for that
    * reason: hydration is not the guest's work and must never be re-uploaded.
+   *
+   * Chunks are independent, so up to `concurrency` are in flight at once,
+   * and an object two positions share is fetched once. `indices` limits the
+   * work to some of the manifest's chunks, which is how the chunks a rebase
+   * left stale (see staleChunks) are brought onto a running device; the
+   * device is then only declared hydrated by a full pass.
    */
-  async hydrate({ onProgress = () => {} } = {}) {
+  async hydrate({ onProgress = () => {}, concurrency = 1, indices = null } = {}) {
     if (!this.manifest) throw new Error("load() before hydrate()");
     if (typeof this.device.writeRaw !== "function") {
       throw new Error(
@@ -146,21 +167,41 @@ export class Machine {
       );
     }
 
-    const indices = manifestModule.indices(this.manifest);
+    const all = manifestModule.indices(this.manifest);
+    const wanted = indices ? all.filter((i) => indices.includes(i)) : all;
     let applied = 0;
-    for (const index of indices) {
-      const id = this.manifest.chunks[String(index)];
-      const stored = await this.host.readObject(id);
-      await verifyChunk(stored, this.manifest, index, id);
-      const plaintext = await this.cipher.decrypt(stored);
-      const { offset, length } = chunkExtent(index, this.chunkSize, this.manifest.diskSize);
-      await this.device.writeRaw(offset, plaintext.subarray(0, length));
-      applied++;
-      onProgress({ applied, total: indices.length });
-    }
+    const inFlight = new Map();
+    const fetchObject = (id) => {
+      if (!inFlight.has(id)) inFlight.set(id, this.host.readObject(id));
+      return inFlight.get(id);
+    };
+    let next = 0;
+    const worker = async () => {
+      for (;;) {
+        const at = next++;
+        if (at >= wanted.length) return;
+        const index = wanted[at];
+        const id = this.manifest.chunks[String(index)];
+        const stored = await fetchObject(id);
+        await verifyChunk(stored, this.manifest, index, id);
+        const plaintext = await this.cipher.decrypt(stored);
+        const { offset, length } = chunkExtent(index, this.chunkSize, this.manifest.diskSize);
+        await this.device.writeRaw(offset, plaintext.subarray(0, length));
+        this._stale.delete(index);
+        applied++;
+        onProgress({ applied, total: wanted.length });
+      }
+    };
+    const width = Math.max(1, Math.min(Math.floor(concurrency) || 1, wanted.length || 1));
+    await Promise.all(Array.from({ length: width }, worker));
 
-    this._hydrated = true;
-    this.onEvent({ type: "hydrated", chunks: applied });
+    if (!indices) {
+      // A chunk the manifest no longer names is free space on a blank base,
+      // and free space the guest zeroed is not stale.
+      this._stale.clear();
+      this._hydrated = true;
+    }
+    this.onEvent({ type: "hydrated", chunks: applied, partial: !!indices });
     return { chunks: applied };
   }
 
@@ -168,7 +209,50 @@ export class Machine {
    * Declare the device already carries this machine's state, for a caller that
    * built the disk itself rather than hydrating in place.
    */
-  markHydrated() { this._hydrated = true; }
+  markHydrated() { this._hydrated = true; this._stale.clear(); }
+
+  /** Chunks another writer changed that this device has not seen, ascending. */
+  get staleChunks() { return [...this._stale].sort((a, b) => a - b); }
+
+  /**
+   * Carry a refused epoch to a new branch, where it can land.
+   *
+   * Two writers who changed the same chunks hold two filesystem states, and
+   * the only honest resolution keeps both: the branch stays with the writer
+   * who landed, and this one's epoch goes onto a branch forked from the last
+   * commit this device was synced against. The next sync() lands it there.
+   */
+  async fork(branch) {
+    if (!branch || branch === this.branch) {
+      throw new Error(`fork needs a branch name other than ${this.branch}`);
+    }
+    if (this.head === null) {
+      throw new Error(`${this.branch} has never been committed, so there is nothing to fork from`);
+    }
+    if (typeof this.host.createBranch !== "function") {
+      throw new Error(`${this.host.constructor.name} cannot create a branch from a commit`);
+    }
+    await this.host.createBranch(branch, this.head);
+    const from = this.branch;
+    this.branch = branch;
+    this._conflict = null;
+    this.onEvent({ type: "forked", from, branch, commit: this.head });
+    return { from, branch, commit: this.head };
+  }
+
+  /**
+   * Drop the epoch a refused or failed sync carried, and the refusal with it.
+   *
+   * The writes stay on the device, so a caller that keeps using it must put
+   * the branch's state back first; this is for one that will rebuild or
+   * discard the device, such as a harness starting a fresh round.
+   */
+  abandonEpoch() {
+    const dropped = this._carried.length;
+    this._carried = [];
+    this._conflict = null;
+    return { ranges: dropped };
+  }
 
   /**
    * Name the machine's current state so it can be booted later by that name.
@@ -235,6 +319,19 @@ export class Machine {
       );
     }
 
+    // An epoch this branch refused stays refused. Its parent is the commit it
+    // was prepared against, so the host would refuse it again; answering here
+    // saves the request and keeps the epoch for fork().
+    if (this._conflict && this._conflict.branch === this.branch) {
+      const { overlappingChunks, theirHead } = this._conflict;
+      throw new ConflictError(
+        `${this.branch} refused this epoch: another writer changed ${overlappingChunks.length} ` +
+        `of the same chunks. Syncing it here again would commit over their work; fork() ` +
+        `carries it to a new branch, abandonEpoch() drops it.`,
+        { branch: this.branch, overlappingChunks, head: theirHead }
+      );
+    }
+
     // P1 Quiesce. The flush is not hygiene. A guest that has written a file but
     // not flushed has produced zero disk writes, so sealing first would commit a
     // machine missing the user's most recent work.
@@ -248,6 +345,21 @@ export class Machine {
 
     // P2 Snapshot, P3 chunk and hash.
     const indices = dirtyChunks(sealed, this.chunkSize, this.manifest.diskSize);
+
+    // A rebase adopted another writer's chunks into the manifest without
+    // putting them on this device. A write to one of them is an overlap the
+    // reference can no longer detect, since the parent is current, so it is
+    // refused here instead, with the epoch kept.
+    const stale = indices.filter((i) => this._stale.has(i));
+    if (stale.length) {
+      this._carried = sealed;
+      throw new ConflictError(
+        `${stale.length} chunk${stale.length === 1 ? "" : "s"} in this epoch ${stale.length === 1 ? "was" : "were"} ` +
+        `changed by another writer and never put onto this device. Hydrate them ` +
+        `(hydrate({ indices: staleChunks })), reboot from ${this.branch}, or fork.`,
+        { branch: this.branch, overlappingChunks: stale, head: this.head, stale: true }
+      );
+    }
 
     // A machine that has never been committed must be written out even with
     // nothing dirty. load() creates the manifest in memory only, so until this
@@ -319,7 +431,11 @@ export class Machine {
       bytesUploaded,
       requests: this.host.requestCount - requestsBefore,
       seconds: (Date.now() - started) / 1000,
-      skipped: false
+      skipped: false,
+      // How many lost races this sync rebased over, and the chunks those
+      // writers changed that this device has still not seen.
+      rebased: result.rebased || 0,
+      staleChunks: this.staleChunks
     };
   }
 
@@ -409,27 +525,61 @@ export class Machine {
   async _resolveConflict({ fresh, prepared, zeroed = [], message, budget = 1 }) {
     this.onEvent({ type: "conflict-detected", branch: this.branch });
 
+    // The state this epoch was prepared against, kept whole so a refusal can
+    // put it back. The reload below is the engine's, not the caller's: it
+    // says nothing about whether the device holds this machine.
     const previous = this.manifest;
+    const previousHead = this.head;
+    const previousManifestId = this._manifestObjectId;
+    const previousDigest = this._manifestDigest;
+    const attached = this._attachedExisting;
+    const hydrated = this._hydrated;
     const ours = new Set([...prepared.map((c) => String(c.index)), ...zeroed.map(String)]);
     await this.load();
+    this._attachedExisting = attached;
+    this._hydrated = hydrated;
     const theirs = this.manifest;
+    const theirHead = this.head;
 
-    const changedByThem = new Set(
-      Object.keys(theirs.chunks).filter((i) => theirs.chunks[i] !== previous.chunks[i])
-    );
+    // What they changed since our parent, including chunks they zeroed, which
+    // are absent from their manifest rather than different in it.
+    const changedByThem = new Set();
+    for (const i of new Set([...Object.keys(theirs.chunks), ...Object.keys(previous.chunks)])) {
+      if (theirs.chunks[i] !== previous.chunks[i]) changedByThem.add(i);
+    }
     const overlap = [...ours].filter((i) => changedByThem.has(i));
 
     if (overlap.length > 0) {
+      // Back to the state we prepared against. With the old head as parent
+      // the host refuses this epoch on every retry, so the refusal holds on
+      // this branch until the epoch is forked or abandoned; carried forward
+      // as a rebase, it would land over their chunks on the next sync.
+      this.manifest = previous;
+      this.head = previousHead;
+      this._manifestObjectId = previousManifestId;
+      this._manifestDigest = previousDigest;
+      const overlappingChunks = overlap.map(Number);
+      this._conflict = { branch: this.branch, overlappingChunks, theirHead };
       throw new ConflictError(
         `another writer changed ${overlap.length} of the same chunks; ` +
         `these states cannot be merged, fork to a new branch instead`,
-        { branch: this.branch, overlappingChunks: overlap.map(Number), head: this.head }
+        { branch: this.branch, overlappingChunks, head: theirHead }
       );
     }
 
-    this.onEvent({ type: "conflict-rebased", disjointChunks: ours.size });
+    // Disjoint: rebase onto them. Their chunks are now in this manifest and
+    // not on this device, and a later write to one of them would be committed
+    // over theirs with nothing left to detect it, since the parent would be
+    // current. Remember them; sync() refuses such a write until they are
+    // hydrated. They are remembered whether or not the commit below lands,
+    // because the manifest keeps them either way.
+    for (const i of changedByThem) this._stale.add(Number(i));
+    this.onEvent({
+      type: "conflict-rebased", disjointChunks: ours.size, theirChunks: changedByThem.size
+    });
     // One rebase spent; whatever budget remains covers a race lost again.
-    return this._commit({ fresh, prepared, zeroed, message, retryOnConflict: budget - 1 });
+    const result = await this._commit({ fresh, prepared, zeroed, message, retryOnConflict: budget - 1 });
+    return { ...result, rebased: (result.rebased || 0) + 1 };
   }
 
   /**

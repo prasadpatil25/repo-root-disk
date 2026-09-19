@@ -64,6 +64,12 @@ export class CasHost {
     if (!this.shared.objects.has(id)) throw new Error(`object ${id} not found`);
     return this.shared.objects.get(id);
   }
+  async createBranch(branch, commit) {
+    this.requestCount++;
+    if (this.shared.branches.has(branch)) throw new Error(`${branch} already exists`);
+    this.shared.branches.set(branch, commit);
+    return branch;
+  }
   async commit({ branch, message, files, parent = null, orphan = false }) {
     const s = this.shared;
     for (const f of files) {
@@ -211,8 +217,11 @@ export async function simulate({
   const log = [];
 
   for (let r = 1; r <= rounds; r++) {
-    // Everyone attaches to the same head, then writes, then races.
+    // Everyone attaches to the same head, then writes, then races. A refused
+    // epoch belongs on a fork, not on the next round of this branch, so it is
+    // abandoned here; an aborted one merely lost its races and is carried.
     for (const w of team) {
+      if (w.refused) { w.machine.abandonEpoch(); w.refused = false; }
       await w.machine.load();
       w.machine.markHydrated();
     }
@@ -224,6 +233,7 @@ export async function simulate({
     });
 
     const outcomes = await race(team, { round: r, retries });
+    for (const o of outcomes) if (o.outcome === "refused") team[o.writer].refused = true;
 
     tallyOutcomes(tally, outcomes);
     const row = { round: r, plan, outcomes };

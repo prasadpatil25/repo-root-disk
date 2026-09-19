@@ -100,7 +100,12 @@ try {
       const times = [];
       for (let r = 1; r <= ROUNDS; r++) {
         await waitForRef(probe);
-        for (const w of team) { await w.machine.load(); w.machine.markHydrated(); }
+        for (const w of team) {
+          // A refused epoch belongs on a fork, not on the next round here.
+          if (w.refused) { w.machine.abandonEpoch(); w.refused = false; }
+          await w.machine.load();
+          w.machine.markHydrated();
+        }
         const plan = roundPlan({ writers, chunksPerWriter: CHUNKS, totalChunks: DISK / CHUNK, overlapChance: 0, random });
         plan.forEach((indices, i) => {
           for (const index of indices) {
@@ -110,6 +115,7 @@ try {
         const t0 = Date.now();
         const outcomes = await race(team, { round: r, retries });
         times.push(Date.now() - t0);
+        for (const o of outcomes) if (o.outcome === "refused") team[o.writer].refused = true;
         tallyOutcomes(tally, outcomes);
         // A landed sync's chunks must be in the head manifest. If the service
         // accepted a stale writer, another's writes are gone, and that is a

@@ -114,6 +114,15 @@ export class ForgejoHost extends Host {
     return created.name || name;
   }
 
+  async createBranch(branch, commit) {
+    // old_ref_name takes a commit; old_branch_name, the older spelling, does
+    // not, and a fork starts from the commit this device was synced against.
+    await this.request("POST", this.base("/branches"), {
+      body: { new_branch_name: branch, old_ref_name: commit }
+    });
+    return branch;
+  }
+
   async deleteBranch(branch) {
     await this.request("DELETE", this.base(`/branches/${encodeURIComponent(branch)}`));
     return branch;

@@ -129,6 +129,12 @@ $("connect").addEventListener("click", async () => {
 
   try {
     state.host = createHost(kind, { token, owner, repo, governor: state.governor });
+    // Reads draw on the same points budget as writes, and a restore at width
+    // eight reaches the enforced ceiling on its own. Pace them, and honour a
+    // refusal's retry-after rather than failing the boot.
+    const reads = new Governor({ ratePerMin: 800, concurrency: 8, minConcurrency: 1 });
+    const rawRead = state.host.readObject.bind(state.host);
+    state.host.readObject = (id) => reads.write(() => rawRead(id));
     const info = await state.host.validate();
     if (!info.canWrite) throw new Error(`the token cannot write to ${owner}/${repo}`);
     const caps = state.host.constructor.capabilities;
@@ -250,6 +256,7 @@ $("boot").addEventListener("click", async () => {
       log(`attached to ${branch} at sync ${state.machine.manifest.sync}; ` +
           `putting its state back onto the disk`);
       const put = await state.machine.hydrate({
+        concurrency: 8,
         onProgress: ({ applied, total }) => {
           if (applied === total || applied % 25 === 0) {
             status(`Restoring ${applied} of ${total} chunks onto the disk.`, "idle");
@@ -684,18 +691,62 @@ $("sync").addEventListener("click", async () => {
           `${result.seconds.toFixed(1)}s -> ${result.commit.slice(0, 8)}`, "ok");
       addRow(result);
       status(`Synced to ${result.commit.slice(0, 8)}.`, "ok");
+      if (result.staleChunks.length) {
+        // The rebase adopted the other writer's chunks into the commit, not
+        // onto this disk. The guest reads them stale until they are put
+        // back, and the engine refuses a write to one of them meanwhile.
+        log(`rebased over another writer: ${result.staleChunks.length} of their chunks are in the ` +
+            `commit but not on this disk. Files in them read stale until you reboot from ` +
+            `${state.machine.branch}; a write to one is refused until then.`, "warn");
+      }
     }
     meters();
     setStep("s4", "on");
   } catch (err) {
-    if (err instanceof ConflictError) {
+    if (err instanceof ConflictError && err.stale) {
+      log(`refused: ${err.overlappingChunks.length} chunk${err.overlappingChunks.length === 1 ? "" : "s"} ` +
+          `this sync would commit (${err.overlappingChunks.slice(0, 8).join(", ")}) ` +
+          `${err.overlappingChunks.length === 1 ? "was" : "were"} changed by another writer and ` +
+          `never put onto this disk. Fork keeps your version on a new branch; rebooting from ` +
+          `${state.machine.branch} takes theirs and drops your unsynced writes.`, "bad");
+      status("Writes to chunks another writer changed. Fork, or reboot from the branch.", "bad");
+      enable(["fork"], true);
+    } else if (err instanceof ConflictError) {
       log(`conflict: ${err.overlappingChunks.length} chunks changed by both writers ` +
-          `(${err.overlappingChunks.slice(0, 8).join(", ")}). Fork to a new branch.`, "bad");
-      status("Conflicting writers. These states cannot be merged.", "bad");
+          `(${err.overlappingChunks.slice(0, 8).join(", ")}). This branch will keep refusing ` +
+          `these writes; Fork carries them to a new branch.`, "bad");
+      status("Conflicting writers. These states cannot be merged; fork to keep yours.", "bad");
+      enable(["fork"], true);
     } else {
       log("ERROR: " + err.message, "bad");
       status(err.message, "bad");
     }
+  }
+  enable(["sync", "compact", "restoreBtn"], true);
+});
+
+// A refused epoch goes to a branch of its own, started at the commit this
+// machine last synced against, and the same sync then lands it there.
+$("fork").addEventListener("click", async () => {
+  const from = state.machine.branch;
+  const suggested = `${from}-${Date.now().toString(36)}`;
+  const name = (prompt(`Fork ${from} to a new branch, carrying this machine's unsynced writes:`, suggested) || "").trim();
+  if (!name) return;
+  enable(["fork", "sync", "compact", "restoreBtn"], false);
+  try {
+    log(`--- fork ${from} -> ${name} ---`);
+    const forked = await state.machine.fork(name);
+    $("branch").value = name;
+    log(`${name} starts at ${forked.commit.slice(0, 8)}, the commit this machine last synced against`, "ok");
+    const result = await state.machine.sync({ message: $("message").value || `forked from ${from}` });
+    log(`${result.chunks} chunks landed on ${name} in ${result.requests} requests -> ${result.commit.slice(0, 8)}`, "ok");
+    addRow(result);
+    meters();
+    status(`Forked to ${name} and synced. ${from} keeps the other writer's state.`, "ok");
+  } catch (err) {
+    log("ERROR: " + err.message, "bad");
+    status(err.message, "bad");
+    enable(["fork"], true);
   }
   enable(["sync", "compact", "restoreBtn"], true);
 });
@@ -760,7 +811,7 @@ $("restoreBtn").addEventListener("click", async () => {
 
     const branch = $("branch").value.trim();
     const result = await restore({
-      host: state.host, branch,
+      host: state.host, branch, concurrency: 8,
       cipher: state.cipher || undefined,
       // Restoration is base plus written chunks. A blank base takes the zeros
       // fast path; anything else must actually be fetched.

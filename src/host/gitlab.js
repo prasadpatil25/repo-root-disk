@@ -133,6 +133,13 @@ export class GitLabHost extends Host {
     return created.name || name;
   }
 
+  async createBranch(branch, commit) {
+    await this.request("POST", this.base("/repository/branches"), {
+      body: { branch, ref: commit }
+    });
+    return branch;
+  }
+
   async deleteBranch(branch) {
     await this.request(
       "DELETE", this.base(`/repository/branches/${encodeURIComponent(branch)}`)

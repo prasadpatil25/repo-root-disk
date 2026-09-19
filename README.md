@@ -38,7 +38,7 @@ claims.
 | More than two writers: what a single rebase aborts, what a budget of N-1 costs | `node src/analysis/contention.mjs` | no |
 | The same race on a real service | `node src/analysis/contention-probe.mjs <github\|gitlab> <owner/repo>` | **yes** |
 | Write amplification and the chunk-size trade-off | `node src/analysis/report.mjs traces/mke2fs-256mb.json` | no |
-| Every invariant the design rests on (795 tests, 15 suites) | see below | no |
+| Every invariant the design rests on (820 tests, 15 suites) | see below | no |
 | GitHub costs 20x the requests and 13x the time of a batch-commit host | `node src/analysis/batch-commit.mjs github <owner/repo>` then `gitlab` | **yes** |
 | Whether a batch-commit host offers a compare-and-swap | `node src/analysis/cas-probe.mjs gitlab <owner/repo>` | **yes** |
 
@@ -97,12 +97,20 @@ budget is `sync({ retryOnConflict })`, one by default. `contention-probe.mjs`
 runs the same race against a real service, all writers under one governor so
 their sum stays under the enforced write ceiling, and checks the head manifest
 after every round for a landed writer's chunks. Running the experiments found
-that a refused or aborted sync dropped its sealed epoch (the engine now carries
-it into the next sync), and that GitLab's `last_commit_id` is validated before
-the commit is made: two syncs arriving together both pass and the second
-overwrites the first, a lost update in 3 of 15 live rounds
-(`traces/contention-gitlab.json`); the same probe on GitHub, whose reference
-update is atomic, lost none (`traces/contention-github.json`).
+three engine defects, since fixed: a refused or aborted sync dropped its sealed
+epoch; carried into the next sync, a refused epoch then landed over the very
+chunks it had been refused for, its parent by then current; and after a rebase
+the winner's chunks were in the loser's manifest but not on its device, so a
+later write to one would have overwritten theirs unseen. The engine now keeps
+a refused epoch refused on its branch until `fork(branch)` carries it to a new
+one (or `abandonEpoch()` drops it), and refuses a write to a chunk a rebase
+adopted until `hydrate({ indices: staleChunks })` puts it on the device. A
+writer the simulation refuses therefore abandons its epoch before the next
+round, as it would fork in use. The probes also found that GitLab's
+`last_commit_id` is validated before the commit is made: two syncs arriving
+together both pass and the second overwrites the first, a lost update in 3 of
+15 live rounds (`traces/contention-gitlab.json`); the same probe on GitHub,
+whose reference update is atomic, lost none (`traces/contention-github.json`).
 
 A 1 GB machine is captured the same way as the 256 MB one, with a corpus
 workload that fills about half the disk:
@@ -128,7 +136,7 @@ for t in test test-engine test-device test-fs test-runner test-terminal \
 done
 ```
 
-795 assertions. They need no network and no credentials. `test-nbd.mjs` speaks
+820 assertions. They need no network and no credentials. `test-nbd.mjs` speaks
 the client half of the NBD protocol over a real socket, so the wire format and
 the server loop are exercised rather than mocked; the one hop that needs Linux
 is `nbd-client` binding the export to `/dev/nbd0`.

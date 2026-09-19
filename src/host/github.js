@@ -102,6 +102,13 @@ export class GitHubHost extends Host {
     return created.ref || ref;
   }
 
+  async createBranch(branch, commit) {
+    await this.request("POST", this.base("/git/refs"), {
+      body: { ref: `refs/heads/${branch}`, sha: commit }
+    });
+    return branch;
+  }
+
   async deleteBranch(branch) {
     await this.request("DELETE", this.base(`/git/refs/heads/${encodeURIComponent(branch)}`));
     return branch;

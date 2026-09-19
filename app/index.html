@@ -244,6 +244,7 @@ code { background: var(--code-bg); padding: .1em .35em; border-radius: 3px; }
   <div class="row" style="margin-top:11px">
     <div class="f" style="flex:1"><label for="message">Commit message</label><input type="text" id="message" spellcheck="false" placeholder="optional" style="width:100%"></div>
     <button class="ghost" id="sync" disabled>Sync</button>
+    <button class="ghost" id="fork" disabled title="After a refused sync: carry this machine's unsynced writes to a new branch">Fork</button>
     <button class="ghost" id="compact" disabled>Compact</button>
     <button class="ghost" id="restoreBtn" disabled>Restore from git</button>
     <button class="ghost" id="reset">Reset</button>

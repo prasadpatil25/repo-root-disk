@@ -66,6 +66,13 @@ class FakeHost {
     return this.objects.get(id);
   }
 
+  async createBranch(branch, commit) {
+    this.requestCount++;
+    if (this.branches.has(branch)) throw new Error(`${branch} already exists`);
+    this.branches.set(branch, commit);
+    return branch;
+  }
+
   async commit({ branch, message, files, parent = null, orphan = false }) {
     const before = this.requestCount;
     for (const file of files) {
@@ -479,6 +486,19 @@ console.log("\nduplicate chunks restore once");
   check("and the disk is right", bytesEqual(restored.disk, device.snapshot()));
   const wide = await restore({ host, branch: "machine", concurrency: 4 });
   check("at width too", bytesEqual(wide.disk, device.snapshot()) && wide.reused === 2);
+
+  // Hydration is the same read, onto a device instead of a buffer, and at
+  // width it must still fetch the shared object once.
+  const other = new MemoryDevice({ diskSize: DISK });
+  const returning = newMachine(host, other);
+  await returning.load();
+  const reads = host.requestCount;
+  const seen = [];
+  const put = await returning.hydrate({ concurrency: 8, onProgress: (p) => seen.push(p.applied) });
+  eq("hydration at width eight applied all three positions", put.chunks, 3);
+  eq("with one object read", host.requestCount - reads, 1);
+  eq("reporting progress for each", seen, [1, 2, 3]);
+  check("and the device matches the disk", bytesEqual(other.snapshot(), device.snapshot()));
 }
 
 // ------------------------------------------------------------- free space
@@ -590,14 +610,119 @@ console.log("\nconcurrent writers");
   check("an overlapping write is refused", conflict instanceof ConflictError);
   eq("and it names the chunk that overlapped", conflict.overlappingChunks, [0]);
 
-  // The refused epoch is not lost. A forked to a new branch would carry it;
-  // here A instead writes something else and syncs again, and the earlier
-  // write must still be in that commit, because the guest made it.
+  // The refusal holds. Carried into the next sync on this branch, the epoch
+  // would land over B's chunk with nothing left to refuse it, since the parent
+  // would by then be current. So the branch keeps refusing it, without a
+  // request, however much else A writes.
   deviceA.write(3 * 256 * K, enc.encode("A writes elsewhere"));
-  await machineA.load();
-  machineA.markHydrated();
-  const after = await machineA.sync({});
-  eq("a refused sync carries its epoch into the next one", after.chunks, 2);
+  const requestsBefore = host.requestCount;
+  let again = null;
+  try { await machineA.sync({}); } catch (err) { again = err; }
+  check("syncing the refused epoch again on the same branch is refused again",
+        again instanceof ConflictError, again && again.message);
+  eq("without a request", host.requestCount, requestsBefore);
+  const headNow = await restore({ host, branch: "machine" });
+  eq("and B's chunk is untouched",
+     new TextDecoder().decode(headNow.disk.subarray(0, 20)), "B changed chunk zero");
+
+  // What the refused epoch is for: a fork. The new branch starts at the commit
+  // A prepared against, and A's epoch, both writes, lands there; B's branch
+  // keeps B's state. Two filesystem states, kept as two.
+  const forked = await machineA.fork("machine-a");
+  // B's commit is the head A collided with; its parent is the commit A last
+  // synced against, and that is where the fork starts.
+  const seedCommit = host.commits.get(conflict.head).parents[0];
+  eq("the fork starts at the commit A last synced against", forked.commit, seedCommit);
+  const landed = await machineA.sync({});
+  eq("the carried epoch lands on the fork, both writes of it", landed.chunks, 2);
+  const forkState = await restore({ host, branch: "machine-a" });
+  eq("the fork holds A's chunk zero",
+     new TextDecoder().decode(forkState.disk.subarray(0, 25)), "A also changed chunk zero");
+  eq("and A's later write", new TextDecoder().decode(forkState.disk.subarray(3 * 256 * K, 3 * 256 * K + 18)),
+     "A writes elsewhere");
+  const original = await restore({ host, branch: "machine" });
+  eq("while the original branch still holds B's",
+     new TextDecoder().decode(original.disk.subarray(0, 20)), "B changed chunk zero");
+  eq("the fork's parent is the pre-race commit, not B's",
+     host.commits.get(landed.commit).parents, [seedCommit]);
+}
+{
+  // A rebase adopts the winner's chunks into the manifest, not onto the
+  // device. The same machine must be able to keep syncing afterwards, and a
+  // write to one of the winner's chunks must be refused, since the reference
+  // could no longer tell it apart from an ordinary write.
+  const host = new FakeHost();
+  const deviceA = new MemoryDevice({ diskSize: DISK });
+  const machineA = newMachine(host, deviceA);
+  await machineA.load({ diskSize: DISK, chunkSize: CHUNK, base: "base.img", baseIsBlank: true });
+  deviceA.write(0, enc.encode("seed"));
+  await machineA.sync({});
+
+  const deviceB = new MemoryDevice({ diskSize: DISK });
+  const machineB = newMachine(host, deviceB);
+  await machineB.load();
+  await machineB.hydrate();
+  deviceB.write(5 * 256 * K, enc.encode("B owns chunk five"));
+  await machineB.sync({});
+
+  deviceA.write(9 * 256 * K, enc.encode("A owns chunk nine"));
+  const rebased = await machineA.sync({});
+  eq("A rebased once", rebased.rebased, 1);
+  eq("and knows which chunk it has not seen", rebased.staleChunks, [5]);
+
+  deviceA.write(10 * 256 * K, enc.encode("A again, elsewhere"));
+  let third = null, thirdErr = null;
+  try { third = await machineA.sync({}); } catch (err) { thirdErr = err; }
+  check("the same machine syncs again after a rebase", !!(third && third.commit),
+        thirdErr && thirdErr.message);
+
+  deviceA.write(5 * 256 * K, enc.encode("A writes over B's chunk"));
+  let stale = null;
+  try { await machineA.sync({}); } catch (err) { stale = err; }
+  check("a write to the winner's chunk is refused", stale instanceof ConflictError && stale.stale === true,
+        stale && stale.message);
+  eq("naming the chunk", stale.overlappingChunks, [5]);
+  const untouched = await restore({ host, branch: "machine" });
+  eq("and B's chunk is untouched",
+     new TextDecoder().decode(untouched.disk.subarray(5 * 256 * K, 5 * 256 * K + 17)), "B owns chunk five");
+
+  // Hydrating the stale chunks puts the winner's bytes on the device, after
+  // which the guard lifts. Here that overwrites A's unsynced write to chunk
+  // five, which is the point: the device then matches the commit.
+  await machineA.hydrate({ indices: machineA.staleChunks, concurrency: 4 });
+  eq("hydrating the stale chunks clears the guard", machineA.staleChunks, []);
+  eq("and puts the winner's bytes on the device",
+     new TextDecoder().decode(deviceA.snapshot().subarray(5 * 256 * K, 5 * 256 * K + 17)), "B owns chunk five");
+  deviceA.write(5 * 256 * K, enc.encode("A now edits chunk five knowingly"));
+  const afterHydrate = await machineA.sync({});
+  check("and a write to it then lands", !!afterHydrate.commit);
+}
+{
+  // A chunk the other writer zeroed is absent from their manifest, not
+  // different in it. It is still a chunk they changed.
+  const host = new FakeHost();
+  const deviceA = new MemoryDevice({ diskSize: DISK });
+  const machineA = newMachine(host, deviceA);
+  await machineA.load({ diskSize: DISK, chunkSize: CHUNK, base: "base.img", baseIsBlank: true });
+  deviceA.write(0, enc.encode("seed"));
+  deviceA.write(4 * 256 * K, enc.encode("chunk four, to be zeroed by B"));
+  await machineA.sync({});
+
+  const deviceB = new MemoryDevice({ diskSize: DISK });
+  const machineB = newMachine(host, deviceB);
+  await machineB.load();
+  await machineB.hydrate();
+  deviceB.write(4 * 256 * K, new Uint8Array(256 * K));
+  const zeroing = await machineB.sync({});
+  check("B's zeroing sync landed", !!zeroing.commit);
+  check("and chunk four left the manifest", !("4" in machineB.manifest.chunks));
+
+  deviceA.write(4 * 256 * K, enc.encode("A rewrites chunk four"));
+  let conflict = null;
+  try { await machineA.sync({}); } catch (err) { conflict = err; }
+  check("A's write to the chunk B zeroed is an overlap", conflict instanceof ConflictError,
+        conflict && conflict.message);
+  eq("naming chunk four", conflict && conflict.overlappingChunks, [4]);
 }
 {
   // A race lost more often than the retry budget allows is an abort, not a

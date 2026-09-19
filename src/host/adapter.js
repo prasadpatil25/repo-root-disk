@@ -113,6 +113,14 @@ export class Host {
   async createRef() { throw new Error("not implemented"); }
 
   /**
+   * Start a branch at an existing commit. A fork after a refused sync: the
+   * epoch that could not land on one branch lands on this one, whose tip is
+   * the commit it was prepared against.
+   * @returns {Promise<string>} the branch name
+   */
+  async createBranch() { throw new Error("not implemented"); }
+
+  /**
    * Remove a branch. Exists so a tool that creates a branch can remove it;
    * callers are expected to delete only what they made.
    */
