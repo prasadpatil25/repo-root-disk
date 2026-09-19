@@ -18,7 +18,8 @@ const DEFAULTS = {
   concurrency: 8,
   minConcurrency: 1,
   backpressureRatio: 1.6,   // sustained median this much above baseline means slow down
-  sampleWindow: 12          // requests per latency sample
+  sampleWindow: 12,         // requests per latency sample
+  retries: 3                // refusals honoured before a write gives up
 };
 
 export class RateLimited extends Error {
@@ -36,6 +37,7 @@ export class Governor {
     this.concurrency = config.concurrency;
     this.minConcurrency = config.minConcurrency;
     this.backpressureRatio = config.backpressureRatio;
+    this.retries = config.retries;
     this.sampleWindow = config.sampleWindow;
     this.onEvent = options.onEvent || (() => {});
 
@@ -95,7 +97,7 @@ export class Governor {
    * Run one governed write. `fn` should throw RateLimited on a 403 or 429 so the
    * governor can honour retry-after rather than hammering.
    */
-  async write(fn, { retries = 3 } = {}) {
+  async write(fn, { retries = this.retries } = {}) {
     for (let attempt = 0; ; attempt++) {
       await this._takeToken();
       const started = Date.now();

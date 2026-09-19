@@ -1,0 +1,174 @@
+sync,label,dirtyChunks,liveChunks,shape,restoreRequests,restoreBytes,storageBytes,uploadRequestsCumulative
+1,"format and mount",72,9,whole-image,3,1073741824,1073741824,4
+2,"unpack alpine",47,47,whole-image,3,1073741824,2147483648,8
+3,"install vim",213,250,whole-image,3,1073741824,3221225472,12
+4,"corpus 1: eight files, 36 MB",157,397,whole-image,3,1073741824,4294967296,16
+5,"corpus 2: eight files, 36 MB",156,543,whole-image,3,1073741824,5368709120,20
+6,"corpus 3: eight files, 36 MB",160,691,whole-image,3,1073741824,6442450944,24
+7,"corpus 4: eight files, 36 MB",155,837,whole-image,3,1073741824,7516192768,28
+8,"corpus 5: eight files, 36 MB",155,983,whole-image,3,1073741824,8589934592,32
+9,"corpus 6: eight files, 36 MB",158,1130,whole-image,3,1073741824,9663676416,36
+10,"corpus 7: eight files, 36 MB",156,1277,whole-image,3,1073741824,10737418240,40
+11,"corpus 8: eight files, 36 MB",155,1423,whole-image,3,1073741824,11811160064,44
+12,"archive 1: tar a directory",153,1568,whole-image,3,1073741824,12884901888,48
+13,"archive 2: tar a directory",154,1714,whole-image,3,1073741824,13958643712,52
+14,"archive 3: tar a directory",155,1859,whole-image,3,1073741824,15032385536,56
+15,"archive 4: tar a directory",155,2003,whole-image,3,1073741824,16106127360,60
+16,"extract 1: untar a copy",161,2151,whole-image,3,1073741824,17179869184,64
+17,"extract 2: untar a copy",159,2297,whole-image,3,1073741824,18253611008,68
+18,"grow 1: 4 MB file",25,2313,whole-image,3,1073741824,19327352832,72
+19,"grow 2: 4 MB file",26,2330,whole-image,3,1073741824,20401094656,76
+20,"grow 3: 4 MB file",25,2346,whole-image,3,1073741824,21474836480,80
+21,"grow 4: 4 MB file",25,2362,whole-image,3,1073741824,22548578304,84
+22,"grow 5: 4 MB file",25,2378,whole-image,3,1073741824,23622320128,88
+23,"grow 6: 4 MB file",26,2395,whole-image,3,1073741824,24696061952,92
+24,"work 21: rewrite 2 MB inside d4/f8",9,2395,whole-image,3,1073741824,25769803776,96
+25,"work 22: delete a directory, recreate it smaller",46,2427,whole-image,3,1073741824,26843545600,100
+26,"work 23: append to a log and edit with vim",9,2427,whole-image,3,1073741824,27917287424,104
+27,"work 24: delete an archive, tar another",159,2572,whole-image,3,1073741824,28991029248,108
+28,"work 25: package churn",9,2573,whole-image,3,1073741824,30064771072,112
+29,"work 26: rewrite 2 MB inside d7/f7",9,2573,whole-image,3,1073741824,31138512896,116
+30,"work 27: delete a directory, recreate it smaller",48,2606,whole-image,3,1073741824,32212254720,120
+31,"work 28: append to a log and edit with vim",7,2606,whole-image,3,1073741824,33285996544,124
+32,"work 29: delete an archive, tar another",157,2752,whole-image,3,1073741824,34359738368,128
+33,"work 30: package churn",10,2752,whole-image,3,1073741824,35433480192,132
+34,"work 31: rewrite 2 MB inside d2/f6",9,2752,whole-image,3,1073741824,36507222016,136
+35,"work 32: delete a directory, recreate it smaller",45,2785,whole-image,3,1073741824,37580963840,140
+36,"work 33: append to a log and edit with vim",7,2785,whole-image,3,1073741824,38654705664,144
+37,"work 34: delete an archive, tar another",157,2930,whole-image,3,1073741824,39728447488,148
+38,"work 35: package churn",11,2931,whole-image,3,1073741824,40802189312,152
+39,"work 36: rewrite 2 MB inside d5/f5",9,2931,whole-image,3,1073741824,41875931136,156
+40,"work 37: delete a directory, recreate it smaller",44,2964,whole-image,3,1073741824,42949672960,160
+41,"work 38: append to a log and edit with vim",7,2964,whole-image,3,1073741824,44023414784,164
+42,"work 39: delete an archive, tar another",156,3109,whole-image,3,1073741824,45097156608,168
+43,"work 40: package churn",10,3110,whole-image,3,1073741824,46170898432,172
+1,"format and mount",72,9,delta-pack,3,18874656,18874656,4
+2,"unpack alpine",47,47,delta-pack,4,31195612,31195612,8
+3,"install vim",213,250,delta-pack,5,87033136,87033136,12
+4,"corpus 1: eight files, 36 MB",157,397,delta-pack,6,128190372,128190372,16
+5,"corpus 2: eight files, 36 MB",156,543,delta-pack,7,169085460,169085460,20
+6,"corpus 3: eight files, 36 MB",160,691,delta-pack,8,211029140,211029140,24
+7,"corpus 4: eight files, 36 MB",155,837,delta-pack,9,251662080,251662080,28
+8,"corpus 5: eight files, 36 MB",155,983,delta-pack,10,292295020,292295020,32
+9,"corpus 6: eight files, 36 MB",158,1130,delta-pack,11,333714404,333714404,36
+10,"corpus 7: eight files, 36 MB",156,1277,delta-pack,12,374609492,374609492,40
+11,"corpus 8: eight files, 36 MB",155,1423,delta-pack,13,415242432,415242432,44
+12,"archive 1: tar a directory",153,1568,delta-pack,14,455351076,455351076,48
+13,"archive 2: tar a directory",154,1714,delta-pack,15,495721868,495721868,52
+14,"archive 3: tar a directory",155,1859,delta-pack,16,536354808,536354808,56
+15,"archive 4: tar a directory",155,2003,delta-pack,17,576987748,576987748,60
+16,"extract 1: untar a copy",161,2151,delta-pack,18,619193576,619193576,64
+17,"extract 2: untar a copy",159,2297,delta-pack,19,660875108,660875108,68
+18,"grow 1: 4 MB file",25,2313,delta-pack,20,667428808,667428808,72
+19,"grow 2: 4 MB file",26,2330,delta-pack,21,674244656,674244656,76
+20,"grow 3: 4 MB file",25,2346,delta-pack,22,680798356,680798356,80
+21,"grow 4: 4 MB file",25,2362,delta-pack,23,687352056,687352056,84
+22,"grow 5: 4 MB file",25,2378,delta-pack,24,693905756,693905756,88
+23,"grow 6: 4 MB file",26,2395,delta-pack,25,700721604,700721604,92
+24,"work 21: rewrite 2 MB inside d4/f8",9,2395,delta-pack,26,703080936,703080936,96
+25,"work 22: delete a directory, recreate it smaller",46,2427,delta-pack,27,715139744,715139744,100
+26,"work 23: append to a log and edit with vim",9,2427,delta-pack,28,717499076,717499076,104
+27,"work 24: delete an archive, tar another",159,2572,delta-pack,29,759180608,759180608,108
+28,"work 25: package churn",9,2573,delta-pack,30,761539940,761539940,112
+29,"work 26: rewrite 2 MB inside d7/f7",9,2573,delta-pack,31,763899272,763899272,116
+30,"work 27: delete a directory, recreate it smaller",48,2606,delta-pack,32,776482376,776482376,120
+31,"work 28: append to a log and edit with vim",7,2606,delta-pack,33,778317412,778317412,124
+32,"work 29: delete an archive, tar another",157,2752,delta-pack,34,819474648,819474648,128
+33,"work 30: package churn",10,2752,delta-pack,35,822096128,822096128,132
+34,"work 31: rewrite 2 MB inside d2/f6",9,2752,delta-pack,36,824455460,824455460,136
+35,"work 32: delete a directory, recreate it smaller",45,2785,delta-pack,37,836252120,836252120,140
+36,"work 33: append to a log and edit with vim",7,2785,delta-pack,38,838087156,838087156,144
+37,"work 34: delete an archive, tar another",157,2930,delta-pack,39,879244392,879244392,148
+38,"work 35: package churn",11,2931,delta-pack,40,882128020,882128020,152
+39,"work 36: rewrite 2 MB inside d5/f5",9,2931,delta-pack,41,884487352,884487352,156
+40,"work 37: delete a directory, recreate it smaller",44,2964,delta-pack,42,896021864,896021864,160
+41,"work 38: append to a log and edit with vim",7,2964,delta-pack,43,897856900,897856900,164
+42,"work 39: delete an archive, tar another",156,3109,delta-pack,44,938751988,938751988,168
+43,"work 40: package churn",10,3110,delta-pack,45,941373468,941373468,172
+1,"format and mount",72,9,chunk-exploded,7,1049834,1049834,8
+2,"unpack alpine",47,47,chunk-exploded,50,12326630,13376464,59
+3,"install vim",213,250,chunk-exploded,253,65566662,69243798,276
+4,"corpus 1: eight files, 36 MB",157,397,chunk-exploded,400,104119768,110449006,437
+5,"corpus 2: eight files, 36 MB",156,543,chunk-exploded,546,142410608,151409886,597
+6,"corpus 3: eight files, 36 MB",160,691,chunk-exploded,694,181226144,193437566,761
+7,"corpus 4: eight files, 36 MB",155,837,chunk-exploded,840,219517272,234172630,920
+8,"corpus 5: eight files, 36 MB",155,983,chunk-exploded,986,257808400,274925798,1079
+9,"corpus 6: eight files, 36 MB",158,1130,chunk-exploded,1133,296361796,316483626,1241
+10,"corpus 7: eight files, 36 MB",156,1277,chunk-exploded,1280,334915193,357535395,1401
+11,"corpus 8: eight files, 36 MB",155,1423,chunk-exploded,1426,373206321,398343124,1560
+12,"archive 1: tar a directory",153,1568,chunk-exploded,1571,411235181,438644545,1717
+13,"archive 2: tar a directory",154,1714,chunk-exploded,1717,449526309,479226214,1875
+14,"archive 3: tar a directory",155,1859,chunk-exploded,1862,487555169,520088007,2034
+15,"archive 4: tar a directory",155,2003,chunk-exploded,2006,525321761,560967656,2193
+16,"extract 1: untar a copy",161,2151,chunk-exploded,2030,531631569,570670521,2233
+17,"extract 2: untar a copy",159,2297,chunk-exploded,2048,536368265,579080770,2268
+18,"grow 1: 4 MB file",25,2313,chunk-exploded,2064,540564553,585920139,2297
+19,"grow 2: 4 MB file",26,2330,chunk-exploded,2081,545023109,593023760,2327
+20,"grow 3: 4 MB file",25,2346,chunk-exploded,2097,549219397,599867221,2356
+21,"grow 4: 4 MB file",25,2362,chunk-exploded,2113,553415685,606712666,2385
+22,"grow 5: 4 MB file",25,2378,chunk-exploded,2129,557611973,613560095,2414
+23,"grow 6: 4 MB file",26,2395,chunk-exploded,2146,562070529,620671776,2444
+24,"work 21: rewrite 2 MB inside d4/f8",9,2395,chunk-exploded,2146,562070529,623327009,2457
+25,"work 22: delete a directory, recreate it smaller",46,2427,chunk-exploded,2178,570463105,635685538,2507
+26,"work 23: append to a log and edit with vim",9,2427,chunk-exploded,2178,570463105,638344739,2520
+27,"work 24: delete an archive, tar another",159,2572,chunk-exploded,2181,571267517,642594784,2539
+28,"work 25: package churn",9,2573,chunk-exploded,2182,571529785,645272089,2552
+29,"work 26: rewrite 2 MB inside d7/f7",9,2573,chunk-exploded,2182,571529785,647949394,2565
+30,"work 27: delete a directory, recreate it smaller",48,2606,chunk-exploded,2215,580184629,660854407,2617
+31,"work 28: append to a log and edit with vim",7,2606,chunk-exploded,2215,580184629,663011516,2628
+32,"work 29: delete an archive, tar another",157,2752,chunk-exploded,2229,583872749,669643177,2656
+33,"work 30: package churn",10,2752,chunk-exploded,2229,583872749,672342678,2669
+34,"work 31: rewrite 2 MB inside d2/f6",9,2752,chunk-exploded,2237,585969901,675042179,2682
+35,"work 32: delete a directory, recreate it smaller",45,2785,chunk-exploded,2270,594624745,687182956,2731
+36,"work 33: append to a log and edit with vim",7,2785,chunk-exploded,2270,594624745,689362261,2742
+37,"work 34: delete an archive, tar another",157,2930,chunk-exploded,2415,632653605,730881146,2903
+38,"work 35: package churn",11,2931,chunk-exploded,2416,632915873,733078555,2914
+39,"work 36: rewrite 2 MB inside d5/f5",9,2931,chunk-exploded,2416,632915873,735800252,2927
+40,"work 37: delete a directory, recreate it smaller",44,2964,chunk-exploded,2449,641570717,747701081,2975
+41,"work 38: append to a log and edit with vim",7,2964,chunk-exploded,2449,641570717,749640438,2985
+42,"work 39: delete an archive, tar another",156,3109,chunk-exploded,2462,644996471,755529837,3010
+43,"work 40: package churn",10,3110,chunk-exploded,2463,645258739,758273632,3023
+1,"format and mount",72,9,restic,17,2626024,2625522,13
+2,"unpack alpine",47,47,restic,20,17835274,19934554,27
+3,"install vim",213,250,restic,25,72086565,83789854,43
+4,"corpus 1: eight files, 36 MB",157,397,restic,30,114563747,158451484,60
+5,"corpus 2: eight files, 36 MB",156,543,restic,41,154596152,213390596,76
+6,"corpus 3: eight files, 36 MB",160,691,restic,49,195379721,275372753,92
+7,"corpus 4: eight files, 36 MB",155,837,restic,56,236281602,344131619,109
+8,"corpus 5: eight files, 36 MB",155,983,restic,66,275735349,400070398,125
+9,"corpus 6: eight files, 36 MB",158,1130,restic,74,317433129,456487910,141
+10,"corpus 7: eight files, 36 MB",156,1277,restic,81,358758893,519298644,157
+11,"corpus 8: eight files, 36 MB",155,1423,restic,89,399975283,591552553,174
+12,"archive 1: tar a directory",153,1568,restic,96,433669424,641071114,189
+13,"archive 2: tar a directory",154,1714,restic,103,464390229,680347460,204
+14,"archive 3: tar a directory",155,1859,restic,108,499902844,721023944,219
+15,"archive 4: tar a directory",155,2003,restic,114,531942206,764083049,234
+16,"extract 1: untar a copy",161,2151,restic,121,562797326,809700864,249
+17,"extract 2: untar a copy",159,2297,restic,127,591189675,848126279,264
+18,"grow 1: 4 MB file",25,2313,restic,132,596434847,863869005,277
+19,"grow 2: 4 MB file",26,2330,restic,136,599581838,880808519,291
+20,"grow 3: 4 MB file",25,2346,restic,137,603778179,899728302,305
+21,"grow 4: 4 MB file",25,2362,restic,141,608773100,913017484,318
+22,"grow 5: 4 MB file",25,2378,restic,144,612969435,927461516,331
+23,"grow 6: 4 MB file",26,2395,restic,148,619510575,944974492,345
+24,"work 21: rewrite 2 MB inside d4/f8",9,2395,restic,151,622059617,949461841,358
+25,"work 22: delete a directory, recreate it smaller",46,2427,restic,154,628372993,974921382,372
+26,"work 23: append to a log and edit with vim",9,2427,restic,156,628897674,981836210,385
+27,"work 24: delete an archive, tar another",159,2572,restic,161,636535787,1002233242,399
+28,"work 25: package churn",9,2573,restic,166,636536769,1008715649,412
+29,"work 26: rewrite 2 MB inside d7/f7",9,2573,restic,169,636012745,1012919324,425
+30,"work 27: delete a directory, recreate it smaller",48,2606,restic,172,647231607,1035192424,439
+31,"work 28: append to a log and edit with vim",7,2606,restic,172,647232469,1041058811,452
+32,"work 29: delete an archive, tar another",157,2752,restic,180,659320600,1058196260,466
+33,"work 30: package churn",10,2752,restic,182,659845862,1063990010,479
+34,"work 31: rewrite 2 MB inside d2/f6",9,2752,restic,184,659846287,1070663050,492
+35,"work 32: delete a directory, recreate it smaller",45,2785,restic,188,669089949,1093647187,506
+36,"work 33: append to a log and edit with vim",7,2785,restic,190,670139345,1097348418,519
+37,"work 34: delete an archive, tar another",157,2930,restic,195,700364373,1137867984,534
+38,"work 35: package churn",11,2931,restic,195,700889472,1141038075,547
+39,"work 36: rewrite 2 MB inside d5/f5",9,2931,restic,198,702420493,1148784885,560
+40,"work 37: delete a directory, recreate it smaller",44,2964,restic,206,709762367,1170749986,574
+41,"work 38: append to a log and edit with vim",7,2964,restic,207,711336148,1173927738,587
+42,"work 39: delete an archive, tar another",156,3109,restic,209,720140740,1196835226,601
+43,"work 40: package churn",10,3110,restic,210,721190316,1201826272,614
+43,"after repair index",10,3110,restic-compacted,168,721180312,1201819950,668

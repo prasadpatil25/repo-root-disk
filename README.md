@@ -33,9 +33,11 @@ claims.
 | restic, a real chunked store, on that same workload | `node src/analysis/restic-baseline.mjs` (needs `restic` and `rest-server` on PATH) | no |
 | All four on a captured 43-sync history of a real machine | `node src/analysis/replay-history.mjs` | no |
 | v86's native snapshot of that machine, and the wrapper's cost to the guest | `app/demo-native.js` from the browser console | no |
-| Restore wall clock from GitHub, serial and eight-wide | `node src/analysis/restore-wallclock.mjs <owner/repo>` | **yes** |
+| Restore wall clock from a real service, serial and eight-wide | `node src/analysis/restore-wallclock.mjs <github\|gitlab> <owner/repo>` | **yes** |
+| More than two writers: what a single rebase aborts, what a budget of N-1 costs | `node src/analysis/contention.mjs` | no |
+| The same race on a real service | `node src/analysis/contention-probe.mjs <github\|gitlab> <owner/repo>` | **yes** |
 | Write amplification and the chunk-size trade-off | `node src/analysis/report.mjs traces/mke2fs-256mb.json` | no |
-| Every invariant the design rests on (742 tests, 14 suites) | see below | no |
+| Every invariant the design rests on (795 tests, 15 suites) | see below | no |
 | GitHub costs 20x the requests and 13x the time of a batch-commit host | `node src/analysis/batch-commit.mjs github <owner/repo>` then `gitlab` | **yes** |
 | Whether a batch-commit host offers a compare-and-swap | `node src/analysis/cas-probe.mjs gitlab <owner/repo>` | **yes** |
 
@@ -76,8 +78,39 @@ reboot, and what the interception wrapper costs the guest (96 MB written
 through the device, attached against detached, interleaved). Results go to
 `traces/history/native.json`. `restore-wallclock.mjs` commits the same machine
 to a throwaway branch and times its restore from the object API, serially and
-eight-wide, three rounds each; it needs a token in `GITHUB_TOKEN` and deletes
-the branch afterwards.
+eight-wide, three rounds each (`ROUNDS`); it needs a token in `GITHUB_TOKEN`
+(or `GITLAB_TOKEN`) and deletes the branch afterwards. `KEEP_BRANCH=1` keeps
+it and a failed digest check explains itself; `BRANCH=<name>` restores from a
+kept branch without uploading again. Uploading a 1 GB machine is where the
+services' undocumented edges live: GitHub builds trees of thousands of entries
+only incrementally and enforces an hourly ceiling on content-creating requests
+(`RETRIES` is how long the governor waits it out), GitLab pages its tree
+listing and shortens large blobs on its JSON endpoint, which the per-chunk
+digest catches and the raw endpoint avoids.
+
+`contention.mjs` races 2, 4 and 8 writers to sync one machine from one parent,
+through the real engine against a fast-forward-only reference, and classifies
+every attempt: landed first try, landed after rebasing, refused for overlapping
+chunks, or aborted after losing more races than the rebase budget allowed. The
+budget is `sync({ retryOnConflict })`, one by default. `contention-probe.mjs`
+runs the same race against a real service, all writers under one governor so
+their sum stays under the enforced write ceiling, and checks the head manifest
+after every round for a landed writer's chunks. Running the experiments found
+that a refused or aborted sync dropped its sealed epoch (the engine now carries
+it into the next sync), and that GitLab's `last_commit_id` is validated before
+the commit is made: two syncs arriving together both pass and the second
+overwrites the first, a lost update in 3 of 15 live rounds
+(`traces/contention-gitlab.json`).
+
+A 1 GB machine is captured the same way as the 256 MB one, with a corpus
+workload that fills about half the disk:
+`m.main({ diskMb: 1024, workload: "corpus", dir: "history-1gb" })`, with
+`serve.py` started under `CAPTURE_ROOT=<a drive with room>`; the payloads run to
+900 MB. `replay-history.mjs <that directory>` and `restore-wallclock.mjs ... <that
+directory>` take it from there. `traces/history-1gb/history.json` is in git;
+without the payloads the replay gives every chunk a distinct payload, so its
+chunk-exploded column is an upper bound (3,167 requests at sync 43 against 2,463
+with the bytes, where copies and zeroed chunks are seen for what they are).
 
 `report.mjs` reads a captured write trace and reports what each chunk size would
 have cost. `traces/mke2fs-256mb.json` is a real capture of `mke2fs` on a 256 MB
@@ -88,12 +121,12 @@ disk, not a synthetic workload.
 ```
 for t in test test-engine test-device test-fs test-runner test-terminal \
          test-keyboard test-alpine test-sweep test-bisect test-nbd test-batch \
-         test-baselines test-restic; do
+         test-baselines test-restic test-contention; do
   node src/$t.mjs
 done
 ```
 
-742 assertions. They need no network and no credentials. `test-nbd.mjs` speaks
+795 assertions. They need no network and no credentials. `test-nbd.mjs` speaks
 the client half of the NBD protocol over a real socket, so the wire format and
 the server loop are exercised rather than mocked; the one hop that needs Linux
 is `nbd-client` binding the export to `/dev/nbd0`.

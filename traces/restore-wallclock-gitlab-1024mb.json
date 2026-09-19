@@ -1,0 +1,58 @@
+{
+ "kind": "gitlab",
+ "slug": "prasadpatil252/myrepo",
+ "branch": "wallclock-mu7xo859",
+ "live": 3110,
+ "liveBytes": 815267840,
+ "uploadRequests": 2,
+ "uploadMs": 484,
+ "rounds": {
+  "1": {
+   "rows": [
+    {
+     "ms": 1582622,
+     "requests": 2490,
+     "chunks": 3110
+    },
+    {
+     "ms": 1693114,
+     "requests": 2490,
+     "chunks": 3110
+    },
+    {
+     "ms": 1360358,
+     "requests": 2490,
+     "chunks": 3110
+    }
+   ],
+   "medianMs": 1582622,
+   "requests": 2490
+  },
+  "8": {
+   "rows": [
+    {
+     "ms": 181692,
+     "requests": 2490,
+     "chunks": 3110
+    },
+    {
+     "ms": 194481,
+     "requests": 2490,
+     "chunks": 3110
+    },
+    {
+     "ms": 186255,
+     "requests": 2490,
+     "chunks": 3110
+    }
+   ],
+   "medianMs": 186255,
+   "requests": 2490
+  }
+ },
+ "uploaded": 0,
+ "governor": {
+  "refused": 0,
+  "backoffs": 0
+ }
+}

@@ -1,0 +1,35 @@
+
+contention on gitlab: prasadpatil252/myrepo, branch contention-mu81nd3n
+
+  connected as                       prasadpatil252
+  machine created                    16 MB, 256 KB chunks
+    LOST UPDATE                      writer 0 chunk 6, writer 0 chunk 12
+  2 writers, budget 1, round 1       ff  2 requests, 4 s
+    LOST UPDATE                      writer 0 chunk 14, writer 0 chunk 23
+  2 writers, budget 1, round 2       ff  2 requests, 4 s
+  2 writers, budget 1, round 3       fr  6 requests, 7 s
+  4 writers, budget 1, round 1       fraa  16 requests, 7 s
+  4 writers, budget 1, round 2       fraa  16 requests, 7 s
+  4 writers, budget 1, round 3       fraa  16 requests, 7 s
+  4 writers, budget 3, round 1       frrr  28 requests, 14 s
+  4 writers, budget 3, round 2       frrr  28 requests, 14 s
+  4 writers, budget 3, round 3       frrr  28 requests, 16 s
+  8 writers, budget 1, round 1       fraaafaa  38 requests, 9 s
+  8 writers, budget 1, round 2       faaraaaa  43 requests, 10 s
+  8 writers, budget 1, round 3       faaraaaa  43 requests, 10 s
+    LOST UPDATE                      writer 4 chunk 35, writer 4 chunk 38
+  8 writers, budget 7, round 1       frrrrrrr  128 requests, 29 s
+  8 writers, budget 7, round 2       ffrrrrrr  103 requests, 25 s
+  8 writers, budget 7, round 3       frrrrrrr  151 requests, 34 s
+  deleted branch                     contention-mu81nd3n
+
+  writers  budget   first  rebased  refused  aborted   req/landed   wasted   s/round
+        2       1     83%     17%      0%      0%          1.7        0         4
+        4       1     25%     25%      0%     50%          8.0       30         6
+        4       3     25%     75%      0%      0%          7.0        0        13
+        8       1     17%     13%      0%     71%         17.7      102         7
+        8       7     17%     83%      0%      0%         15.9        0        27
+  lost updates                       [{"writers":2,"retries":1,"round":1,"lost":["writer 0 chunk 6","writer 0 chunk 12"]},{"writers":2,"retries":1,"round":2,"lost":["writer 0 chunk 14","writer 0 chunk 23"]},{"writers":8,"retries":7,"round":1,"lost":["writer 4 chunk 35","writer 4 chunk 38"]}]
+
+  wrote traces/contention-gitlab.json
+exit 0

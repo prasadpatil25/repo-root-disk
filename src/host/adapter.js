@@ -120,15 +120,26 @@ export class Host {
 
   // --- shared plumbing -------------------------------------------------------
 
-  async request(method, path, { body, headers = {}, binary = false, raw = false } = {}) {
+  /**
+   * One HTTP request. With `retryOn5xx`, a 5xx answer is retried a few times
+   * with backoff: a content-addressed write (blob, tree, commit) is safe to
+   * repeat, and a service that answers 502 to a large tree is not refusing it.
+   * Each attempt counts as a request, since each one was made.
+   */
+  async request(method, path, { body, headers = {}, binary = false, raw = false, retryOn5xx = false } = {}) {
     const url = path.startsWith("http") ? path : this.endpoint + path;
     const init = { method, headers: { ...this.authHeaders(), ...headers } };
     if (body !== undefined) {
       init.headers["Content-Type"] = "application/json";
       init.body = JSON.stringify(body);
     }
-    this.requestCount++;
-    const response = await fetch(url, init);
+    let response;
+    for (let attempt = 1; ; attempt++) {
+      this.requestCount++;
+      response = await fetch(url, init);
+      if (response.status < 500 || !retryOn5xx || attempt >= 4) break;
+      await new Promise((r) => setTimeout(r, 2000 * attempt));
+    }
 
     if (response.status === 403 || response.status === 429) {
       const retryAfter = Number(response.headers.get("retry-after")) || 60;

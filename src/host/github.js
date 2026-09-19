@@ -14,6 +14,11 @@
 
 import { Host, toBase64 } from "./adapter.js";
 
+/** Tree entries per create-tree request; larger trees are chained through base_tree. */
+const TREE_BATCH = 1000;
+/** The batch is halved on a 5xx, down to this. */
+const TREE_BATCH_MIN = 50;
+
 export class GitHubHost extends Host {
   static get defaultEndpoint() { return "https://api.github.com"; }
 
@@ -24,6 +29,16 @@ export class GitHubHost extends Host {
       batchCommit: false,
       maxBodyBytes: 100 * 1024 * 1024
     };
+  }
+
+  /**
+   * One blob per new object, then the tree (in batches past TREE_BATCH
+   * entries), a commit and a reference update. The tree term is what the
+   * portability comparison counts as one; it stays one for every machine
+   * that section measured.
+   */
+  static requestsPerCommit(fileCount) {
+    return fileCount + Math.max(1, Math.ceil(fileCount / TREE_BATCH)) + 2;
   }
 
   authHeaders() {
@@ -117,7 +132,7 @@ export class GitHubHost extends Host {
     await this.governedAll(
       toUpload.map((file) => async () => {
         const result = await this.request("POST", this.base("/git/blobs"), {
-          body: { content: toBase64(file.bytes), encoding: "base64" }
+          body: { content: toBase64(file.bytes), encoding: "base64" }, retryOn5xx: true
         });
         if (file.id && result.sha !== file.id) {
           throw new Error(
@@ -129,15 +144,37 @@ export class GitHubHost extends Host {
       })
     );
 
-    const tree = await this.governed(() =>
-      this.request("POST", this.base("/git/trees"), {
-        body: {
-          tree: files.map((f) => ({
-            path: f.path, mode: "100644", type: "blob", sha: f.id
-          }))
+    // One tree request for the usual sync. A machine with thousands of live
+    // chunks exceeds what the endpoint answers in one call (a 502 at 2,460
+    // entries, where 941 succeeded), so a large tree is built in batches,
+    // each chained onto the previous through base_tree. That costs
+    // ceil(n / TREE_BATCH) requests where the portability comparison counts
+    // one; a 256 KB chunk machine reaches the second batch at 250 MB of live
+    // disk, past every machine that comparison measured.
+    const entries = files.map((f) => ({ path: f.path, mode: "100644", type: "blob", sha: f.id }));
+    let tree = null;
+    let batchSize = TREE_BATCH;
+    for (let at = 0; at < entries.length;) {
+      const batch = entries.slice(at, at + batchSize);
+      const body = tree ? { base_tree: tree.sha, tree: batch } : { tree: batch };
+      try {
+        tree = await this.governed(() =>
+          this.request("POST", this.base("/git/trees"), { body, retryOn5xx: true })
+        );
+        at += batch.length;
+      } catch (err) {
+        // A 502, or a 422 that says the request timed out and asks for the
+        // tree to be built incrementally, is the endpoint timing out on the
+        // batch, not refusing the entries: halve and go again, down to a floor.
+        const timedOut = err.status >= 500
+          || (err.status === 422 && /timed out|too large|incrementally/i.test(err.message || ""));
+        if (timedOut && batchSize > TREE_BATCH_MIN) {
+          batchSize = Math.max(TREE_BATCH_MIN, Math.floor(batchSize / 2));
+          continue;
         }
-      })
-    );
+        throw err;
+      }
+    }
 
     const commit = await this.governed(() =>
       this.request("POST", this.base("/git/commits"), {
@@ -145,7 +182,8 @@ export class GitHubHost extends Host {
           message,
           tree: tree.sha,
           parents: orphan || !parent ? [] : [parent]
-        }
+        },
+        retryOn5xx: true
       })
     );
 
@@ -164,11 +202,23 @@ export class GitHubHost extends Host {
         })
       );
     } else {
-      await this.governed(() =>
-        this.request("POST", this.base("/git/refs"), {
-          body: { ref: `refs/heads/${branch}`, sha: commit.sha }
-        })
-      );
+      // A commit created a moment ago is sometimes not yet visible to the refs
+      // endpoint, which then answers 422 "Object does not exist". That is
+      // replication lag, not a refusal, and a short retry resolves it.
+      for (let attempt = 1; ; attempt++) {
+        try {
+          await this.governed(() =>
+            this.request("POST", this.base("/git/refs"), {
+              body: { ref: `refs/heads/${branch}`, sha: commit.sha }
+            })
+          );
+          break;
+        } catch (err) {
+          const lagging = err.status === 422 && /object does not exist/i.test(err.message || "");
+          if (!lagging || attempt >= 5) throw err;
+          await new Promise((r) => setTimeout(r, 1500 * attempt));
+        }
+      }
     }
 
     return { commit: commit.sha, requests: this.requestCount - before };

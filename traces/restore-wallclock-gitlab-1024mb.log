@@ -1,0 +1,21 @@
+
+restore wall clock on gitlab: alpine, vim, and a forty-step corpus workload on a 1024 MB disk
+
+  connected as                   prasadpatil252
+  repository                     prasadpatil252/myrepo (private)
+  reusing branch                 wallclock-mu7xo859
+  restore, width 1, round 1      2490 requests, 3110 chunks, 1582.6 s
+  restore, width 1, round 2      2490 requests, 3110 chunks, 1693.1 s
+  restore, width 1, round 3      2490 requests, 3110 chunks, 1360.4 s
+  restore, width 8, round 1      2490 requests, 3110 chunks, 181.7 s
+  restore, width 8, round 2      2490 requests, 3110 chunks, 194.5 s
+  restore, width 8, round 3      2490 requests, 3110 chunks, 186.3 s
+
+  the machine: 3110 live chunks, 777.5 MB; 0 uploaded, the rest deduplicated
+  restore at width 1             2490 requests, median 1582.6 s over 3
+  restore at width 8             2490 requests, median 186.3 s over 3
+  read refusals                  0
+
+  wrote traces/restore-wallclock-gitlab-1024mb.json
+  deleted branch                 wallclock-mu7xo859
+exit 0

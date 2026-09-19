@@ -1,0 +1,112 @@
+{
+ "kind": "gitlab",
+ "slug": "prasadpatil252/myrepo",
+ "rounds": 3,
+ "chunksPerWriter": 2,
+ "results": [
+  {
+   "writers": 2,
+   "retries": 1,
+   "first": 5,
+   "rebased": 1,
+   "refused": 0,
+   "aborted": 0,
+   "attempts": 6,
+   "rebases": 1,
+   "requests": 10,
+   "wasted": 0,
+   "landed": 6,
+   "requestsPerLanded": 1.6666666666666667,
+   "roundSeconds": 3.6063333333333336
+  },
+  {
+   "writers": 4,
+   "retries": 1,
+   "first": 3,
+   "rebased": 3,
+   "refused": 0,
+   "aborted": 6,
+   "attempts": 12,
+   "rebases": 9,
+   "requests": 48,
+   "wasted": 30,
+   "landed": 6,
+   "requestsPerLanded": 8,
+   "roundSeconds": 5.659666666666667
+  },
+  {
+   "writers": 4,
+   "retries": 3,
+   "first": 3,
+   "rebased": 9,
+   "refused": 0,
+   "aborted": 0,
+   "attempts": 12,
+   "rebases": 18,
+   "requests": 84,
+   "wasted": 0,
+   "landed": 12,
+   "requestsPerLanded": 7,
+   "roundSeconds": 12.729666666666667
+  },
+  {
+   "writers": 8,
+   "retries": 1,
+   "first": 4,
+   "rebased": 3,
+   "refused": 0,
+   "aborted": 17,
+   "attempts": 24,
+   "rebases": 20,
+   "requests": 124,
+   "wasted": 102,
+   "landed": 7,
+   "requestsPerLanded": 17.714285714285715,
+   "roundSeconds": 7.487333333333333
+  },
+  {
+   "writers": 8,
+   "retries": 7,
+   "first": 4,
+   "rebased": 20,
+   "refused": 0,
+   "aborted": 0,
+   "attempts": 24,
+   "rebases": 71,
+   "requests": 382,
+   "wasted": 0,
+   "landed": 24,
+   "requestsPerLanded": 15.916666666666666,
+   "roundSeconds": 27.138
+  }
+ ],
+ "lostUpdates": [
+  {
+   "writers": 2,
+   "retries": 1,
+   "round": 1,
+   "lost": [
+    "writer 0 chunk 6",
+    "writer 0 chunk 12"
+   ]
+  },
+  {
+   "writers": 2,
+   "retries": 1,
+   "round": 2,
+   "lost": [
+    "writer 0 chunk 14",
+    "writer 0 chunk 23"
+   ]
+  },
+  {
+   "writers": 8,
+   "retries": 7,
+   "round": 1,
+   "lost": [
+    "writer 4 chunk 35",
+    "writer 4 chunk 38"
+   ]
+  }
+ ]
+}

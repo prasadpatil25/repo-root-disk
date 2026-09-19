@@ -11,14 +11,17 @@
 // garbage collector agree to remove it. Encrypting before upload means the host
 // never held the plaintext in the first place.
 //
-// Nonces are derived rather than random: nonce = HMAC-SHA256(key, plaintext)
-// truncated to 12 bytes. Identical plaintext therefore yields identical
-// ciphertext, which preserves the free-space collapse that is the only
-// deduplication actually available. Because the key is secret, an attacker
-// cannot test a guessed chunk, so this avoids the confirmation attack that
-// content-derived-key convergent encryption suffers from. The leak is limited to
-// "these two chunks are equal", which is exactly what deduplication reveals
-// anyway.
+// Nonces are random. An earlier version derived them from the plaintext
+// under the key, so that identical chunks encrypted identically and free
+// space still collapsed to one object. That is a deterministic scheme, and a
+// deterministic scheme leaks equality: anyone who can read the repository and
+// get content onto the disk learns whether that content was already there,
+// with no key at all (Harnik et al., 2010). The measurement that motivated
+// determinism also removes the need for it. Deduplication on a populated disk
+// is entirely free space, so the engine now represents a zeroed chunk on a
+// blank base by absence, exactly as an unwritten chunk, and nothing about
+// occupied chunks need be equal to anything. Every occupied chunk therefore
+// gets a fresh 96-bit nonce and the ordinary AES-GCM guarantee.
 
 const subtle = globalThis.crypto.subtle;
 const encoder = new TextEncoder();
@@ -33,7 +36,7 @@ export function describe(params) {
     ? {
         algorithm: "AES-GCM-256",
         kdf: `PBKDF2-SHA256-${PBKDF2_ITERATIONS}`,
-        nonce: "HMAC-SHA256(key, plaintext)[0:12]",
+        nonce: "random-96",
         salt: params.saltHex
       }
     : null;
@@ -69,40 +72,31 @@ export async function deriveCipher(passphrase, saltHex) {
   const bits = await subtle.deriveBits(
     { name: "PBKDF2", salt: hexToBytes(saltHex), iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
     material,
-    512
+    256
   );
-  const raw = new Uint8Array(bits);
-
   const aesKey = await subtle.importKey(
-    "raw", raw.slice(0, 32), { name: "AES-GCM" }, false, ["encrypt", "decrypt"]
+    "raw", new Uint8Array(bits), { name: "AES-GCM" }, false, ["encrypt", "decrypt"]
   );
-  const macKey = await subtle.importKey(
-    "raw", raw.slice(32, 64), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
-  );
-
-  return new ChunkCipher(aesKey, macKey, saltHex);
+  return new ChunkCipher(aesKey, saltHex);
 }
 
 export class ChunkCipher {
-  constructor(aesKey, macKey, saltHex) {
+  constructor(aesKey, saltHex) {
     this._aes = aesKey;
-    this._mac = macKey;
     this.saltHex = saltHex;
   }
 
-  async _nonce(plaintext) {
-    const mac = await subtle.sign("HMAC", this._mac, plaintext);
-    return new Uint8Array(mac).slice(0, NONCE_BYTES);
-  }
-
   /**
-   * Encrypt one chunk. The nonce is prepended, so the stored object is
-   * self-describing and the same plaintext always produces the same bytes.
+   * Encrypt one chunk under a fresh random nonce, prepended so the stored
+   * object is self-describing. The same plaintext encrypts differently every
+   * time, which is the point. With 96-bit nonces the birthday bound is around
+   * 2^32 chunks per key, some 10^15 bytes at this chunk size.
    * @param {Uint8Array} plaintext
    * @returns {Promise<Uint8Array>}
    */
   async encrypt(plaintext) {
-    const nonce = await this._nonce(plaintext);
+    const nonce = new Uint8Array(NONCE_BYTES);
+    globalThis.crypto.getRandomValues(nonce);
     const sealed = new Uint8Array(
       await subtle.encrypt({ name: "AES-GCM", iv: nonce }, this._aes, plaintext)
     );

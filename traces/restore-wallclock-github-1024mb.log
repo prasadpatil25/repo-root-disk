@@ -1,0 +1,28 @@
+
+restore wall clock on github: alpine, vim, and a forty-step corpus workload on a 1024 MB disk
+
+  connected as                   prasadpatil25
+  repository                     prasadpatil25/telbot (private)
+  committed                      2460 chunks in 2484 requests, 1072 s at 150/min
+  restore, width 1, round 1      2464 requests, 3110 chunks, 1372.6 s
+  restore, width 1, round 2      2464 requests, 3110 chunks, 1294.4 s
+  restore, width 8, round 1      2464 requests, 3110 chunks, 163.1 s
+  deleted branch                 wallclock-mu7ydicf
+file:///C:/git/experiment/src/host/adapter.js:146
+      throw new RateLimited(retryAfter);
+            ^
+
+RateLimited: rate limited, retry after 60s
+    at GitHubHost.request (file:///C:/git/experiment/src/host/adapter.js:146:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Governor.write (file:///C:/git/experiment/src/core/governor.js:105:24)
+    at async file:///C:/git/experiment/src/core/machine.js:572:33
+    at async worker (file:///C:/git/experiment/src/core/machine.js:587:22)
+    at async Promise.all (index 6)
+    at async restore (file:///C:/git/experiment/src/core/machine.js:595:3)
+    at async file:///C:/git/experiment/src/analysis/restore-wallclock.mjs:162:15 {
+  retryAfterSeconds: 60
+}
+
+Node.js v22.18.0
+exit 1

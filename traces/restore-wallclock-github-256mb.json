@@ -1,0 +1,58 @@
+{
+ "kind": "github",
+ "slug": "prasadpatil25/telbot",
+ "branch": "wallclock-mu7tej2v",
+ "live": 310,
+ "liveBytes": 81264640,
+ "uploadRequests": 311,
+ "uploadMs": 70277,
+ "rounds": {
+  "1": {
+   "rows": [
+    {
+     "ms": 134348,
+     "requests": 309,
+     "chunks": 310
+    },
+    {
+     "ms": 138565,
+     "requests": 309,
+     "chunks": 310
+    },
+    {
+     "ms": 137867,
+     "requests": 309,
+     "chunks": 310
+    }
+   ],
+   "medianMs": 137867,
+   "requests": 309
+  },
+  "8": {
+   "rows": [
+    {
+     "ms": 20134,
+     "requests": 309,
+     "chunks": 310
+    },
+    {
+     "ms": 20238,
+     "requests": 309,
+     "chunks": 310
+    },
+    {
+     "ms": 18447,
+     "requests": 309,
+     "chunks": 310
+    }
+   ],
+   "medianMs": 20134,
+   "requests": 309
+  }
+ },
+ "uploaded": 305,
+ "governor": {
+  "refused": 0,
+  "backoffs": 0
+ }
+}

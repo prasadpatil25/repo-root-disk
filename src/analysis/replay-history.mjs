@@ -15,13 +15,14 @@
 // restic needs those, since content-defined chunking sees content.
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { WholeImage, DeltaPack, ChunkExploded, run, cumulative } from "./baselines.js";
 import { runRestic, toCsv } from "./restic-run.js";
 import { planFrom } from "./history.js";
 
 const K = 1024;
 const DIR = process.argv[2] || "traces/history";
+const NAME = basename(DIR.replace(/[\\/]+$/, ""));   // output files are named after the history
 const mb = (b) => (b / K / K).toFixed(1);
 
 // ------------------------------------------------------------ the history
@@ -54,7 +55,23 @@ for (const [name, Shape] of shapes) {
 }
 
 let restic = null;
-if (haveBytes) {
+if (process.env.SKIP_RESTIC === "1") {
+  // The shapes are cheap and restic is not; a rerun of the shapes keeps an
+  // earlier restic run's rows, read back from its CSV, so the combined table
+  // stays whole.
+  const earlier = `traces/${NAME}-restic.csv`;
+  if (existsSync(earlier)) {
+    const [head, ...lines] = readFileSync(earlier, "utf8").trim().split("\n");
+    const cols = head.split(",");
+    const rows = lines.map((l) => Object.fromEntries(l.split(",").map((v, i) => [cols[i], v === "" ? null : isNaN(v) ? v : Number(v)])));
+    const last = rows.filter((r) => r.phase === "backup").at(-1);
+    const after = rows.find((r) => r.phase === "repaired");
+    restic = { rows, after, repair: { requests: after ? after.uploadRequests : 0 }, versions: { restic: "earlier run" }, fromCsv: true };
+    console.log(`  restic          reused ${earlier} (${last ? last.sync : 0} syncs)`);
+  } else {
+    console.log("  restic skipped (SKIP_RESTIC=1) and no earlier CSV found");
+  }
+} else if (haveBytes) {
   process.stdout.write(`  running restic          `);
   const t0 = Date.now();
   try {
@@ -140,7 +157,7 @@ if (restic) {
       r.restoreRequests, r.restoreBytes, r.storageBytes, r.uploadRequestsCumulative].join(","));
   }
   mkdirSync("traces", { recursive: true });
-  writeFileSync("traces/history-restic.csv", toCsv(restic.rows));
+  if (!restic.fromCsv) writeFileSync(`traces/${NAME}-restic.csv`, toCsv(restic.rows));
 }
-writeFileSync("traces/history-replay.csv", out.join("\n") + "\n");
-console.log(`\n  wrote traces/history-replay.csv${restic ? " and traces/history-restic.csv" : ""}`);
+writeFileSync(`traces/${NAME}-replay.csv`, out.join("\n") + "\n");
+console.log(`\n  wrote traces/${NAME}-replay.csv${restic ? ` and traces/${NAME}-restic.csv` : ""}`);

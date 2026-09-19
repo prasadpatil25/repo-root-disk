@@ -433,6 +433,105 @@ console.log("\nchunks are verified, not just addressed");
   eq("and says how much is covered", [coverage.covered, coverage.total], [1, 2]);
 }
 
+// ------------------------------------------------------- a refused first commit
+
+console.log("\na refused first commit is not a lost race");
+{
+  // A 422 while creating the branch is the service objecting to the commit,
+  // not another writer; the engine must surface it, not try to rebase onto a
+  // branch that does not exist.
+  const host = new FakeHost();
+  const realCommit = host.commit.bind(host);
+  host.commit = async (args) => {
+    if (!args.branchExists) { const e = new Error("POST /git/trees -> 422 Unprocessable Entity"); e.status = 422; throw e; }
+    return realCommit(args);
+  };
+  const device = new MemoryDevice({ diskSize: DISK });
+  const machine = newMachine(host, device);
+  await machine.load({ diskSize: DISK, chunkSize: CHUNK, base: "base.img", baseIsBlank: true });
+  device.write(0, enc.encode("first"));
+  let err = null;
+  try { await machine.sync({}); } catch (e) { err = e; }
+  check("the service's own refusal comes back", err && /422/.test(err.message), err && err.message);
+  check("not a complaint about a missing branch", !(err && /does not exist/.test(err.message)));
+}
+
+// ------------------------------------------------------------ duplicates
+
+console.log("\nduplicate chunks restore once");
+{
+  // A file copied onto chunk-aligned blocks gives two positions one object.
+  // The store holds it once already; the restore should fetch it once too.
+  const host = new FakeHost();
+  const device = new MemoryDevice({ diskSize: DISK });
+  const machine = newMachine(host, device);
+  await machine.load({ diskSize: DISK, chunkSize: CHUNK, base: "base.img", baseIsBlank: true });
+  const content = new Uint8Array(CHUNK); for (let i = 0; i < CHUNK; i++) content[i] = i & 255;
+  device.write(1 * CHUNK, content);
+  device.write(5 * CHUNK, content);
+  device.write(9 * CHUNK, content);
+  const r = await machine.sync({});
+  eq("three positions, one upload", [r.chunks, r.uploaded, r.reused], [3, 1, 2]);
+  const before = host.requestCount;
+  const restored = await restore({ host, branch: "machine" });
+  eq("restore fetched the object once and applied it three times", [restored.chunksApplied, restored.reused], [3, 2]);
+  eq("so it cost one object read plus the reference, tree and manifest", host.requestCount - before, 4);
+  check("and the disk is right", bytesEqual(restored.disk, device.snapshot()));
+  const wide = await restore({ host, branch: "machine", concurrency: 4 });
+  check("at width too", bytesEqual(wide.disk, device.snapshot()) && wide.reused === 2);
+}
+
+// ------------------------------------------------------------- free space
+
+console.log("\nfree space is absence");
+{
+  // A chunk the guest zeroes on a blank base leaves the manifest, exactly as
+  // if it had never been written: no object, no ciphertext, nothing to
+  // deduplicate. That is what lets the cipher use random nonces.
+  const host = new FakeHost();
+  const device = new MemoryDevice({ diskSize: DISK });
+  const machine = newMachine(host, device);
+  await machine.load({ diskSize: DISK, chunkSize: CHUNK, base: "base.img", baseIsBlank: true });
+  device.write(2 * CHUNK, enc.encode("something in chunk two"));
+  await machine.sync({});
+  eq("a written chunk is in the manifest", manifestModule.indices(machine.manifest), [2]);
+
+  const objectsBefore = host.objects.size;
+  device.write(2 * CHUNK, new Uint8Array(CHUNK));   // the guest zeroes it
+  const r = await machine.sync({});
+  eq("zeroing it counts as a dirty chunk", r.chunks, 1);
+  eq("but uploads nothing for it", r.uploaded, 0);
+  eq("and the manifest no longer names it", manifestModule.indices(machine.manifest), []);
+  eq("only the manifest was added to the store", host.objects.size - objectsBefore, 1);
+  const restored = await restore({ host, branch: "machine" });
+  check("a restore reads it back as zeros", restored.disk.subarray(2 * CHUNK, 3 * CHUNK).every((b) => b === 0));
+  check("which is the live disk", bytesEqual(restored.disk, device.snapshot()));
+
+  // A partial zero is content, not free space.
+  const half = new Uint8Array(CHUNK); half[CHUNK - 1] = 7;
+  device.write(2 * CHUNK, half);
+  await machine.sync({});
+  eq("a chunk with one non-zero byte is stored", manifestModule.indices(machine.manifest), [2]);
+}
+{
+  // Under encryption the same content stored twice makes two objects, and
+  // free space still makes none.
+  const host = new FakeHost();
+  const device = new MemoryDevice({ diskSize: DISK });
+  const cipher = await deriveCipher("a passphrase the host never sees", randomSaltHex());
+  const machine = newMachine(host, device, { cipher });
+  await machine.load({ diskSize: DISK, chunkSize: CHUNK, base: "base.img", baseIsBlank: true });
+  device.write(0, enc.encode("same content"));
+  await machine.sync({});
+  const first = machine.manifest.chunks["0"];
+  device.write(0, enc.encode("same content"));
+  await machine.sync({});
+  check("identical plaintext committed twice is two distinct objects", machine.manifest.chunks["0"] !== first);
+  device.write(1 * CHUNK, new Uint8Array(CHUNK));
+  const r = await machine.sync({});
+  eq("and a zeroed chunk still uploads nothing", r.uploaded, 0);
+}
+
 // ------------------------------------------------------------------- conflicts
 
 console.log("\nconcurrent writers");
@@ -490,6 +589,68 @@ console.log("\nconcurrent writers");
   try { await machineA.sync({}); } catch (err) { conflict = err; }
   check("an overlapping write is refused", conflict instanceof ConflictError);
   eq("and it names the chunk that overlapped", conflict.overlappingChunks, [0]);
+
+  // The refused epoch is not lost. A forked to a new branch would carry it;
+  // here A instead writes something else and syncs again, and the earlier
+  // write must still be in that commit, because the guest made it.
+  deviceA.write(3 * 256 * K, enc.encode("A writes elsewhere"));
+  await machineA.load();
+  machineA.markHydrated();
+  const after = await machineA.sync({});
+  eq("a refused sync carries its epoch into the next one", after.chunks, 2);
+}
+{
+  // A race lost more often than the retry budget allows is an abort, not a
+  // merge. Three writers from one parent: with one rebase allowed, the third
+  // loses twice and gives up; with two, it lands.
+  for (const [budget, wantAbort] of [[true, true], [2, false]]) {
+    const host = new FakeHost();
+    const devices = [], machines = [];
+    for (let i = 0; i < 3; i++) {
+      devices.push(new MemoryDevice({ diskSize: DISK }));
+      machines.push(newMachine(host, devices[i]));
+    }
+    await machines[0].load({ diskSize: DISK, chunkSize: CHUNK, base: "base.img", baseIsBlank: true });
+    devices[0].write(0, enc.encode("seed"));
+    await machines[0].sync({});
+    for (let i = 1; i < 3; i++) { await machines[i].load(); machines[i].markHydrated(); }
+    // Two winners land first, then the third writer tries from the old parent.
+    devices[1].write(1 * 256 * K, enc.encode("one"));
+    await machines[1].sync({});
+    await machines[0].load(); machines[0].markHydrated();
+    devices[0].write(2 * 256 * K, enc.encode("zero again"));
+    await machines[0].sync({});
+    devices[2].write(3 * 256 * K, enc.encode("two"));
+    // machine 2 believes the head is the seed commit; it is two commits behind.
+    let err = null, ok = null;
+    // Force a second lost race: after its first rebase lands on the current
+    // head, another commit slips in. Emulate by wrapping the host's commit.
+    const realCommit = host.commit.bind(host);
+    let calls = 0;
+    host.commit = async (args) => {
+      calls++;
+      if (calls === 2) {
+        // Between the rebase's load() and its commit, someone else moved.
+        const d = new MemoryDevice({ diskSize: DISK });
+        const m = newMachine(host, d);
+        await m.load(); m.markHydrated();
+        d.write(4 * 256 * K, enc.encode("interloper"));
+        await realCommitFor(m);
+      }
+      return realCommit(args);
+    };
+    async function realCommitFor(m) {
+      const saved = host.commit; host.commit = realCommit;
+      try { await m.sync({}); } finally { host.commit = saved; }
+    }
+    try { ok = await machines[2].sync({ retryOnConflict: budget }); } catch (e) { err = e; }
+    host.commit = realCommit;
+    if (wantAbort) {
+      check("with one rebase, a race lost twice aborts", err !== null && /fast forward/i.test(err.message));
+    } else {
+      check("with a budget of two, a race lost twice still lands", ok !== null && !!ok.commit);
+    }
+  }
 }
 
 // ------------------------------------ the same races, on a GitLab-shaped host
@@ -709,8 +870,9 @@ console.log("\ncompaction");
 
   const result = await machine.compact({});
   eq("compaction reads every chunk on the disk", result.chunksRead, 16);
-  // A 4 MB disk with four small edits is almost entirely zeros, and zero chunks
-  // collapse to one object. This ratio is occupancy, not compression.
+  // A 4 MB disk with four small edits is almost entirely zeros, and a zeroed
+  // chunk on a blank base is absent rather than stored. This ratio is
+  // occupancy, not compression.
   check("mostly-empty disks collapse hard", result.distinctObjects <= 3,
         `${result.distinctObjects} distinct`);
   check("earlier objects became unreachable", result.unreachableAfter > 0,
@@ -722,8 +884,8 @@ console.log("\ncompaction");
   const restored = await restore({ host, branch: "machine" });
   check("a compacted machine still restores exactly",
         bytesEqual(restored.disk, device.snapshot()));
-  eq("and its manifest covers the whole disk",
-     manifestModule.indices(restored.manifest).length, 16);
+  eq("and its manifest names the one occupied chunk, free space being absent",
+     manifestModule.indices(restored.manifest), [0]);
   check("compaction is reported as read time as well as total", result.readSeconds >= 0);
   check("objects did not grow without bound", host.objects.size >= beforeObjects);
 }

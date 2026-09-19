@@ -141,17 +141,29 @@ export class GitLabHost extends Host {
   }
 
   async readTree(ref) {
-    const entries = await this.request(
-      "GET", this.base(`/repository/tree?ref=${encodeURIComponent(ref)}&recursive=true&per_page=100`)
-    );
-    return (entries || [])
-      .filter((entry) => entry.type === "blob")
-      .map((entry) => ({ path: entry.path, id: entry.id, size: 0 }));
+    // The tree comes 100 entries a page, and a machine of a few hundred live
+    // chunks already needs several. GitHub answers the whole tree in one call;
+    // here the reference plus tree costs 1 + ceil(entries / 100) requests,
+    // which restore pays on every boot.
+    const out = [];
+    for (let page = 1; ; page++) {
+      const entries = await this.request(
+        "GET", this.base(`/repository/tree?ref=${encodeURIComponent(ref)}&recursive=true&per_page=100&page=${page}`)
+      );
+      for (const entry of entries || []) {
+        if (entry.type === "blob") out.push({ path: entry.path, id: entry.id, size: 0 });
+      }
+      if (!entries || entries.length < 100) break;
+    }
+    return out;
   }
 
   async readObject(id) {
-    const blob = await this.request("GET", this.base(`/repository/blobs/${id}`));
-    return fromBase64(blob.content);
+    // The JSON form of this endpoint returned 233,593 of a 262,144-byte chunk
+    // of random content, measured on the 1 GB machine, where the object under
+    // that id is intact (its git id is over the full content). The raw form
+    // serves the bytes as they are, and without the base64 inflation.
+    return this.request("GET", this.base(`/repository/blobs/${id}/raw`), { binary: true });
   }
 
   async commit({ branch, message, files, parent = null, orphan = false, branchExists }) {
@@ -173,30 +185,40 @@ export class GitLabHost extends Host {
     // restore reads the manifest, and the manifest does not name them.
     const toCommit = files.filter((file) => !file.skipUpload);
 
-    const payload = {
-      branch,
-      commit_message: message,
-      actions: toCommit.map((file) => ({
-        action: file.replaces ? "update" : "create",
-        file_path: file.path,
-        content: toBase64(file.bytes),
-        encoding: "base64",
-        // The one field this API offers that might refuse a stale writer:
-        // "last known file commit id", enforcement undocumented. Sent only when
-        // a caller supplies it, so an ordinary sync is unchanged until the
-        // probe has established what it does.
-        ...(file.lastCommit ? { last_commit_id: file.lastCommit } : {})
-      }))
-    };
-
-    const estimated = estimateBody(payload);
+    const toAction = (file) => ({
+      action: file.replaces ? "update" : "create",
+      file_path: file.path,
+      content: toBase64(file.bytes),
+      encoding: "base64",
+      // The one field this API offers that might refuse a stale writer:
+      // "last known file commit id", enforcement undocumented. Sent only when
+      // a caller supplies it, so an ordinary sync is unchanged until the
+      // probe has established what it does.
+      ...(file.lastCommit ? { last_commit_id: file.lastCommit } : {})
+    });
+    const actions = toCommit.map(toAction);
     const limit = this.maxBodyBytes;
-    if (estimated > limit) {
+
+    // One commit when it fits, which is every sync the portability comparison
+    // measured. A sync larger than the ceiling becomes several: the objects
+    // go first, in commits that each fit, and the manifest goes last, so the
+    // branch's machine state changes only when everything it names is there.
+    // The manifest is the caller's last file, by the engine's convention.
+    const batches = [];
+    let current = [];
+    let size = 256;
+    for (const action of actions) {
+      const cost = action.content.length + action.file_path.length + 64;
+      if (current.length && size + cost > limit) { batches.push(current); current = []; size = 256; }
+      current.push(action);
+      size += cost;
+    }
+    if (current.length) batches.push(current);
+    if (batches.some((b) => b.length === 1 && estimateBody({ actions: b }) > limit)) {
       throw new Error(
-        `batch commit body is about ${(estimated / 1048576).toFixed(1)} MB, over the ` +
-        `${(limit / 1048576).toFixed(0)} MB ceiling we set for this host, which is ` +
-        `our own figure and not something the service told us. Split the sync into ` +
-        `several commits, or raise it to find out what the service really accepts.`
+        `a single object of about ${(estimateBody({ actions: batches.find((b) => b.length === 1) }) / 1048576).toFixed(1)} MB ` +
+        `is over the ${(limit / 1048576).toFixed(0)} MB ceiling we set for this host, which is our own ` +
+        `figure and not something the service told us; raise it to find out what the service accepts.`
       );
     }
 
@@ -205,6 +227,7 @@ export class GitLabHost extends Host {
     // only create or edit files when you are on a branch": at that moment the
     // target is exactly what does not exist.
     const exists = branchExists === undefined ? parent !== null : branchExists;
+    const payload = { branch, commit_message: message };
     if (exists) {
       // Nothing. start_sha and start_branch both mean "create this branch from
       // there", so naming either for a branch that already exists is refused
@@ -231,10 +254,20 @@ export class GitLabHost extends Host {
       // very first commit with the target branch named alone.
     }
 
-    const result = await this.governed(() =>
-      this.request("POST", this.base("/repository/commits"), { body: payload })
-    );
-    return { commit: result.id, requests: this.requestCount - before };
+    let result = null;
+    for (let i = 0; i < batches.length; i++) {
+      const body = {
+        ...payload,
+        actions: batches[i],
+        commit_message: batches.length === 1 ? message : `${message} (${i + 1}/${batches.length})`
+      };
+      // Only the first commit starts the branch; the rest are on it.
+      if (i > 0) delete body.start_branch;
+      result = await this.governed(() =>
+        this.request("POST", this.base("/repository/commits"), { body })
+      );
+    }
+    return { commit: result.id, requests: this.requestCount - before, commits: batches.length };
   }
 }
 

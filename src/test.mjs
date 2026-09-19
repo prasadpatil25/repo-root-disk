@@ -111,16 +111,18 @@ eq("round trips", new TextDecoder().decode(opened),
    "machine state that should not be readable by the host");
 check("ciphertext differs from plaintext", !sealed.every((b, i) => b === plain[i]));
 
-// Determinism is the property that preserves the only dedup actually available.
+// Nonces are random, so nothing about two ciphertexts says whether their
+// plaintexts were equal. Free space is kept out of the store by the engine
+// (a zeroed chunk on a blank base is absent), not by making zeros encrypt alike.
 const again = await cipher.encrypt(plain);
-check("same plaintext yields identical ciphertext",
-      sealed.length === again.length && sealed.every((b, i) => b === again[i]));
+check("the same plaintext encrypts differently every time",
+      await blobId(again) !== await blobId(sealed));
+eq("and both decrypt", new TextDecoder().decode(await cipher.decrypt(again)),
+   new TextDecoder().decode(plain));
 const zerosA = await cipher.encrypt(new Uint8Array(4096));
 const zerosB = await cipher.encrypt(new Uint8Array(4096));
-check("zero chunks still collapse to one object",
-      await blobId(zerosA) === await blobId(zerosB));
-const other = await cipher.encrypt(enc.encode("different"));
-check("different plaintext yields different ciphertext", await blobId(other) !== await blobId(sealed));
+check("two zero chunks do not encrypt alike either", await blobId(zerosA) !== await blobId(zerosB));
+check("the recorded parameters say so", describe({ saltHex: salt }).nonce === "random-96");
 
 const wrong = await deriveCipher("wrong passphrase", salt);
 let rejected = false;
@@ -225,6 +227,36 @@ function mockResponse(status, json) {
         GitHubHost.prototype.readObject.toString().includes("vnd.github.raw"));
 }
 
+// GitHub: a tree the endpoint will not build in one call is built in pieces
+{
+  // 2,300 entries: over the batch size, and the endpoint answers 502 to any
+  // batch above 300, which is what a machine with thousands of live chunks
+  // met. The tree must still come out, chained through base_tree, and the
+  // request count must say what it cost.
+  let treeCalls = 0;
+  const seen = mockFetch([
+    [/\/git\/blobs$/, (m) => m === "POST" ? { status: 201, json: { sha: "blob" } } : null],
+    [/\/git\/trees$/, (m, u, body) => {
+      treeCalls++;
+      if (body.tree.length > 300) return { status: 502, json: { message: "Server Error" } };
+      return { status: 201, json: { sha: "tree" + treeCalls } };
+    }],
+    [/\/git\/commits$/, () => ({ status: 201, json: { sha: "commit1" } })],
+    [/\/git\/refs$/, () => ({ status: 201, json: {} })]
+  ]);
+  const host = createHost("github", { token: "t", owner: "o", repo: "r" });
+  const files = Array.from({ length: 2300 }, (_, i) => ({ path: `objects/${i}`, bytes: new Uint8Array(0), id: "blob", skipUpload: true }));
+  const result = await host.commit({ branch: "machine", message: "big", files, branchExists: false });
+  eq("the commit lands", result.commit, "commit1");
+  const treeBodies = seen.filter((r) => r.url.endsWith("/git/trees")).map((r) => r.body);
+  const landed = treeBodies.filter((b) => b.tree.length <= 300);
+  eq("every entry reached a tree", landed.reduce((a, b) => a + b.tree.length, 0), 2300);
+  check("later batches chain onto the earlier tree", landed.slice(1).every((b) => b.base_tree));
+  check("no batch exceeded the size the endpoint accepted after the halving", landed.every((b) => b.tree.length <= 250));
+  eq("and the model counts one blob-free tree per batch plus commit and reference",
+     result.requests, seen.length);
+}
+
 // Forgejo: one batch request onto a branch that already exists
 {
   const seen = mockFetch([
@@ -269,6 +301,26 @@ function mockResponse(status, json) {
   check("gitlab sends no parent pin, because the API has no way to accept one",
         seen[0].body.start_sha === undefined && seen[0].body.start_branch === undefined,
         JSON.stringify(Object.keys(seen[0].body)));
+}
+
+// GitLab: a sync over the body ceiling becomes several commits, manifest last
+{
+  const seen = mockFetch([
+    [/\/repository\/commits$/, () => ({ status: 201, json: { id: "gl" + seen.length } })]
+  ]);
+  // A 1 MB ceiling and four 300 KB chunks plus a manifest: about 400 KB each
+  // in base64, so two chunks per commit, and the manifest rides in the last.
+  const host = createHost("gitlab", { token: "t", owner: "o", repo: "r", maxBodyBytes: 1024 * 1024 });
+  const chunk = () => ({ path: "objects/" + Math.random().toString(36).slice(2), bytes: new Uint8Array(300 * 1024) });
+  const files = [chunk(), chunk(), chunk(), chunk(), { path: "manifest.json", bytes: enc.encode("{}"), replaces: "old" }];
+  const result = await host.commit({ branch: "machine", message: "big", parent: "p", branchExists: true, files });
+  const commits = seen.filter((r) => r.url.endsWith("/repository/commits"));
+  eq("two commits for what would have been one", [result.requests, result.commits], [2, 2]);
+  check("every commit fits the ceiling", commits.every((r) => JSON.stringify(r.body).length <= 1024 * 1024));
+  eq("the manifest is in the last commit only",
+     commits.map((r) => r.body.actions.some((a) => a.file_path === "manifest.json")), [false, true]);
+  eq("every chunk went exactly once", commits.reduce((a, r) => a + r.body.actions.length, 0), 5);
+  check("commit messages are numbered", commits.every((r, i) => r.body.commit_message === `big (${i + 1}/2)`));
 }
 
 // Creating a branch, which is what a machine's first commit has to do

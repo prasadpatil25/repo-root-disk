@@ -11,6 +11,29 @@ import * as manifestModule from "./manifest.js";
 import { plaintextCipher } from "./crypto.js";
 import { Governor } from "./governor.js";
 
+/**
+ * Whether a host's refusal means another writer moved the reference first.
+ * One spelling per host, each measured rather than read off documentation;
+ * the contention probe uses the same test, so it and the engine agree.
+ */
+export function isLostRace(err) {
+  if (!err) return false;
+  const m = err.message || "";
+  return err.status === 422
+    || /not a fast forward/i.test(m)
+    || /file has changed/i.test(m)
+    || /reference does not point to expected object/i.test(m)
+    || /sha does not match/i.test(m);
+}
+
+/** Whether a chunk is all zeros, which on a blank base is what "absent" means. */
+export function isZeroChunk(bytes) {
+  const words = new Uint32Array(bytes.buffer, bytes.byteOffset, bytes.byteLength >>> 2);
+  for (let i = 0; i < words.length; i++) if (words[i] !== 0) return false;
+  for (let i = words.length << 2; i < bytes.byteLength; i++) if (bytes[i] !== 0) return false;
+  return true;
+}
+
 export class ConflictError extends Error {
   constructor(message, details) {
     super(message);
@@ -30,6 +53,7 @@ export class Machine {
    * @param {(event: Object) => void} [options.onEvent]
    */
   constructor({ host, device, branch, cipher, governor, onEvent }) {
+    this._carried = [];
     this.host = host;
     this.device = device;
     this.branch = branch;
@@ -188,6 +212,14 @@ export class Machine {
   /**
    * One sync. Returns what it cost, which is the shape the evaluation reports.
    */
+  /**
+   * @param {Object} [options]
+   * @param {string} [options.message]
+   * @param {boolean|number} [options.retryOnConflict]  how many times a lost
+   *   race may be rebased before the sync gives up: `true` is one, the
+   *   policy the paper evaluates as Algorithm 3; a number bounds it; `false`
+   *   surfaces the first refusal.
+   */
   async sync({ message, retryOnConflict = true } = {}) {
     const started = Date.now();
     const requestsBefore = this.host.requestCount;
@@ -207,7 +239,12 @@ export class Machine {
     // not flushed has produced zero disk writes, so sealing first would commit a
     // machine missing the user's most recent work.
     await this.device.flush();
-    const sealed = this.device.seal();
+    // A sync that was refused or lost its race has already sealed its epoch,
+    // and the device will not hand those ranges out again. They are carried
+    // here until a commit lands, so a failed sync loses nothing and the next
+    // one commits what the guest actually wrote.
+    const sealed = [...this._carried, ...this.device.seal()];
+    this._carried = [];
 
     // P2 Snapshot, P3 chunk and hash.
     const indices = dirtyChunks(sealed, this.chunkSize, this.manifest.diskSize);
@@ -228,10 +265,16 @@ export class Machine {
     }
 
     const prepared = [];
+    const zeroed = [];
     for (const index of indices) {
       // P3: read through the device so the base image is merged in. A local
       // shadow initialised to zeros is correct only for a blank base.
       const plaintext = await this.device.readChunk(index, this.chunkSize);
+      // On a blank base a chunk the guest has zeroed is what an unwritten one
+      // is, so it is represented the same way: by absence. Free space costs no
+      // object and no ciphertext, which is what lets every stored chunk carry
+      // a random nonce without giving up the one deduplication there was.
+      if (this.manifest.baseIsBlank && isZeroChunk(plaintext)) { zeroed.push(index); continue; }
       const stored = await this.cipher.encrypt(plaintext);
       // The git object id addresses the chunk; the digest is what proves the
       // bytes at that address are the ones we put there.
@@ -253,13 +296,19 @@ export class Machine {
       fresh.push(chunk);
     }
 
-    const result = await this._commit({
-      fresh, prepared,
-      message: message || (establishing && indices.length === 0
-        ? `create machine on ${this.branch}`
-        : `sync ${this.manifest.sync + 1}: ${indices.length} chunks`),
-      retryOnConflict
-    });
+    let result;
+    try {
+      result = await this._commit({
+        fresh, prepared, zeroed,
+        message: message || (establishing && indices.length === 0
+          ? `create machine on ${this.branch}`
+          : `sync ${this.manifest.sync + 1}: ${indices.length} chunks`),
+        retryOnConflict
+      });
+    } catch (err) {
+      this._carried = sealed;
+      throw err;
+    }
 
     const bytesUploaded = fresh.reduce((sum, c) => sum + c.bytes.length, 0);
     return {
@@ -274,7 +323,7 @@ export class Machine {
     };
   }
 
-  async _commit({ fresh, prepared, message, retryOnConflict }) {
+  async _commit({ fresh, prepared, zeroed = [], message, retryOnConflict }) {
     // The manifest is cumulative: every chunk the disk needs, not only this
     // epoch's. That is what keeps restore cost constant in machine age.
     const next = { ...this.manifest, chunks: { ...this.manifest.chunks } };
@@ -282,6 +331,10 @@ export class Machine {
     for (const chunk of prepared) {
       next.chunks[String(chunk.index)] = chunk.id;
       next.digests[String(chunk.index)] = chunk.digest;
+    }
+    for (const index of zeroed) {
+      delete next.chunks[String(index)];
+      delete next.digests[String(index)];
     }
     next.sync = this.manifest.sync + 1;
 
@@ -333,15 +386,18 @@ export class Machine {
       return committed;
     } catch (err) {
       // GitHub says 422 or "not a fast forward"; GitLab's per-file lock says
-      // 400 "The file has changed"; Forgejo's says 409 "sha does not match".
-      // All mean another writer moved first, and all take the same conflict
-      // path. Each was measured, not read off documentation.
-      const lost = err.status === 422
-        || /not a fast forward/i.test(err.message || "")
-        || /file has changed/i.test(err.message || "")
-        || /sha does not match/i.test(err.message || "");
-      if (!lost || !retryOnConflict) throw err;
-      return this._resolveConflict({ fresh, prepared, message });
+      // 400 "The file has changed", and under simultaneous commits GitLab's
+      // own reference check says 400 "reference does not point to expected
+      // object"; Forgejo's says 409 "sha does not match". All mean another
+      // writer moved first, and all take the same conflict path. Each was
+      // measured, not read off documentation.
+      const lost = isLostRace(err);
+      const budget = retryOnConflict === true ? 1 : Number(retryOnConflict) || 0;
+      // A first commit has no parent and so no race to lose: a refusal there is
+      // the service objecting to the commit itself, and rebasing onto a branch
+      // that does not exist would only bury it.
+      if (!lost || budget <= 0 || this.head === null) throw err;
+      return this._resolveConflict({ fresh, prepared, zeroed, message, budget });
     }
   }
 
@@ -350,11 +406,11 @@ export class Machine {
    * disjoint chunks the histories can be combined; if they overlap they cannot,
    * because two divergent filesystem states do not merge.
    */
-  async _resolveConflict({ fresh, prepared, message }) {
+  async _resolveConflict({ fresh, prepared, zeroed = [], message, budget = 1 }) {
     this.onEvent({ type: "conflict-detected", branch: this.branch });
 
     const previous = this.manifest;
-    const ours = new Set(prepared.map((c) => String(c.index)));
+    const ours = new Set([...prepared.map((c) => String(c.index)), ...zeroed.map(String)]);
     await this.load();
     const theirs = this.manifest;
 
@@ -372,7 +428,8 @@ export class Machine {
     }
 
     this.onEvent({ type: "conflict-rebased", disjointChunks: ours.size });
-    return this._commit({ fresh, prepared, message, retryOnConflict: false });
+    // One rebase spent; whatever budget remains covers a race lost again.
+    return this._commit({ fresh, prepared, zeroed, message, retryOnConflict: budget - 1 });
   }
 
   /**
@@ -404,6 +461,8 @@ export class Machine {
     const byId = new Map();
     for (let index = 0; index < total; index++) {
       const plaintext = await this.device.readChunk(index, this.chunkSize);
+      // Free space is absence here too; see sync().
+      if (this.manifest.baseIsBlank && isZeroChunk(plaintext)) continue;
       const stored = await this.cipher.encrypt(plaintext);
       const id = await blobId(stored);
       chunks[String(index)] = id;
@@ -509,8 +568,29 @@ export async function restore({
   // Chunks are independent, so up to `concurrency` of them are in flight at
   // once. The count of requests is the same at any width; only the wall clock
   // changes, which is what a machine waiting to boot cares about.
-  let fromCdn = 0, fromApi = 0;
+  let fromCdn = 0, fromApi = 0, reused = 0;
   const indices = manifestModule.indices(manifest);
+  // Two positions can name one object, when the guest copied a file onto
+  // chunk-aligned blocks. The object is fetched once and written to each.
+  const inFlight = new Map();
+  const fetchObject = (id) => {
+    if (!inFlight.has(id)) {
+      inFlight.set(id, (async () => {
+        let stored = null;
+        if (cdn) {
+          // Read-your-writes: the CDN can lag a commit it has not seen, so a
+          // miss falls back to the object API rather than failing the boot.
+          try { stored = await cdn(id); } catch { stored = null; }
+          if (stored) fromCdn++;
+        }
+        if (!stored) { stored = await host.readObject(id); fromApi++; }
+        return stored;
+      })());
+    } else {
+      reused++;
+    }
+    return inFlight.get(id);
+  };
   let next = 0;
   const worker = async () => {
     for (;;) {
@@ -518,14 +598,7 @@ export async function restore({
       if (at >= indices.length) return;
       const index = indices[at];
       const id = manifest.chunks[String(index)];
-      let stored = null;
-      if (cdn) {
-        // Read-your-writes: the CDN can lag a commit it has not seen, so a miss
-        // falls back to the object API rather than failing the boot.
-        try { stored = await cdn(id); } catch { stored = null; }
-        if (stored) fromCdn++;
-      }
-      if (!stored) { stored = await host.readObject(id); fromApi++; }
+      const stored = await fetchObject(id);
       await verifyChunk(stored, manifest, index, id);
       const plaintext = await cipher.decrypt(stored);
       const { offset } = chunkExtent(index, manifest.chunkSize, manifest.diskSize);
@@ -541,7 +614,8 @@ export async function restore({
     commit: ref.commit,
     chunksApplied: indices.length,
     fromCdn,
-    fromApi
+    fromApi,
+    reused
   };
 }
 

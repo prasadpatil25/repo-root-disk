@@ -19,6 +19,17 @@
 // Phases land in traces/history/, with history.json describing them. The JSON
 // alone reproduces the three in-process shapes, since they count chunks; the
 // .bin files carry the bytes restic needs.
+//
+// For the 1 GB machine:
+//
+//   m.main({ diskMb: 1024, workload: "corpus", dir: "history-1gb", onStep: ... });
+//
+// which uses an in-memory blank disk and a corpus workload that fills about
+// half of it: eight directories of random files of 1 to 8 MB, archives of four
+// of them with tar, two of those extracted again, then twenty steps that
+// delete, rewrite in place, append, edit with vim and recreate. Start serve.py
+// with CAPTURE_ROOT pointing at a drive with room; the payloads run to
+// hundreds of megabytes.
 
 import { V86Device, serialFlush } from "../src/device/v86.js";
 import { Terminal } from "../src/ui/terminal.js";
@@ -38,7 +49,6 @@ const PACKAGES = [
   "xxd-9.1.0707-r0.apk"
 ];
 const BASE = `${V86_ROOT}/images/blank-256mb.img`;
-const DISK_SIZE = 256 * 1024 * 1024;
 const CHUNK = 256 * 1024;
 const PROMPT = /[#$%>]\s*$/;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -60,9 +70,9 @@ function keepAwake() {
   }
 }
 
-async function upload(name, body) {
-  const r = await fetch(`/traces/history/${name}`, { method: "PUT", body });
-  if (!r.ok) throw new Error(`upload of ${name} refused: ${r.status}`);
+async function upload(dir, name, body) {
+  const r = await fetch(`/traces/${dir}/${name}`, { method: "PUT", body });
+  if (!r.ok) throw new Error(`upload of ${dir}/${name} refused: ${r.status}`);
 }
 
 /**
@@ -132,10 +142,68 @@ export function sessionSteps() {
   return steps;
 }
 
-export async function main({ onStep = console.log } = {}) {
+/**
+ * The corpus workload, for a disk large enough to hold one.
+ *
+ * Forty steps as before, but the first twenty build and copy a corpus of
+ * random files through the ordinary tools, and the last twenty work on it.
+ */
+export function corpusSteps() {
+  const steps = [];
+  for (let i = 1; i <= 8; i++) {
+    const files = Array.from({ length: 8 }, (_, n) =>
+      `dd if=/dev/urandom of=/root/corpus/d${i}/f${n + 1} bs=1M count=${n + 1} 2>/dev/null`);
+    steps.push({ label: `corpus ${i}: eight files, 36 MB`, commands: [`mkdir -p /root/corpus/d${i}`, ...files] });
+  }
+  for (let i = 1; i <= 4; i++) {
+    steps.push({ label: `archive ${i}: tar a directory`, commands: [`tar cf /root/archive${i}.tar -C /root/corpus d${i}`] });
+  }
+  for (let i = 1; i <= 2; i++) {
+    steps.push({ label: `extract ${i}: untar a copy`, commands: [`mkdir -p /root/copy${i}`, `tar xf /root/archive${i}.tar -C /root/copy${i}`] });
+  }
+  for (let i = 1; i <= 6; i++) {
+    steps.push({ label: `grow ${i}: 4 MB file`, commands: [`dd if=/dev/urandom of=/root/corpus/g${i} bs=1M count=4 2>/dev/null`] });
+  }
+  for (let i = 21; i <= 40; i++) {
+    const d = ((i * 7) % 8) + 1, f = ((i * 3) % 8) + 1;
+    switch (i % 5) {
+      case 1:
+        steps.push({ label: `work ${i}: rewrite 2 MB inside d${d}/f${f}`,
+          commands: [`dd if=/dev/urandom of=/root/corpus/d${d}/f${f} bs=1M count=2 seek=1 conv=notrunc 2>/dev/null`] });
+        break;
+      case 2:
+        steps.push({ label: `work ${i}: delete a directory, recreate it smaller`,
+          commands: [`rm -rf /root/corpus/d${d}`, `mkdir -p /root/corpus/d${d}`,
+            `dd if=/dev/urandom of=/root/corpus/d${d}/f1 bs=1M count=8 2>/dev/null`] });
+        break;
+      case 3:
+        steps.push({ label: `work ${i}: append to a log and edit with vim`,
+          commands: [`for n in $(seq 1 64); do echo "step ${i} line $n $(date)" >> /var/log/session.log; done`,
+            "test -f /root/notes.txt || cat /etc/passwd /etc/group /etc/services > /root/notes.txt",
+            `vim -es -c '%s/^\\([a-z0-9_]*\\):/\\1_${i}:/' -c 'wq' /root/notes.txt`] });
+        break;
+      case 4:
+        steps.push({ label: `work ${i}: delete an archive, tar another`,
+          commands: [`rm -f /root/archive${(i % 4) + 1}.tar`, `tar cf /root/archive${(i % 4) + 1}.tar -C /root/corpus d${d}`] });
+        break;
+      default:
+        steps.push({ label: `work ${i}: package churn`,
+          commands: ["apk del xxd", `apk add --allow-untrusted --no-network ${alpine.CACHE}/xxd-9.1.0707-r0.apk`] });
+    }
+  }
+  return steps;
+}
+
+export async function main({ onStep = console.log, diskMb = 256, dir = "history", workload = "session" } = {}) {
   const log = onStep;
   const wake = keepAwake();
   const terminal = new Terminal(document.getElementById("term"));
+  const DISK_SIZE = diskMb * 1024 * 1024;
+  // The 256 MB machine streams the blank image the paper's other runs use; any
+  // other size is an in-memory blank disk, which the device wraps the same way.
+  const hda = diskMb === 256
+    ? { url: BASE, size: DISK_SIZE, async: true, fixed_chunk_size: CHUNK }
+    : { buffer: new ArrayBuffer(DISK_SIZE) };
 
   const emulator = new V86({
     wasm_path: `../vendor/v86/v86.wasm`,
@@ -144,7 +212,7 @@ export async function main({ onStep = console.log } = {}) {
     bios: { url: `${V86_ROOT}/bios/seabios.bin` },
     vga_bios: { url: `${V86_ROOT}/bios/vgabios.bin` },
     cdrom: { url: `${V86_ROOT}/images/linux4.iso` },
-    hda: { url: BASE, size: DISK_SIZE, async: true, fixed_chunk_size: CHUNK },
+    hda,
     filesystem: {},
     autostart: true, disable_keyboard: true, disable_mouse: true
   });
@@ -170,7 +238,10 @@ export async function main({ onStep = console.log } = {}) {
   });
 
   const history = {
-    label: "alpine, vim, and a forty-step working session",
+    label: workload === "corpus"
+      ? `alpine, vim, and a forty-step corpus workload on a ${diskMb} MB disk`
+      : "alpine, vim, and a forty-step working session",
+    workload,
     diskSize: DISK_SIZE,
     chunkSize: CHUNK,
     guest: "buildroot 4.16.13 i686, alpine 3.20.10 on the disk",
@@ -189,9 +260,9 @@ export async function main({ onStep = console.log } = {}) {
     for (const i of chunks) payloads.push(await device.readChunk(i, CHUNK));
     const index = history.phases.length;
     const file = `phase-${String(index).padStart(3, "0")}.bin`;
-    await upload(file, packPhase({ label, chunkSize: CHUNK, chunks }, payloads));
+    await upload(dir, file, packPhase({ label, chunkSize: CHUNK, chunks }, payloads));
     history.phases.push({ index, label, ranges: ranges.length, chunks, file });
-    await upload("history.json", JSON.stringify(history, null, 1));
+    await upload(dir, "history.json", JSON.stringify(history, null, 1));
     log(`phase ${index} ${label}: ${ranges.length} ranges, ${chunks.length} chunks`);
   };
 
@@ -218,7 +289,7 @@ export async function main({ onStep = console.log } = {}) {
   await flush();
   await seal("install vim");
 
-  for (const step of sessionSteps()) {
+  for (const step of (workload === "corpus" ? corpusSteps() : sessionSteps())) {
     for (const command of step.commands) {
       const r = await alpine.inside(run, command, { timeoutMs: 300000 });
       if (!r.ok) log(`  (${step.label}) failed, continuing: ${command}: ${r.output.slice(-160)}`);
@@ -233,7 +304,7 @@ export async function main({ onStep = console.log } = {}) {
 
   history.complete = true;
   history.finishedAt = new Date().toISOString();
-  await upload("history.json", JSON.stringify(history, null, 1));
+  await upload(dir, "history.json", JSON.stringify(history, null, 1));
 
   wake();
   await emulator.destroy();
